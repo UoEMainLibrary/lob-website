@@ -1,0 +1,6 @@
+db-backup
+.ddev
+.idea
+web/sites/default/files
+web/sites/default/settings.php
+web/sites/default/settings.ddev.php

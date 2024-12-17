@@ -1,0 +1,17 @@
+# Ignore all hidden files exept these.
+.*
+!/.php-cs-fixer.dist.php
+!/.github
+!/.gitignore
+!/.gitattributes
+!/.editorconfig
+!.gitkeep
+
+# Other ignored paths and files.
+/vendor
+/composer.lock
+
+/features/tmp/*
+!/features/tmp/.placeholder
+
+/.phpunit.cache

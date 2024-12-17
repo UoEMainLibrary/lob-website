@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the entityconnect module.
+ */
+
+use Drupal\user\Entity\Role;
+
+/**
+ * Implements hook_install().
+ *
+ * Grant new permission to roles having 'access admin pages' permission.
+ */
+function entityconnect_install() {
+  /** @var \Drupal\user\RoleInterface[] $roles */
+  $roles = Role::loadMultiple();
+  foreach ($roles as $role) {
+    if ($role->hasPermission('access administration pages')) {
+      $role->grantPermission('administer entityconnect');
+      $role->save();
+    }
+  }
+}

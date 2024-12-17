@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ * Bootstrap sub-theme.
+ *
+ * Place your custom PHP code in this file.
+ */
+
+/*
+// function computed_field_field_parent_path_compute(&$entity_field, $entity_type, $entity, $field, $instance, $langcode, $items) {
+function computed_field_field_ancestors_compute($entity_type_manager, $entity, $fields, $delta) {
+  $parents = field_get_items($entity_type, $entity, 'field_parent');
+
+  $n = 0;
+  foreach ($parents as $parent) {
+    $parent = $parent['target_id'];
+    $entity_field[$n]['value'] = '';
+
+    $top = FALSE;
+    $family = array();
+    $family[] = $parent;
+
+    while (count($family) > 0) {
+      $entity_field[$n]['value'] .= $family[0] . ',';
+      computed_field_field_parent_path_helper($family, $entity_type);
+    }
+    $entity_field[$n]['value'] = trim($entity_field[$n]['value'], ',');
+    $n = $n + 1;
+  }
+}
+
+function computed_field_field_parent_path_helper (&$family, $entity_type) {
+  $entity_id = array_shift($family);
+  $entity = entity_load($entity_type, array($entity_id));
+  $target_ids = $entity[$entity_id];
+  $target_ids = $target_ids->field_parent;
+  if (isset($target_ids['und'])){
+    foreach ($target_ids['und'] as $target_id) {
+      $family[] = $target_id['target_id'];
+    }
+  }
+}
+*/
+
+function bootstrap_lob_preprocess_html(&$variables) {
+  // Add node ID to the body class.
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if (is_object($node)) {
+    $variables['attributes']['class'][] = 'node-' . $node->id();
+  }
+}
+
+/* autofocus on search forms */
+function bootstrap_lob_form_views_exposed_form_alter(&$form, $form_state, $form_id) {
+  //Get view object
+  $view = $form_state->get('view');
+  if ($view->id() == 'full_text_search') {
+    $form['search_api_fulltext']['#attributes']['autofocus'] = 'autofocus';
+  }
+}

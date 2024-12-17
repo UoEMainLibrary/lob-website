@@ -1,0 +1,5 @@
+name: SPARQL Reference
+description: Provides a autocomplete widget that looks up concept URIs in SPARQL endpoints.
+type: module
+package: Custom
+core_version_requirement: ^8 || ^9 || ^10

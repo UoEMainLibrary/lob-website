@@ -1,0 +1,7 @@
+sparql_reference.autocomplete:
+  path: '/autocomplete/ref'
+  defaults:
+    _controller: '\Drupal\sparql_reference\Controller\SparqlReferenceAutocompleteController::handleAutocomplete'
+    _format: json
+  requirements:
+    _permission: 'access content'

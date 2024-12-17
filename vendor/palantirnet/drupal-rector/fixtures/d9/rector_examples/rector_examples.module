@@ -1,0 +1,20 @@
+<?php
+
+use Drupal\Component\Utility\Bytes;
+function extension_paths() {
+    drupal_get_path('module', 'node');
+    drupal_get_path('theme', 'seven');
+    drupal_get_path('profile', 'standard');
+    drupal_get_filename('module', 'node');
+    drupal_get_filename('theme', 'seven');
+    drupal_get_filename('profile', 'standard');
+}
+
+function rector_examples_with_render() {
+    $build = [];
+    $output = render($build);
+}
+
+function rector_utility_bytes_to_int() {
+    $int = Bytes::toInt("15");
+}

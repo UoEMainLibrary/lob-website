@@ -1,0 +1,9 @@
+publish thesaurus:
+  title: 'Publish LoB'
+  description: 'Publish the LoB thesaurus to a SPARQL endpoint.'
+  restrict access: TRUE
+
+export thesaurus:
+  title: 'Export LoB'
+  description: 'Export the LoB thesaurus as a RDF file.'
+  restrict access: TRUE

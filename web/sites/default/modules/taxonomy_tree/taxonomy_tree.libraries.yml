@@ -1,0 +1,6 @@
+framework:
+  js:
+    theme:
+      js/tree.js: {}
+  dependencies:
+    - core/drupalSettings

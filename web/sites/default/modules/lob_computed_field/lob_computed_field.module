@@ -1,0 +1,40 @@
+<?php
+
+use Drupal\node\Entity\Node;
+
+function computed_field_field_parent_path_compute($entity_type, $entity, $fields, $delta) {
+  $result = "";
+
+  foreach($entity->field_parent as $i => $field)
+  {
+    $nid = $field->target_id;
+
+    $result .= computed_field_get_parent_path_recursive($nid);
+  }
+
+  $result = preg_replace('/ \/ $/', '', $result);
+
+  return $result;
+}
+
+function computed_field_get_parent_path_recursive($nid) {
+  $result = "";
+
+  if(isset($nid)) {
+    $node = Node::load($nid);
+
+    if(isset($node)) {
+      foreach($node->field_parent as $i => $field)
+      {
+        $nid = $field->target_id;
+
+        $result .= computed_field_get_parent_path_recursive($nid);
+      }
+
+      // Append *after* recursive decent to build the path from top to bottom..
+      $result .= "{$node->getTitle()} / ";
+    }
+  }
+
+  return $result;
+}

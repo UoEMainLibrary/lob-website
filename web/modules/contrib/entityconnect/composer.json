@@ -1,0 +1,36 @@
+{
+  "name": "drupal/entityconnect",
+  "description": "Entity Connect extends Entity References fields by adding 'add new content' and 'edit current content' buttons.",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "keywords": ["Drupal"],
+  "homepage": "https://www.drupal.org/project/entityconnect",
+  "authors": [
+    {
+      "name": "jygastaud",
+      "homepage": "https://www.drupal.org/u/jygastaud",
+      "role": "Maintainer"
+    },
+    {
+      "name": "olmeta.david",
+      "homepage": "https://www.drupal.org/u/olmetadavid",
+      "role": "Maintainer"
+    },
+    {
+      "name": "Agnes Chisholm (amaria)",
+      "homepage": "https://www.drupal.org/u/amaria",
+      "role": "Maintainer"
+    },
+    {
+      "name": "Viktor Holovachek (AstonVictor)",
+      "homepage": "https://www.drupal.org/u/astonvictor",
+      "role": "Maintainer"
+    }
+  ],
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/entityconnect",
+    "source": "https://git.drupalcode.org/project/entityconnect"
+  },
+  "require": {  }
+}

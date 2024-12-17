@@ -1,0 +1,5 @@
+name: Link Node Filter
+description: Adds an input filter that allows a node to link to other nodes.
+type: module
+package: Custom
+core_version_requirement: ^8 || ^9 || ^10

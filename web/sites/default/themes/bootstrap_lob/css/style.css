@@ -1,0 +1,489 @@
+/**
+ * If using a CSS pre-processor, tell it to overwrite this file. If not, place
+ * your custom CSS modifications here.
+ */
+
+@font-face {
+  font-family: "Ubuntu";
+  src: url("../fonts/Ubuntu-Light.ttf");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ubuntu";
+  src: url("../fonts/Ubuntu-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ubuntu";
+  src: url("../fonts/Ubuntu-Bold.ttf");
+  font-weight: 700;
+  font-style: normal;
+}
+
+body {
+  background: #ececec;
+  color: #222;
+  margin-top: 0;
+  font-family: "Ubuntu", "Arial", "Helvetica", sans-serif;
+  font-size: 18px;
+}
+
+h1 {
+  color: #333366;
+  font-size: 2em;
+  font-weight: 600;
+}
+
+h2 {
+  color: #333366;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+h3 {
+  color: black;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+li {
+  margin-bottom: 0.5em;
+}
+
+a {
+  color: #333366;
+}
+
+.btn-success, button#edit-submit-full-text-search, button#edit-submit-full-text-search--2, button#edit-submit-alphabetical-order , button.field-add-more-submit {
+  color: #ffffff;
+  background-color: #0066aa;
+  border-color: #333366;
+}
+
+.logo {
+  margin-right: 30px;
+}
+
+.logo img {
+  width: 40px;
+}
+
+.region-navigation {
+  width: 100%;
+}
+
+.navbar-header {
+  float: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.navbar-header > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.navbar-brand {
+  float: none;
+  font-size: 1.5em;
+  font-weight: 400;
+  color: white !important;
+}
+
+.navbar-toggle {
+  background: white;
+}
+
+.navbar-default .navbar-toggle .icon-bar {
+  background-color: black;
+}
+
+.navbar-default {
+  background: #333366;
+  color: white;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.navbar-container {
+  background: transparent;
+  padding-top: 10px;
+}
+
+.navbar-collapse {
+  overflow: hidden;
+  border: none !important;
+  display: flex !important;
+  justify-content: flex-end;
+  background: linear-gradient(
+    0deg,
+    rgba(34, 34, 68, 1) 90%,
+    rgba(32, 32, 64, 1) 100%
+  );
+}
+
+.navbar-collapse .menu {
+  padding: 0;
+}
+
+.navbar-collapse .menu li a {
+  color: white;
+  margin-right: 2px;
+  border-top: 2px solid transparent;
+}
+
+.navbar-collapse .menu li a.is-active {
+  font-weight: 600;
+  background: #ececec !important;
+  color: #0066aa;
+  border-top: 2px solid #0066aa;
+}
+
+.navbar-collapse .menu li a:hover {
+  color: #0066aa;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-collapse .menu li {
+  margin: 0;
+}
+
+.page-header {
+  border: none;
+}
+
+.author {
+  color: #666;
+}
+
+.dropdown-menu {
+  margin: 0;
+  margin-left: -1px;
+  border-radius: 0;
+  border-color: #e7e7e7;
+  background: #eeeeee;
+}
+
+.dropdown-menu li a {
+  line-height: 40px;
+}
+
+.main-container {
+  background: #ececec;
+  padding-top: 2em;
+  padding-bottom: 3em;
+}
+
+.page-node-type-collection .main-container .block-title,
+.page-node-type-concept .main-container .block-title {
+  color: black;
+  font-size: 1em;
+  padding-top: 1em;
+  margin-top: 0;
+}
+
+.region-sidebar-second {
+  box-shadow: none;
+}
+
+body > footer.footer {
+  border-top: none;
+  margin-top: 0;
+}
+
+footer h2 {
+  color: black;
+}
+
+.footer {
+  border-top: 0;
+}
+
+.footer section {
+  margin-bottom: 3em;
+}
+
+.terms-container {
+  padding: 1.5em 0;
+}
+
+.terms-container.empty {
+  padding: 0.5em 0;
+}
+
+.term-list {
+  padding: 0;
+}
+
+.term-list .term-list {
+  padding-left: 15px;
+}
+
+.term-list li {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1px;
+}
+
+.term-loading-spinner {
+  font-size: 0.8em;
+  font-style: italic;
+  padding: 5px 0 10px 40px;
+  transition: all cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.term-list-item .term-list-item-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.term-list .term-list-item {
+  border: 1px solid #333366;
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 10px 10px 10px 0;
+  /*background-color: RGBA(150,150,150,0.3); this helps reading the hierarchy but reduces contrast*/
+}
+
+/* these have now been implemented in js so that we do not have links with empty content for accessibility
+.term-list-item > .term-list-item-wrapper > .term-toggle:before {
+  content: "+";
+}
+
+.term-list-item.expanded > .term-list-item-wrapper > .term-toggle:before {
+  content: "-";
+}*/
+
+.term-list a {
+  text-decoration: none;
+}
+
+.term-list a:hover {
+  color: #0066aa;
+}
+
+.term-toggle {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  font-weight: bold;
+  line-height: 40px;
+  text-align: center;
+}
+
+.term-toggle.hidden {
+  display: block !important;
+  visibility: hidden !important;
+}
+
+.term-children-count {
+  color: #666;
+  font-size: 0.8em;
+  padding: 5px;
+  border-radius: 3px;
+  background: #e8e8e8;
+  margin-left: 10px;
+}
+
+.term-children-count.n-0 {
+  display: none;
+}
+
+.view-alphabetical-order .attachment-before {
+  max-width: 50em;
+  margin-bottom: 2em;
+}
+
+.view-alphabetical-order .attachment-before a {
+  font-weight: 600;
+}
+
+.view-alphabetical-order .views-row {
+  border-bottom: 1px solid #ccc;
+  line-height: 2.5em;
+}
+
+.concept .field {
+  border-top: 1px solid #ccc;
+  padding: 1em 0 1em 0;
+}
+
+/* Hide the scope note reference for concepts */
+.page-node-type-concept article.source-reference h2, .page-node-type-concept article.source-reference div.author, .page-node-type-label article.source-reference h2, .page-node-type-label article.source-reference div.author {
+  display: none;
+}
+
+.field--name-field-source-reference .field {
+  border: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* Frame comments nicely */
+.page-node-type-concept article.js-comment, .page-node-type-label article.js-comment {
+  border: 1px solid #333366;
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 0 10px;
+}
+
+/* Give less emphasis on comment author names and comment links */
+.page-node-type-concept .js-comment footer, .page-node-type-label .js-comment footer {
+  font-size: 0.7em;
+}
+
+.page-node-type-concept .js-comment ul.links, .page-node-type-label .js-comment ul.links {
+  font-size: 0.7em;
+}
+
+/* Recomendation notice */
+#block-views-block-interface-snippets-block-1 {
+  padding: 15px 20px 15px 35px;
+  margin-bottom: 20px;
+  border: 1px solid;
+  border-width: 1px 1px 1px 0;
+  border-radius: 2px;
+  background: no-repeat 10px 17px;
+  color: #734c00;
+  border-color: #f4daa6 #f4daa6 #f4daa6 transparent;
+  background-color: #fdf8ed;
+  background-image: url(../../../../../core/misc/icons/e29700/warning.svg);
+  box-shadow: -8px 0 0 #e09600;
+}
+
+/* Fix contrast of navigation heading */
+#block-mainnavigation h2 {
+  color: #FFFFFF;
+}
+
+/* Search input field highlighted when empty */
+input#edit-search-api-fulltext:placeholder-shown, input#edit-search-api-fulltext--2:placeholder-shown {
+  border: 1px solid red; /* Red border only if the input is empty */
+}
+
+#block-bootstrap-lob-exposedformfull-text-searchpage-1 {
+  padding: 0 0 30px 0;
+}
+
+.view-full-text-search article.concept {
+  border: 1px solid #333366;
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 10px;
+}
+
+/* responsive SVG images */
+.field--name-field-drawing img {
+  width: 100%;
+}
+
+/* pagination */
+.pagination > .active > a, .pagination > .active > span, .pagination > .active > a:hover, .pagination > .active > span:hover, .pagination > .active > a:focus, .pagination > .active > span:focus {
+  background-color: #333366;
+  border-color: #333366;
+}
+
+.pagination > li > a, .pagination > li > span {
+   color: #333366;
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (max-width: 767px) {
+  .navbar-collapse .menu li a {
+    color: white;
+    border-right: 2px solid transparent;
+    border-top: 0;
+  }
+
+  .navbar-collapse .menu li a.is-active {
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: #0066aa;
+    border-top: 0;
+    border-right: 2px solid #0066aa;
+  }
+
+  .navbar-collapse .menu li a:hover {
+    color: #0066aa;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .navbar-collapse > .container {
+    margin: 0 !important;
+    width: 200px;
+    padding: 10px;
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  .navbar-container {
+    padding-top: 0;
+  }
+
+  .navbar-collapse {
+    display: block;
+  }
+
+  .navbar-toggle {
+    display: none;
+  }
+
+  .navbar-collapse #block-bootstrap-lob-account-menu {
+    margin-left: auto;
+  }
+
+  .region-navigation {
+    padding: 10px 0;
+  }
+
+  .navbar-collapse {
+    padding-top: 16px;
+  }
+
+  .region-navigation-collapsible {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .region-navigation-collapsible .menu {
+    display: flex;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  .navbar-header {
+    background-image: url("../images/header-background.jpg");
+    background-repeat: no-repeat;
+    background-position: right top;
+  }
+
+  .logo img {
+    width: 50px;
+  }
+
+  .navbar-brand {
+    font-size: 2.5em;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  .container {
+    width: 1070px;
+  }
+}

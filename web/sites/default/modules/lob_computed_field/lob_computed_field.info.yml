@@ -1,0 +1,9 @@
+name: LoB Computed Field
+description: Hook implementation for computing the parent path field to improve the Solr search experience.
+package: Custom
+type: module
+core: 8.x
+core_version_requirement: ^8 || ^9 || ^10
+configure: lob_computed_field.config_form
+dependencies:
+  - computed_field

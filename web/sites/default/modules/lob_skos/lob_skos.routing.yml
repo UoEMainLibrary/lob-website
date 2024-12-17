@@ -1,0 +1,15 @@
+lob_skos.publish_form:
+  path: '/skos/publish'
+  defaults:
+    _form: '\Drupal\lob_skos\Form\PublishForm'
+    _title: 'Publish to SPARQL endpoint'
+  requirements:
+    _permission: 'publish thesaurus'
+
+lob_skos.export_form:
+  path: '/skos/export'
+  defaults:
+    _form: '\Drupal\lob_skos\Form\ExportForm'
+    _title: 'Export to RDF file'
+  requirements:
+    _permission: 'export thesaurus'

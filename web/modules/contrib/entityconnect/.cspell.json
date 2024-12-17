@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignoreWords": [
+    "Clientside",
+    "Holovachek",
+    "Viktor",
+    "addbuttonallowed",
+    "amaria",
+    "editbuttonallowed",
+    "entityreference",
+    "entitytconnect",
+    "jygastaud",
+    "olmeta",
+    "olmetadavid"
+  ]
+}

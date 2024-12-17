@@ -1,0 +1,5 @@
+lob_computed_field.config_form:
+  title: 'Computed Field Settings'
+  parent: system.admin_structure
+  description: 'Recompute the values of all computed fields.'
+  route_name: lob_computed_field.config_form

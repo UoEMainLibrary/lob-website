@@ -1,0 +1,7 @@
+lob_computed_field.config_form:
+  path: '/admin/config/lob_computed_field'
+  defaults:
+    _form: '\Drupal\lob_computed_field\Form\ConfigForm'
+    _title: 'Computed Field Settings'
+  requirements:
+    _role: 'ual_it_staff+webmaster+lob_member'

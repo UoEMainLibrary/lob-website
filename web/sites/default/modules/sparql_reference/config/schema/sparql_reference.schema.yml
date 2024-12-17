@@ -1,0 +1,16 @@
+field.widget.settings.sparql_ref_autocomplete_widget:
+  type: mapping
+  label: 'Autocomplete (SPARQL endpoint)'
+  mapping:
+    vid:
+      type: string
+      label: 'Vocabulary'
+    sparql_endpoint:
+      type: string
+      label: 'SPARQL endpoint'
+    sparql_query:
+      type: string
+      label: 'SPARQL query'
+    max_results:
+      type: integer
+      label: 'Max results'

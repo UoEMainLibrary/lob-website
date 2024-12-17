@@ -1,0 +1,9 @@
+name: Taxonomy Tree
+description: Provides custom fields for building taxonomy views.
+type: module
+package: Custom
+core_version_requirement: ^8 || ^9 || ^10
+
+libraries-extend:
+  taxonomy_tree/framework:
+    - taxonomy_tree/framework

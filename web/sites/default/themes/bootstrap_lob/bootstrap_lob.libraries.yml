@@ -1,0 +1,5 @@
+framework:
+  css:
+    theme:
+      css/fonts.css: {}
+      css/style.css: {}

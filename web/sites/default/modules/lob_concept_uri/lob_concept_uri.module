@@ -1,0 +1,20 @@
+<?php
+
+//use Drupal\node\NodeInterface; upgrade to Drupal 10
+use Drupal\node\NodeInterface;
+
+//function lob_concept_uri_entity_presave(Drupal\Core\Entity\EntityInterface $entity)   { upgrade to Drupal 10
+function lob_concept_uri_entity_presave(EntityInterface $entity) {
+
+  if ($entity->bundle() == 'concept') {
+
+    $concept_nid = $entity->id();
+    $concept_uri = $entity->get("field_entity_uri")->getValue()[0]["uri"];
+
+    if ($concept_uri == "") {
+      $entity->set("field_entity_uri", "http://w3id.org/lob/concept/" . $concept_nid);
+    }
+
+  }
+}
+
