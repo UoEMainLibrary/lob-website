@@ -3,7 +3,7 @@
 namespace Drupal\Tests\svg_formatter\Functional;
 
 use Drupal\Core\File\Exception\FileException;
-use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\File\FileExists;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\media\Entity\Media;
 use Drupal\Tests\BrowserTestBase;
@@ -132,7 +132,7 @@ class SvgFormatterTest extends BrowserTestBase {
     }
 
     $source_file = \Drupal::service('file.repository')
-      ->writeData(self::SVG_DATA, $destination, FileSystemInterface::EXISTS_REPLACE);
+      ->writeData(self::SVG_DATA, $destination, FileExists::Replace);
 
     return $source_file;
   }

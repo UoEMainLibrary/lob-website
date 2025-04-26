@@ -1,12 +1,12 @@
 name: SVG Formatter
 description: 'SVG Formatter provides support for using SVG images on your website.'
 type: module
-core_version_requirement: ^9.2 || ^10.0
+core_version_requirement: ^10.3 || ^11.0
 package: Field types
 test_dependencies:
   - token:token
 
-# Information added by Drupal.org packaging script on 2024-03-16
-version: '2.0.3'
+# Information added by Drupal.org packaging script on 2024-12-31
+version: '2.0.4'
 project: 'svg_formatter'
-datestamp: 1710573986
+datestamp: 1735631696
