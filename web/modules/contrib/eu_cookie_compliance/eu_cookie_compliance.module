@@ -234,14 +234,31 @@ function eu_cookie_compliance_page_attachments(&$variables) {
     }
     else {
       \Drupal::messenger()
-        ->addError(t('Could not read the EU Cookie Compliance JavaScript file that is used to handle disabled scripts. There may be a problem with your file system or the file may be missing. Try accessing the EU Cookie Compliance settings page and re-save the form.'));
+        ->addError(t('Could not read the EU Cookie Compliance JavaScript file that is used to handle disabled scripts. There may be a problem with your file system or the file may be missing. Try accessing the <a href=":url">EU Cookie Compliance settings page</a> and re-save the form.', [':url' => Url::fromRoute('eu_cookie_compliance.settings')->toString()]));
     }
   }
   // Add inline javascript.
   $disabled_javascripts = $config->get('disabled_javascripts');
   // Initialize a variable to keep libraries to we wish to disable.
   $libraries_to_disable = [];
+  $unverified_scripts = [];
   if ($disabled_javascripts != '') {
+    /* Since we are going to be disabling javascript, get a list of currently
+       attached JS, so we can check if the JS we will be loading later exists
+       on this page */
+    $all_js = [];
+    if (isset($variables['#attached']['library'])) {
+      foreach ($variables['#attached']['library'] as $library) {
+        list($extension, $name) = explode('/', $library);
+        $lib = \Drupal::service('library.discovery')->getLibraryByName($extension, $name);
+        if (!empty($lib['js'])) {
+          foreach ($lib['js'] as $js_path => $value) {
+            $all_js[] = $value['data'];
+          }
+        }
+      }
+    }
+
     $disabled_javascripts = _eu_cookie_compliance_explode_multiple_lines($disabled_javascripts);
     $disabled_javascripts = array_filter($disabled_javascripts, 'strlen');
 
@@ -261,11 +278,24 @@ function eu_cookie_compliance_page_attachments(&$variables) {
         }
       }
 
+      if (!in_array($script, $all_js)) {
+        if (strpos($script, 'http') !== 0 && strpos($script, '//') !== 0) {
+          // Add the leading slash due to the configSave(). Needed for the JS to
+          // match our verified scripts
+          $script = '/' . $script;
+        }
+        $unverified_scripts[] = $script;
+      }
+
       // Store the actual script name, since we will need it later.
       $disabled_javascripts[$key] = $script;
 
     }
   }
+
+  // Provide a list of missing scripts to prevent the compliance script
+  // from being used to load them.
+  $variables['#attached']['drupalSettings']['eu_cookie_compliance']['unverified_scripts'] = $unverified_scripts;
 
   // Add inline css.
   if (!empty($data['css'])) {
@@ -836,10 +866,20 @@ function eu_cookie_compliance_user_in_eu() {
  * Implements hook_js_alter().
  */
 function eu_cookie_compliance_js_alter(&$javascript, AttachedAssetsInterface $assets) {
+  if (empty($javascript)) {
+    return;
+  }
+
   $config = \Drupal::config('eu_cookie_compliance.settings');
   $disabled_javascripts = $config->get('disabled_javascripts');
   $disabled_javascripts = _eu_cookie_compliance_explode_multiple_lines($disabled_javascripts);
-  
+
+  $disabled_javascripts = array_filter($disabled_javascripts, function ($js) use ($javascript) {
+    $script_name = strtok($js, '%');
+    return isset($javascript[$script_name]);
+  });
+
+
   $exclude_paths_value = $config->get('exclude_paths');
   $exclude_paths = !is_null($exclude_paths_value) ? explode(PHP_EOL, $exclude_paths_value) : [];
   $current_path = \Drupal::service('path.current')->getPath();

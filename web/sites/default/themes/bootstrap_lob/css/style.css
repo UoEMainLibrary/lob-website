@@ -319,6 +319,18 @@ footer h2 {
   padding: 1em 0 1em 0;
 }
 
+
+/* Visual map */
+
+.view-visual-map .views-view-responsive-grid__item {
+  border: 1px solid #333366;
+  border-radius: 10px;
+}
+
+.views-field-title h3 {
+  padding-left: 20px;
+}
+
 /* Hide the scope note reference for concepts */
 .page-node-type-concept article.source-reference h2, .page-node-type-concept article.source-reference div.author, .page-node-type-label article.source-reference h2, .page-node-type-label article.source-reference div.author {
   display: none;

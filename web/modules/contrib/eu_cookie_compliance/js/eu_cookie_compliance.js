@@ -239,6 +239,7 @@
       'id': 'sliding-popup',
       'role': 'alertdialog',
       'aria-describedby': 'popup-text',
+      'aria-label': Drupal.t('Cookie compliance banner'),
     });
     $html.addClass('eu-cookie-withdraw-wrapper');
 
@@ -462,6 +463,7 @@
       'id': 'sliding-popup',
       'role': 'alertdialog',
       'aria-describedby': 'popup-text',
+      'aria-label': Drupal.t('Cookie compliance banner'),
     });
     if (!drupalSettings.eu_cookie_compliance.popup_use_bare_css && !drupalSettings.eu_cookie_compliance.popup_use_olivero_css) {
       popup.height(drupalSettings.eu_cookie_compliance.popup_height)
