@@ -107,8 +107,13 @@ class ScriptFileManager {
       }
 
       $load_disabled_scripts[] = [
-        'src' => $script, 'loadByBehavior' => !empty($attach_name),
-        'attachName' => !empty($attach_name) ? $attach_name : null,
+        'src' => $script,
+        'options' => [
+          'categoryWrap' => !empty($category),
+          'categoryName' => !empty($category) ? $category : '',
+          'loadByBehavior' => !empty($attach_name),
+          'attachName' => !empty($attach_name) ? $attach_name : null,
+        ],
       ];
     }
 
@@ -118,20 +123,27 @@ class ScriptFileManager {
       window.euCookieComplianceLoadScripts = function(category) {
         const unverifiedScripts = drupalSettings.eu_cookie_compliance.unverified_scripts;
         const scriptList = {$disabled_json_list};
-
-        scriptList.forEach(({src, loadByBehavior, attachName}) => {
-          if (!unverifiedScripts.includes(src)) {
+        scriptList.forEach(({src, options}) => {
+          function createSnippet(src, options) {
             const tag = document.createElement("script");
             tag.src = decodeURI(src);
-            if (loadByBehavior && attachName) {
+            if (options.loadByBehavior && options.attachName) {
               const intervalId = setInterval(() => {
-                if (Drupal.behaviors[attachName]) {
-                  Drupal.behaviors[attachName].attach(document, drupalSettings);
+                if (Drupal.behaviors[options.attachName]) {
+                  Drupal.behaviors[options.attachName].attach(document, drupalSettings);
                   clearInterval(intervalId);
                 }
               }, 100);
             }
             document.body.appendChild(tag);
+          }
+
+          if (!unverifiedScripts.includes(src)) {
+            if (options.categoryWrap && options.categoryName === category) {
+              createSnippet(src, options);
+            } else if (!options.categoryWrap) {
+              createSnippet(src, options);
+            }
           }
         });
       }
@@ -151,13 +163,10 @@ class ScriptFileManager {
     }
 
     if (is_writable($this->directory)) {
-      /* TODO: Remove this as we do not support less than Drupal 9 */
-      if ((float) \Drupal::VERSION < 9.3) {
-        file_save_data($this->generatedScript, $this->absolutePath(), FileSystemInterface::EXISTS_REPLACE);
+      if ((float) \Drupal::VERSION < 10.3) {
+        $this->fileSystem->saveData($this->generatedScript, $this->absolutePath(), FileSystemInterface::EXISTS_REPLACE);
       } else {
         $this->fileSystem->saveData($this->generatedScript, $this->absolutePath(), FileExists::Replace);
-        \Drupal::service('file.repository')
-          ->writeData($this->generatedScript, $this->absolutePath(), FileSystemInterface::EXISTS_REPLACE);
       }
     } else {
       $this->messenger->addError($this->t('Could not generate the EU Cookie Compliance JavaScript file that would be used for handling disabled JavaScripts. There may be a problem with your files folder.'));

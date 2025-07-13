@@ -327,8 +327,12 @@ footer h2 {
   border-radius: 10px;
 }
 
-.views-field-title h3 {
+.view-visual-map .views-field-title h3 {
   padding-left: 20px;
+}
+
+.view-visual-map .views-field-field-drawing {
+  padding: 10px;
 }
 
 /* Hide the scope note reference for concepts */

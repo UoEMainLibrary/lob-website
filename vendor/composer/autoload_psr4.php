@@ -83,7 +83,7 @@ return array(
     'DrupalRector\\' => array($vendorDir . '/palantirnet/drupal-rector/src'),
     'DrupalFinder\\' => array($vendorDir . '/webflo/drupal-finder/src'),
     'DrupalCodeGenerator\\' => array($vendorDir . '/chi-teck/drupal-code-generator/src'),
-    'Doctrine\\Deprecations\\' => array($vendorDir . '/doctrine/deprecations/lib/Doctrine/Deprecations'),
+    'Doctrine\\Deprecations\\' => array($vendorDir . '/doctrine/deprecations/src'),
     'Doctrine\\Common\\Lexer\\' => array($vendorDir . '/doctrine/lexer/src'),
     'Doctrine\\Common\\Annotations\\' => array($vendorDir . '/doctrine/annotations/lib/Doctrine/Common/Annotations'),
     'Dflydev\\DotAccessData\\' => array($vendorDir . '/dflydev/dot-access-data/src'),
