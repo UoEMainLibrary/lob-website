@@ -109,7 +109,6 @@ class ComposerStaticInit7f462c0e1e81602f821b8b2f59a1a946
             'Psr\\Http\\Client\\' => 16,
             'Psr\\EventDispatcher\\' => 20,
             'Psr\\Container\\' => 14,
-            'Psr\\Cache\\' => 10,
             'PhpParser\\' => 10,
             'Peast\\' => 6,
             'PHPStan\\' => 8,
@@ -161,7 +160,6 @@ class ComposerStaticInit7f462c0e1e81602f821b8b2f59a1a946
             'DrupalCodeGenerator\\' => 20,
             'Doctrine\\Deprecations\\' => 22,
             'Doctrine\\Common\\Lexer\\' => 22,
-            'Doctrine\\Common\\Annotations\\' => 28,
             'Dflydev\\DotAccessData\\' => 22,
         ),
         'C' => 
@@ -376,10 +374,6 @@ class ComposerStaticInit7f462c0e1e81602f821b8b2f59a1a946
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
-        'Psr\\Cache\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/psr/cache/src',
-        ),
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
@@ -501,10 +495,6 @@ class ComposerStaticInit7f462c0e1e81602f821b8b2f59a1a946
         'Doctrine\\Common\\Lexer\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/lexer/src',
-        ),
-        'Doctrine\\Common\\Annotations\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/doctrine/annotations/lib/Doctrine/Common/Annotations',
         ),
         'Dflydev\\DotAccessData\\' => 
         array (
