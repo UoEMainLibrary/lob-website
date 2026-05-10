@@ -7,7 +7,7 @@ dependencies:
   - filefield_paths:filefield_paths
   - drupal:file_test
 
-# Information added by Drupal.org packaging script on 2024-12-03
-version: '8.x-1.0-beta8'
+# Information added by Drupal.org packaging script on 2025-12-12
+version: '8.x-1.0-rc1'
 project: 'filefield_paths'
-datestamp: 1733186527
+datestamp: 1765543391
