@@ -10,7 +10,7 @@ use PhpParser\Node\Expr\BinaryOp\NotIdentical;
 use PhpParser\Node\Expr\BooleanNot;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -21,21 +21,21 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class DowngradeStrStartsWithRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Downgrade str_starts_with() to strncmp() version', [new CodeSample('str_starts_with($haystack, $needle);', 'strncmp($haystack, $needle, strlen($needle)) === 0;')]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class, BooleanNot::class];
     }
     /**
      * @param FuncCall|BooleanNot $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node instanceof FuncCall && $this->isName($node, 'str_starts_with')) {
             return $this->createIdentical($node);
@@ -48,23 +48,23 @@ final class DowngradeStrStartsWithRector extends AbstractRector
         }
         return null;
     }
-    private function createIdentical(FuncCall $funcCall) : Identical
+    private function createIdentical(FuncCall $funcCall): Identical
     {
         $strlenFuncCall = $this->createStrlenFuncCall($funcCall);
         $strncmpFuncCall = $this->createStrncmpFuncCall($funcCall, $strlenFuncCall);
-        return new Identical($strncmpFuncCall, new LNumber(0));
+        return new Identical($strncmpFuncCall, new Int_(0));
     }
-    private function createNotIdenticalStrncmpFuncCall(FuncCall $funcCall) : NotIdentical
+    private function createNotIdenticalStrncmpFuncCall(FuncCall $funcCall): NotIdentical
     {
         $strlenFuncCall = $this->createStrlenFuncCall($funcCall);
         $strncmpFuncCall = $this->createStrncmpFuncCall($funcCall, $strlenFuncCall);
-        return new NotIdentical($strncmpFuncCall, new LNumber(0));
+        return new NotIdentical($strncmpFuncCall, new Int_(0));
     }
-    private function createStrlenFuncCall(FuncCall $funcCall) : FuncCall
+    private function createStrlenFuncCall(FuncCall $funcCall): FuncCall
     {
         return new FuncCall(new Name('strlen'), [$funcCall->args[1]]);
     }
-    private function createStrncmpFuncCall(FuncCall $funcCall, FuncCall $strlenFuncCall) : FuncCall
+    private function createStrncmpFuncCall(FuncCall $funcCall, FuncCall $strlenFuncCall): FuncCall
     {
         $newArgs = $funcCall->args;
         $newArgs[] = new Arg($strlenFuncCall);

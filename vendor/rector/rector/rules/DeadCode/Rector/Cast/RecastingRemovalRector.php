@@ -17,12 +17,14 @@ use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Reflection\Php\PhpPropertyReflection;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\BooleanType;
+use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\FloatType;
 use PHPStan\Type\IntegerType;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\StringType;
 use PHPStan\Type\Type;
+use PHPStan\Type\UnionType;
 use Rector\NodeAnalyzer\ExprAnalyzer;
 use Rector\NodeAnalyzer\PropertyFetchAnalyzer;
 use Rector\Rector\AbstractRector;
@@ -36,19 +38,16 @@ final class RecastingRemovalRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     /**
      * @var array<class-string<Node>, class-string<Type>>
      */
@@ -59,9 +58,9 @@ final class RecastingRemovalRector extends AbstractRector
         $this->reflectionResolver = $reflectionResolver;
         $this->exprAnalyzer = $exprAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Removes recasting of the same type', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Remove recasting of the same type', [new CodeSample(<<<'CODE_SAMPLE'
 $string = '';
 $string = (string) $string;
 
@@ -80,22 +79,31 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Cast::class];
     }
     /**
      * @param Cast $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        $nodeClass = \get_class($node);
+        $nodeClass = get_class($node);
         if (!isset(self::CAST_CLASS_TO_NODE_TYPE[$nodeClass])) {
             return null;
         }
         $nodeType = $this->nodeTypeResolver->getNativeType($node->expr);
         if ($nodeType instanceof MixedType) {
             return null;
+        }
+        if ($nodeType instanceof ConstantArrayType && $nodeClass === Array_::class) {
+            if ($this->shouldSkip($node->expr)) {
+                return null;
+            }
+            if ($this->shouldSkipCall($node->expr)) {
+                return null;
+            }
+            return $node->expr;
         }
         $sameNodeType = self::CAST_CLASS_TO_NODE_TYPE[$nodeClass];
         if (!$nodeType instanceof $sameNodeType) {
@@ -109,7 +117,7 @@ CODE_SAMPLE
         }
         return $node->expr;
     }
-    private function shouldSkipCall(Expr $expr) : bool
+    private function shouldSkipCall(Expr $expr): bool
     {
         if (!$expr instanceof MethodCall && !$expr instanceof StaticCall) {
             return \false;
@@ -117,8 +125,16 @@ CODE_SAMPLE
         $type = $this->nodeTypeResolver->getNativeType($expr);
         return $type instanceof MixedType && !$type->isExplicitMixed();
     }
-    private function shouldSkip(Expr $expr) : bool
+    private function shouldSkip(Expr $expr): bool
     {
+        $type = $this->getType($expr);
+        if ($type instanceof UnionType) {
+            foreach ($type->getTypes() as $unionedType) {
+                if ($unionedType instanceof MixedType) {
+                    return \true;
+                }
+            }
+        }
         if (!$this->propertyFetchAnalyzer->isPropertyFetch($expr)) {
             return $this->exprAnalyzer->isNonTypedFromParam($expr);
         }

@@ -24,38 +24,33 @@ final class PropertyFetchTypeResolver implements NodeTypeResolverInterface, Node
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
-    /**
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
-     */
-    private $nodeTypeResolver;
+    private ReflectionProvider $reflectionProvider;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeNameResolver $nodeNameResolver, ReflectionProvider $reflectionProvider)
     {
         $this->nodeNameResolver = $nodeNameResolver;
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function autowire(NodeTypeResolver $nodeTypeResolver) : void
+    public function autowire(NodeTypeResolver $nodeTypeResolver): void
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeClasses() : array
+    public function getNodeClasses(): array
     {
         return [PropertyFetch::class];
     }
     /**
      * @param PropertyFetch $node
      */
-    public function resolve(Node $node) : Type
+    public function resolve(Node $node): Type
     {
         // compensate 3rd party non-analysed property reflection
         $vendorPropertyType = $this->getVendorPropertyFetchType($node);
@@ -68,7 +63,7 @@ final class PropertyFetchTypeResolver implements NodeTypeResolverInterface, Node
         }
         return $scope->getType($node);
     }
-    private function getVendorPropertyFetchType(PropertyFetch $propertyFetch) : Type
+    private function getVendorPropertyFetchType(PropertyFetch $propertyFetch): Type
     {
         // 3rd party code
         $propertyName = $this->nodeNameResolver->getName($propertyFetch->name);
@@ -83,14 +78,14 @@ final class PropertyFetchTypeResolver implements NodeTypeResolverInterface, Node
             return new MixedType();
         }
         $classReflection = $this->reflectionProvider->getClass($varType->getClassName());
-        if (!$classReflection->hasProperty($propertyName)) {
+        if (!$classReflection->hasInstanceProperty($propertyName)) {
             return new MixedType();
         }
         $propertyFetchScope = $propertyFetch->getAttribute(AttributeKey::SCOPE);
         if (!$propertyFetchScope instanceof Scope) {
             return new MixedType();
         }
-        $extendedPropertyReflection = $classReflection->getProperty($propertyName, $propertyFetchScope);
+        $extendedPropertyReflection = $classReflection->getInstanceProperty($propertyName, $propertyFetchScope);
         return $extendedPropertyReflection->getReadableType();
     }
 }

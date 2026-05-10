@@ -11,9 +11,8 @@ final class NestedAttrGroupsFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\PhpNestedAttributeGroupFactory
      */
-    private $phpNestedAttributeGroupFactory;
+    private PhpNestedAttributeGroupFactory $phpNestedAttributeGroupFactory;
     public function __construct(PhpNestedAttributeGroupFactory $phpNestedAttributeGroupFactory)
     {
         $this->phpNestedAttributeGroupFactory = $phpNestedAttributeGroupFactory;
@@ -23,7 +22,7 @@ final class NestedAttrGroupsFactory
      * @param Use_[] $uses
      * @return AttributeGroup[]
      */
-    public function create(array $nestedDoctrineTagAndAnnotationToAttributes, array $uses) : array
+    public function create(array $nestedDoctrineTagAndAnnotationToAttributes, array $uses): array
     {
         $attributeGroups = [];
         foreach ($nestedDoctrineTagAndAnnotationToAttributes as $nestedDoctrineTagAndAnnotationToAttribute) {
@@ -35,8 +34,8 @@ final class NestedAttrGroupsFactory
                 $attributeGroups[] = $this->phpNestedAttributeGroupFactory->create($doctrineAnnotationTagValueNode, $nestedDoctrineTagAndAnnotationToAttribute->getNestedAnnotationToAttribute(), $uses);
             }
             $nestedAttributeGroups = $this->phpNestedAttributeGroupFactory->createNested($doctrineAnnotationTagValueNode, $nestedDoctrineTagAndAnnotationToAttribute->getNestedAnnotationToAttribute());
-            $attributeGroups = \array_merge($attributeGroups, $nestedAttributeGroups);
+            $attributeGroups = array_merge($attributeGroups, $nestedAttributeGroups);
         }
-        return \array_unique($attributeGroups, \SORT_REGULAR);
+        return array_unique($attributeGroups, \SORT_REGULAR);
     }
 }

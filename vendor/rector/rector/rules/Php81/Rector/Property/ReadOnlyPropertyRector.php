@@ -13,7 +13,7 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Analyser\Scope;
 use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
@@ -22,10 +22,10 @@ use Rector\Comments\NodeDocBlock\DocBlockUpdater;
 use Rector\NodeAnalyzer\ParamAnalyzer;
 use Rector\NodeManipulator\PropertyFetchAssignManipulator;
 use Rector\NodeManipulator\PropertyManipulator;
-use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\PhpParser\Node\BetterNodeFinder;
+use Rector\PHPStan\ScopeFetcher;
 use Rector\Privatization\NodeManipulator\VisibilityManipulator;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\Rector\AbstractRector;
 use Rector\ValueObject\MethodName;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\ValueObject\Visibility;
@@ -35,43 +35,36 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\Php81\Rector\Property\ReadOnlyPropertyRector\ReadOnlyPropertyRectorTest
  */
-final class ReadOnlyPropertyRector extends AbstractScopeAwareRector implements MinPhpVersionInterface
+final class ReadOnlyPropertyRector extends AbstractRector implements MinPhpVersionInterface
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyManipulator
      */
-    private $propertyManipulator;
+    private PropertyManipulator $propertyManipulator;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyFetchAssignManipulator
      */
-    private $propertyFetchAssignManipulator;
+    private PropertyFetchAssignManipulator $propertyFetchAssignManipulator;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ParamAnalyzer
      */
-    private $paramAnalyzer;
+    private ParamAnalyzer $paramAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Privatization\NodeManipulator\VisibilityManipulator
      */
-    private $visibilityManipulator;
+    private VisibilityManipulator $visibilityManipulator;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     public function __construct(PropertyManipulator $propertyManipulator, PropertyFetchAssignManipulator $propertyFetchAssignManipulator, ParamAnalyzer $paramAnalyzer, VisibilityManipulator $visibilityManipulator, BetterNodeFinder $betterNodeFinder, PhpDocInfoFactory $phpDocInfoFactory, DocBlockUpdater $docBlockUpdater)
     {
         $this->propertyManipulator = $propertyManipulator;
@@ -82,7 +75,7 @@ final class ReadOnlyPropertyRector extends AbstractScopeAwareRector implements M
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->docBlockUpdater = $docBlockUpdater;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Decorate read-only property with `readonly` attribute', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -117,20 +110,21 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkip($node)) {
             return null;
         }
         $hasChanged = \false;
         $classMethod = $node->getMethod(MethodName::CONSTRUCT);
+        $scope = ScopeFetcher::fetch($node);
         if ($classMethod instanceof ClassMethod) {
             foreach ($classMethod->params as $param) {
                 $justChanged = $this->refactorParam($node, $classMethod, $param, $scope);
@@ -151,20 +145,23 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::READONLY_PROPERTY;
     }
-    private function refactorProperty(Class_ $class, Property $property, Scope $scope) : ?Property
+    private function refactorProperty(Class_ $class, Property $property, Scope $scope): ?Property
     {
         // 1. is property read-only?
         if ($property->isReadonly()) {
             return null;
         }
+        if ($property->hooks !== []) {
+            return null;
+        }
         if ($property->props[0]->default instanceof Expr) {
             return null;
         }
-        if ($property->type === null) {
+        if (!$property->type instanceof Node) {
             return null;
         }
         if ($property->isStatic()) {
@@ -180,17 +177,13 @@ CODE_SAMPLE
             return null;
         }
         $this->visibilityManipulator->makeReadonly($property);
-        $attributeGroups = $property->attrGroups;
-        if ($attributeGroups !== []) {
-            $property->setAttribute(AttributeKey::ORIGINAL_NODE, null);
-        }
         $this->removeReadOnlyDoc($property);
         return $property;
     }
     /**
      * @param \PhpParser\Node\Stmt\Property|\PhpParser\Node\Param $node
      */
-    private function removeReadOnlyDoc($node) : void
+    private function removeReadOnlyDoc($node): void
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($node);
         $readonlyDoc = $phpDocInfo->getByName('readonly');
@@ -206,19 +199,25 @@ CODE_SAMPLE
         $phpDocInfo->removeByName('readonly');
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
     }
-    private function refactorParam(Class_ $class, ClassMethod $classMethod, Param $param, Scope $scope) : ?\PhpParser\Node\Param
+    private function refactorParam(Class_ $class, ClassMethod $classMethod, Param $param, Scope $scope): ?\PhpParser\Node\Param
     {
         if (!$this->visibilityManipulator->hasVisibility($param, Visibility::PRIVATE)) {
             return null;
         }
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return null;
         }
         // early check not property promotion and already readonly
-        if ($param->flags === 0 || $this->visibilityManipulator->isReadonly($param)) {
+        if (!$param->isPromoted() || $this->visibilityManipulator->isReadonly($param)) {
+            return null;
+        }
+        if ($param->hooks !== []) {
             return null;
         }
         if ($this->propertyManipulator->isPropertyChangeableExceptConstructor($class, $param, $scope)) {
+            return null;
+        }
+        if ($param->byRef) {
             return null;
         }
         if ($this->paramAnalyzer->isParamReassign($classMethod, $param)) {
@@ -227,37 +226,34 @@ CODE_SAMPLE
         if ($this->isPromotedPropertyAssigned($class, $param)) {
             return null;
         }
-        if ($param->attrGroups !== []) {
-            $param->setAttribute(AttributeKey::ORIGINAL_NODE, null);
-        }
         $this->visibilityManipulator->makeReadonly($param);
         $this->removeReadOnlyDoc($param);
         return $param;
     }
-    private function isPromotedPropertyAssigned(Class_ $class, Param $param) : bool
+    private function isPromotedPropertyAssigned(Class_ $class, Param $param): bool
     {
         $constructClassMethod = $class->getMethod(MethodName::CONSTRUCT);
         if (!$constructClassMethod instanceof ClassMethod) {
             return \false;
         }
-        if ($param->flags === 0) {
+        if (!$param->isPromoted()) {
             return \false;
         }
         $propertyFetch = new PropertyFetch(new Variable('this'), $this->getName($param));
         $isAssigned = \false;
-        $this->traverseNodesWithCallable($class->stmts, function (Node $node) use($propertyFetch, &$isAssigned) : ?int {
+        $this->traverseNodesWithCallable($class->stmts, function (Node $node) use ($propertyFetch, &$isAssigned): ?int {
             if (!$node instanceof Assign) {
                 return null;
             }
             if ($this->nodeComparator->areNodesEqual($propertyFetch, $node->var)) {
                 $isAssigned = \true;
-                return NodeTraverser::STOP_TRAVERSAL;
+                return NodeVisitor::STOP_TRAVERSAL;
             }
             return null;
         });
         return $isAssigned;
     }
-    private function shouldSkip(Class_ $class) : bool
+    private function shouldSkip(Class_ $class): bool
     {
         if ($class->isReadonly()) {
             return \true;
@@ -269,9 +265,9 @@ CODE_SAMPLE
         // skip "clone $this" cases, as can create unexpected write to local constructor property
         return $this->hasCloneThis($class);
     }
-    private function hasCloneThis(Class_ $class) : bool
+    private function hasCloneThis(Class_ $class): bool
     {
-        return (bool) $this->betterNodeFinder->findFirst($class, function (Node $node) : bool {
+        return (bool) $this->betterNodeFinder->findFirst($class, function (Node $node): bool {
             if (!$node instanceof Clone_) {
                 return \false;
             }

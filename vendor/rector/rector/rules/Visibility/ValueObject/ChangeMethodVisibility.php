@@ -8,19 +8,16 @@ final class ChangeMethodVisibility
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     /**
      * @readonly
-     * @var int
      */
-    private $visibility;
+    private int $visibility;
     public function __construct(string $class, string $method, int $visibility)
     {
         $this->class = $class;
@@ -28,15 +25,15 @@ final class ChangeMethodVisibility
         $this->visibility = $visibility;
         RectorAssert::className($class);
     }
-    public function getClass() : string
+    public function getClass(): string
     {
         return $this->class;
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getVisibility() : int
+    public function getVisibility(): int
     {
         return $this->visibility;
     }

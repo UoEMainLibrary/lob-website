@@ -17,7 +17,7 @@ use Rector\Contract\Rector\ConfigurableRectorInterface;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\DeadCode\Rector\ClassLike\RemoveAnnotationRector\RemoveAnnotationRectorTest
  */
@@ -25,30 +25,27 @@ final class RemoveAnnotationRector extends AbstractRector implements Configurabl
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @var string[]
      */
-    private $annotationsToRemove = [];
+    private array $annotationsToRemove = [];
     public function __construct(PhpDocTagRemover $phpDocTagRemover, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->phpDocTagRemover = $phpDocTagRemover;
         $this->docBlockUpdater = $docBlockUpdater;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove annotation by names', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 /**
@@ -68,14 +65,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassLike::class, FunctionLike::class, Property::class, ClassConst::class];
     }
     /**
      * @param ClassLike|FunctionLike|Property|ClassConst $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         Assert::notEmpty($this->annotationsToRemove);
         $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
@@ -88,7 +85,7 @@ CODE_SAMPLE
             if ($namedHasChanged) {
                 $hasChanged = \true;
             }
-            if (!\is_a($annotationToRemove, PhpDocTagValueNode::class, \true)) {
+            if (!is_a($annotationToRemove, PhpDocTagValueNode::class, \true)) {
                 continue;
             }
             $typedHasChanged = $phpDocInfo->removeByType($annotationToRemove);
@@ -105,7 +102,7 @@ CODE_SAMPLE
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allString($configuration);
         $this->annotationsToRemove = $configuration;

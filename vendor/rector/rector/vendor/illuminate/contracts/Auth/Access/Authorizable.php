@@ -1,6 +1,6 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Contracts\Auth\Access;
+namespace RectorPrefix202604\Illuminate\Contracts\Auth\Access;
 
 interface Authorizable
 {
@@ -8,7 +8,7 @@ interface Authorizable
      * Determine if the entity has a given ability.
      *
      * @param  iterable|string  $abilities
-     * @param  array|mixed  $arguments
+     * @param  mixed  $arguments
      * @return bool
      */
     public function can($abilities, $arguments = []);

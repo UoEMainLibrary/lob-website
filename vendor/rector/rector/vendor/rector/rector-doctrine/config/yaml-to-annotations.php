@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use Rector\Config\RectorConfig;
 use Rector\Doctrine\CodeQuality\AttributeTransformer\ClassAttributeTransformer\EmbeddableClassAttributeTransformer;
@@ -25,7 +25,7 @@ use Rector\Doctrine\CodeQuality\AttributeTransformer\PropertyAttributeTransforme
 use Rector\Doctrine\CodeQuality\AttributeTransformer\YamlToAttributeTransformer;
 use Rector\Doctrine\CodeQuality\Contract\ClassAttributeTransformerInterface;
 use Rector\Doctrine\CodeQuality\Contract\PropertyAttributeTransformerInterface;
-return static function (RectorConfig $rectorConfig) : void {
+return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->autotagInterface(ClassAttributeTransformerInterface::class);
     $rectorConfig->autotagInterface(PropertyAttributeTransformerInterface::class);
     // for yaml to class attribute transformer

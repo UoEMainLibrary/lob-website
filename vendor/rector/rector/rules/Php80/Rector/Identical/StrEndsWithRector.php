@@ -14,7 +14,7 @@ use PhpParser\Node\Expr\BinaryOp\NotIdentical;
 use PhpParser\Node\Expr\BooleanNot;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\UnaryMinus;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use Rector\NodeAnalyzer\BinaryOpAnalyzer;
 use Rector\PhpParser\Node\Value\ValueResolver;
@@ -33,26 +33,24 @@ final class StrEndsWithRector extends AbstractRector implements MinPhpVersionInt
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\BinaryOpAnalyzer
      */
-    private $binaryOpAnalyzer;
+    private BinaryOpAnalyzer $binaryOpAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(BinaryOpAnalyzer $binaryOpAnalyzer, ValueResolver $valueResolver)
     {
         $this->binaryOpAnalyzer = $binaryOpAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::STR_ENDS_WITH;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Change helper functions to str_ends_with()', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Change helper functions to `str_ends_with()`', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     public function run()
@@ -101,18 +99,18 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Identical::class, NotIdentical::class, Equal::class, NotEqual::class];
     }
     /**
      * @param Identical|NotIdentical|Equal|NotEqual $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         return $this->refactorSubstr($node) ?? $this->refactorSubstrCompare($node);
     }
-    public function providePolyfillPackage() : string
+    public function providePolyfillPackage(): string
     {
         return PolyfillPackage::PHP_80;
     }
@@ -136,7 +134,7 @@ CODE_SAMPLE
         if ($substrFuncCall->isFirstClassCallable()) {
             return null;
         }
-        if (\count($substrFuncCall->getArgs()) < 2) {
+        if (count($substrFuncCall->getArgs()) < 2) {
             return null;
         }
         $needle = $substrFuncCall->getArgs()[1]->value;
@@ -162,7 +160,7 @@ CODE_SAMPLE
         }
         $substrCompareFuncCall = $funcCallAndExpr->getFuncCall();
         $args = $substrCompareFuncCall->getArgs();
-        if (\count($args) < 2) {
+        if (count($args) < 2) {
             return null;
         }
         $haystack = $args[0]->value;
@@ -179,7 +177,7 @@ CODE_SAMPLE
         $isPositive = $binaryOp instanceof Identical || $binaryOp instanceof Equal;
         return $this->buildReturnNode($haystack, $needle, $isPositive);
     }
-    private function isUnaryMinusStrlenFuncCallArgValue(Expr $substrOffset, Expr $needle) : bool
+    private function isUnaryMinusStrlenFuncCallArgValue(Expr $substrOffset, Expr $needle): bool
     {
         if (!$substrOffset instanceof UnaryMinus) {
             return \false;
@@ -188,7 +186,7 @@ CODE_SAMPLE
             return \false;
         }
         $funcCall = $substrOffset->expr;
-        if (!$this->nodeNameResolver->isName($funcCall, 'strlen')) {
+        if (!$this->isName($funcCall, 'strlen')) {
             return \false;
         }
         if (!isset($funcCall->getArgs()[0])) {
@@ -199,19 +197,19 @@ CODE_SAMPLE
         }
         return $this->nodeComparator->areNodesEqual($funcCall->args[0]->value, $needle);
     }
-    private function isHardCodedLNumberAndString(Expr $substrOffset, Expr $needle) : bool
+    private function isHardCodedLNumberAndString(Expr $substrOffset, Expr $needle): bool
     {
         if (!$substrOffset instanceof UnaryMinus) {
             return \false;
         }
-        if (!$substrOffset->expr instanceof LNumber) {
+        if (!$substrOffset->expr instanceof Int_) {
             return \false;
         }
         $lNumber = $substrOffset->expr;
         if (!$needle instanceof String_) {
             return \false;
         }
-        return $lNumber->value === \strlen($needle->value);
+        return $lNumber->value === strlen($needle->value);
     }
     /**
      * @return \PhpParser\Node\Expr\FuncCall|\PhpParser\Node\Expr\BooleanNot

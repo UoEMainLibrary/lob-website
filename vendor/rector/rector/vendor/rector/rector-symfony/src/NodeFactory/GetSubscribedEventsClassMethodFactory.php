@@ -3,12 +3,12 @@
 declare (strict_types=1);
 namespace Rector\Symfony\NodeFactory;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Return_;
@@ -32,34 +32,28 @@ final class GetSubscribedEventsClassMethodFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     /**
      * @readonly
-     * @var \Rector\Privatization\NodeManipulator\VisibilityManipulator
      */
-    private $visibilityManipulator;
+    private VisibilityManipulator $visibilityManipulator;
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeFactory\EventReferenceFactory
      */
-    private $eventReferenceFactory;
+    private \Rector\Symfony\NodeFactory\EventReferenceFactory $eventReferenceFactory;
     /**
      * @var string
      */
@@ -76,7 +70,7 @@ final class GetSubscribedEventsClassMethodFactory
     /**
      * @param EventReferenceToMethodNameInterface[] $eventReferencesToMethodNames
      */
-    public function create(array $eventReferencesToMethodNames) : ClassMethod
+    public function create(array $eventReferencesToMethodNames): ClassMethod
     {
         $getSubscribersClassMethod = $this->createClassMethod();
         $eventsToMethodsArray = new Array_();
@@ -92,13 +86,13 @@ final class GetSubscribedEventsClassMethodFactory
      * @param array<string, ServiceDefinition[]> $eventsToMethods
      * @param EventNameToClassAndConstant[] $eventNamesToClassConstants
      */
-    public function createFromServiceDefinitionsAndEventsToMethods(array $eventsToMethods, array $eventNamesToClassConstants) : ClassMethod
+    public function createFromServiceDefinitionsAndEventsToMethods(array $eventsToMethods, array $eventNamesToClassConstants): ClassMethod
     {
         $getSubscribersClassMethod = $this->createClassMethod();
         $eventsToMethodsArray = new Array_();
         foreach ($eventsToMethods as $eventName => $methodNamesWithPriorities) {
             $eventNameExpr = $this->eventReferenceFactory->createEventName($eventName, $eventNamesToClassConstants);
-            if (\count($methodNamesWithPriorities) === 1) {
+            if (count($methodNamesWithPriorities) === 1) {
                 $this->createSingleMethod($methodNamesWithPriorities, $eventName, $eventNameExpr, $eventsToMethodsArray);
             } else {
                 $this->createMultipleMethods($methodNamesWithPriorities, $eventNameExpr, $eventsToMethodsArray, $eventName);
@@ -108,23 +102,23 @@ final class GetSubscribedEventsClassMethodFactory
         $this->decorateClassMethodWithReturnType($getSubscribersClassMethod);
         return $getSubscribersClassMethod;
     }
-    private function createClassMethod() : ClassMethod
+    private function createClassMethod(): ClassMethod
     {
         $classMethod = $this->nodeFactory->createPublicMethod(self::GET_SUBSCRIBED_EVENTS_METHOD_NAME);
         $this->visibilityManipulator->makeStatic($classMethod);
         return $classMethod;
     }
-    private function createArrayItemFromMethodAndPriority(?int $priority, string $methodName, Expr $expr) : ArrayItem
+    private function createArrayItemFromMethodAndPriority(?int $priority, string $methodName, Expr $expr): ArrayItem
     {
         if ($priority !== null && $priority !== 0) {
             $methodNameWithPriorityArray = new Array_();
             $methodNameWithPriorityArray->items[] = new ArrayItem(new String_($methodName));
-            $methodNameWithPriorityArray->items[] = new ArrayItem(new LNumber($priority));
+            $methodNameWithPriorityArray->items[] = new ArrayItem(new Int_($priority));
             return new ArrayItem($methodNameWithPriorityArray, $expr);
         }
         return new ArrayItem(new String_($methodName), $expr);
     }
-    private function decorateClassMethodWithReturnType(ClassMethod $classMethod) : void
+    private function decorateClassMethodWithReturnType(ClassMethod $classMethod): void
     {
         if ($this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::SCALAR_TYPES)) {
             $classMethod->returnType = new Identifier('array');
@@ -137,7 +131,7 @@ final class GetSubscribedEventsClassMethodFactory
      * @param ServiceDefinition[] $methodNamesWithPriorities
      * @param \PhpParser\Node\Expr\ClassConstFetch|\PhpParser\Node\Scalar\String_ $expr
      */
-    private function createSingleMethod(array $methodNamesWithPriorities, string $eventName, $expr, Array_ $eventsToMethodsArray) : void
+    private function createSingleMethod(array $methodNamesWithPriorities, string $eventName, $expr, Array_ $eventsToMethodsArray): void
     {
         $methodName = $this->resolveMethodName($methodNamesWithPriorities[0], $eventName);
         $priority = $this->resolvePriority($methodNamesWithPriorities[0], $eventName);
@@ -150,7 +144,7 @@ final class GetSubscribedEventsClassMethodFactory
      * @param ServiceDefinition[] $methodNamesWithPriorities
      * @param \PhpParser\Node\Expr\ClassConstFetch|\PhpParser\Node\Scalar\String_ $expr
      */
-    private function createMultipleMethods(array $methodNamesWithPriorities, $expr, Array_ $eventsToMethodsArray, string $eventName) : void
+    private function createMultipleMethods(array $methodNamesWithPriorities, $expr, Array_ $eventsToMethodsArray, string $eventName): void
     {
         $eventItems = [];
         $alreadyUsedTags = [];
@@ -169,7 +163,7 @@ final class GetSubscribedEventsClassMethodFactory
         $multipleMethodsArray = new Array_($eventItems);
         $eventsToMethodsArray->items[] = new ArrayItem($multipleMethodsArray, $expr);
     }
-    private function resolveMethodName(ServiceDefinition $serviceDefinition, string $eventName) : ?string
+    private function resolveMethodName(ServiceDefinition $serviceDefinition, string $eventName): ?string
     {
         /** @var EventListenerTag[]|Tag[] $eventTags */
         $eventTags = $serviceDefinition->getTags();
@@ -184,7 +178,7 @@ final class GetSubscribedEventsClassMethodFactory
         }
         return null;
     }
-    private function resolvePriority(ServiceDefinition $serviceDefinition, string $eventName) : ?int
+    private function resolvePriority(ServiceDefinition $serviceDefinition, string $eventName): ?int
     {
         /** @var EventListenerTag[]|Tag[] $eventTags */
         $eventTags = $serviceDefinition->getTags();
@@ -202,19 +196,19 @@ final class GetSubscribedEventsClassMethodFactory
     /**
      * @param TagInterface[] $alreadyUsedTags
      */
-    private function shouldSkip(string $eventName, EventListenerTag $eventListenerTag, array $alreadyUsedTags) : bool
+    private function shouldSkip(string $eventName, EventListenerTag $eventListenerTag, array $alreadyUsedTags): bool
     {
         if ($eventName !== $eventListenerTag->getEvent()) {
             return \true;
         }
-        return \in_array($eventListenerTag, $alreadyUsedTags, \true);
+        return in_array($eventListenerTag, $alreadyUsedTags, \true);
     }
-    private function createEventItem(EventListenerTag $eventListenerTag) : ArrayItem
+    private function createEventItem(EventListenerTag $eventListenerTag): ArrayItem
     {
         if ($eventListenerTag->getPriority() !== 0) {
             $methodNameWithPriorityArray = new Array_();
             $methodNameWithPriorityArray->items[] = new ArrayItem(new String_($eventListenerTag->getMethod()));
-            $methodNameWithPriorityArray->items[] = new ArrayItem(new LNumber($eventListenerTag->getPriority()));
+            $methodNameWithPriorityArray->items[] = new ArrayItem(new Int_($eventListenerTag->getPriority()));
             return new ArrayItem($methodNameWithPriorityArray);
         }
         return new ArrayItem(new String_($eventListenerTag->getMethod()));

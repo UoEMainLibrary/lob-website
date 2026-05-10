@@ -8,9 +8,8 @@ final class AnnotationPropertyToAttributeClass
 {
     /**
      * @readonly
-     * @var string
      */
-    private $attributeClass;
+    private string $attributeClass;
     /**
      * @readonly
      * @var int|string|null
@@ -18,9 +17,8 @@ final class AnnotationPropertyToAttributeClass
     private $annotationProperty = null;
     /**
      * @readonly
-     * @var bool
      */
-    private $doesNeedNewImport = \false;
+    private bool $doesNeedNewImport = \false;
     /**
      * @param string|int|null $annotationProperty
      */
@@ -38,11 +36,11 @@ final class AnnotationPropertyToAttributeClass
     {
         return $this->annotationProperty;
     }
-    public function getAttributeClass() : string
+    public function getAttributeClass(): string
     {
         return $this->attributeClass;
     }
-    public function doesNeedNewImport() : bool
+    public function doesNeedNewImport(): bool
     {
         return $this->doesNeedNewImport;
     }

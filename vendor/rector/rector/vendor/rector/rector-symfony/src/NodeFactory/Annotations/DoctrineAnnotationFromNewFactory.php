@@ -13,14 +13,13 @@ final class DoctrineAnnotationFromNewFactory
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeFactory\Annotations\DoctrineAnnotationKeyToValuesResolver
      */
-    private $doctrineAnnotationKeyToValuesResolver;
+    private \Rector\Symfony\NodeFactory\Annotations\DoctrineAnnotationKeyToValuesResolver $doctrineAnnotationKeyToValuesResolver;
     public function __construct(\Rector\Symfony\NodeFactory\Annotations\DoctrineAnnotationKeyToValuesResolver $doctrineAnnotationKeyToValuesResolver)
     {
         $this->doctrineAnnotationKeyToValuesResolver = $doctrineAnnotationKeyToValuesResolver;
     }
-    public function create(New_ $new) : DoctrineAnnotationTagValueNode
+    public function create(New_ $new): DoctrineAnnotationTagValueNode
     {
         $annotationName = $this->resolveAnnotationName($new);
         $newArgs = $new->getArgs();
@@ -32,7 +31,7 @@ final class DoctrineAnnotationFromNewFactory
         }
         return new DoctrineAnnotationTagValueNode(new ShortenedIdentifierTypeNode($annotationName), null, $annotationKeyToValues);
     }
-    private function resolveAnnotationName(New_ $new) : string
+    private function resolveAnnotationName(New_ $new): string
     {
         $className = $new->class;
         $originalName = $className->getAttribute(AttributeKey::ORIGINAL_NAME);

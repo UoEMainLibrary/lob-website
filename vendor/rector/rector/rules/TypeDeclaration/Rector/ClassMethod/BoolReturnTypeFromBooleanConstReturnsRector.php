@@ -13,7 +13,8 @@ use PhpParser\Node\Stmt\Return_;
 use PHPStan\Analyser\Scope;
 use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\PhpParser\Node\Value\ValueResolver;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\PHPStan\ScopeFetcher;
+use Rector\Rector\AbstractRector;
 use Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\VendorLocker\NodeVendorLocker\ClassMethodReturnTypeOverrideGuard;
@@ -23,28 +24,24 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\TypeDeclaration\Rector\ClassMethod\BoolReturnTypeFromBooleanConstReturnsRector\BoolReturnTypeFromBooleanConstReturnsRectorTest
  */
-final class BoolReturnTypeFromBooleanConstReturnsRector extends AbstractScopeAwareRector implements MinPhpVersionInterface
+final class BoolReturnTypeFromBooleanConstReturnsRector extends AbstractRector implements MinPhpVersionInterface
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\VendorLocker\NodeVendorLocker\ClassMethodReturnTypeOverrideGuard
      */
-    private $classMethodReturnTypeOverrideGuard;
+    private ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer
      */
-    private $returnAnalyzer;
+    private ReturnAnalyzer $returnAnalyzer;
     public function __construct(ValueResolver $valueResolver, BetterNodeFinder $betterNodeFinder, ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard, ReturnAnalyzer $returnAnalyzer)
     {
         $this->valueResolver = $valueResolver;
@@ -52,7 +49,7 @@ final class BoolReturnTypeFromBooleanConstReturnsRector extends AbstractScopeAwa
         $this->classMethodReturnTypeOverrideGuard = $classMethodReturnTypeOverrideGuard;
         $this->returnAnalyzer = $returnAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add return bool, based on direct true/false returns', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -85,15 +82,16 @@ CODE_SAMPLE
     /**
      * @funcCall array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Function_::class];
     }
     /**
      * @param ClassMethod|Function_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        $scope = ScopeFetcher::fetch($node);
         if ($this->shouldSkip($node, $scope)) {
             return null;
         }
@@ -107,14 +105,14 @@ CODE_SAMPLE
         $node->returnType = new Identifier('bool');
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::SCALAR_TYPES;
     }
     /**
      * @param ClassMethod|Function_|Closure $node
      */
-    private function shouldSkip(Node $node, Scope $scope) : bool
+    private function shouldSkip(Node $node, Scope $scope): bool
     {
         // already has the type, skip
         if ($node->returnType instanceof Node) {
@@ -125,7 +123,7 @@ CODE_SAMPLE
     /**
      * @param Return_[] $returns
      */
-    private function hasOnlyBooleanConstExprs(array $returns) : bool
+    private function hasOnlyBooleanConstExprs(array $returns): bool
     {
         foreach ($returns as $return) {
             if (!$return->expr instanceof ConstFetch) {

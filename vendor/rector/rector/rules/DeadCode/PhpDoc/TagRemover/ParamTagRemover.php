@@ -16,24 +16,22 @@ final class ParamTagRemover
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\DeadParamTagValueNodeAnalyzer
      */
-    private $deadParamTagValueNodeAnalyzer;
+    private DeadParamTagValueNodeAnalyzer $deadParamTagValueNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     public function __construct(DeadParamTagValueNodeAnalyzer $deadParamTagValueNodeAnalyzer, DocBlockUpdater $docBlockUpdater)
     {
         $this->deadParamTagValueNodeAnalyzer = $deadParamTagValueNodeAnalyzer;
         $this->docBlockUpdater = $docBlockUpdater;
     }
-    public function removeParamTagsIfUseless(PhpDocInfo $phpDocInfo, FunctionLike $functionLike, ?Type $type = null) : bool
+    public function removeParamTagsIfUseless(PhpDocInfo $phpDocInfo, FunctionLike $functionLike, ?Type $type = null): bool
     {
         $hasChanged = \false;
         $phpDocNodeTraverser = new PhpDocNodeTraverser();
-        $phpDocNodeTraverser->traverseWithCallable($phpDocInfo->getPhpDocNode(), '', function (Node $docNode) use($functionLike, &$hasChanged, $type, $phpDocInfo) : ?int {
+        $phpDocNodeTraverser->traverseWithCallable($phpDocInfo->getPhpDocNode(), '', function (Node $docNode) use ($functionLike, &$hasChanged, $type, $phpDocInfo): ?int {
             if (!$docNode instanceof PhpDocTagNode) {
                 return null;
             }

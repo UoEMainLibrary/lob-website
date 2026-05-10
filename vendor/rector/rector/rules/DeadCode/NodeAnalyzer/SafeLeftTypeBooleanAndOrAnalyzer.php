@@ -22,24 +22,20 @@ final class SafeLeftTypeBooleanAndOrAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(BetterNodeFinder $betterNodeFinder, ExprAnalyzer $exprAnalyzer, ReflectionResolver $reflectionResolver, NodeTypeResolver $nodeTypeResolver)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -50,17 +46,13 @@ final class SafeLeftTypeBooleanAndOrAnalyzer
     /**
      * @param \PhpParser\Node\Expr\BinaryOp\BooleanAnd|\PhpParser\Node\Expr\BinaryOp\BooleanOr $booleanAnd
      */
-    public function isSafe($booleanAnd) : bool
+    public function isSafe($booleanAnd): bool
     {
-        $hasNonTypedFromParam = (bool) $this->betterNodeFinder->findFirst($booleanAnd->left, function (Node $node) : bool {
-            return $node instanceof Variable && $this->exprAnalyzer->isNonTypedFromParam($node);
-        });
+        $hasNonTypedFromParam = (bool) $this->betterNodeFinder->findFirst($booleanAnd->left, fn(Node $node): bool => $node instanceof Variable && $this->exprAnalyzer->isNonTypedFromParam($node));
         if ($hasNonTypedFromParam) {
             return \false;
         }
-        $hasPropertyFetchOrArrayDimFetch = (bool) $this->betterNodeFinder->findFirst($booleanAnd->left, static function (Node $node) : bool {
-            return $node instanceof PropertyFetch || $node instanceof StaticPropertyFetch || $node instanceof ArrayDimFetch;
-        });
+        $hasPropertyFetchOrArrayDimFetch = (bool) $this->betterNodeFinder->findFirst($booleanAnd->left, static fn(Node $node): bool => $node instanceof PropertyFetch || $node instanceof StaticPropertyFetch || $node instanceof ArrayDimFetch);
         // get type from Property and ArrayDimFetch is unreliable
         if ($hasPropertyFetchOrArrayDimFetch) {
             return \false;
@@ -70,7 +62,7 @@ final class SafeLeftTypeBooleanAndOrAnalyzer
         if ($classReflection instanceof ClassReflection && $classReflection->isTrait()) {
             return !$booleanAnd->left instanceof Instanceof_;
         }
-        return !(bool) $this->betterNodeFinder->findFirst($booleanAnd->left, function (Node $node) : bool {
+        return !(bool) $this->betterNodeFinder->findFirst($booleanAnd->left, function (Node $node): bool {
             if (!$node instanceof CallLike) {
                 return \false;
             }

@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\CodingStyle\ClassNameImport\ClassNameImportSkipVoter;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use Rector\CodingStyle\ClassNameImport\ShortNameResolver;
 use Rector\CodingStyle\Contract\ClassNameImport\ClassNameImportSkipVoterInterface;
@@ -22,14 +22,13 @@ final class FullyQualifiedNameClassNameImportSkipVoter implements ClassNameImpor
 {
     /**
      * @readonly
-     * @var \Rector\CodingStyle\ClassNameImport\ShortNameResolver
      */
-    private $shortNameResolver;
+    private ShortNameResolver $shortNameResolver;
     public function __construct(ShortNameResolver $shortNameResolver)
     {
         $this->shortNameResolver = $shortNameResolver;
     }
-    public function shouldSkip(File $file, FullyQualifiedObjectType $fullyQualifiedObjectType, Node $node) : bool
+    public function shouldSkip(File $file, FullyQualifiedObjectType $fullyQualifiedObjectType, Node $node): bool
     {
         // "new X" or "X::static()"
         /** @var array<string, string> $shortNamesToFullyQualifiedNames */
@@ -43,13 +42,13 @@ final class FullyQualifiedNameClassNameImportSkipVoter implements ClassNameImpor
             if ($fullyQualifiedObjectTypeShortName !== $shortName) {
                 continue;
             }
-            $fullyQualifiedName = \ltrim($fullyQualifiedName, '\\');
+            $fullyQualifiedName = ltrim($fullyQualifiedName, '\\');
             return $className !== $fullyQualifiedName;
         }
         return \false;
     }
-    private function cleanShortName(string $shortName) : string
+    private function cleanShortName(string $shortName): string
     {
-        return \strncmp($shortName, '\\', \strlen('\\')) === 0 ? \ltrim((string) Strings::after($shortName, '\\', -1)) : $shortName;
+        return strncmp($shortName, '\\', strlen('\\')) === 0 ? ltrim((string) Strings::after($shortName, '\\', -1)) : $shortName;
     }
 }

@@ -11,14 +11,13 @@ final class StmtMethodCallMatcher
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function match(Stmt $stmt, string $methodName) : ?MethodCall
+    public function match(Stmt $stmt, string $methodName): ?MethodCall
     {
         if (!$stmt instanceof Expression) {
             return null;

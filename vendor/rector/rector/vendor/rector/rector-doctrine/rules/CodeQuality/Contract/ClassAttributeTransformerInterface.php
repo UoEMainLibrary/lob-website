@@ -11,6 +11,6 @@ interface ClassAttributeTransformerInterface
     /**
      * @return MappingClass::*
      */
-    public function getClassName() : string;
-    public function transform(EntityMapping $entityMapping, Class_ $class) : void;
+    public function getClassName(): string;
+    public function transform(EntityMapping $entityMapping, Class_ $class): bool;
 }

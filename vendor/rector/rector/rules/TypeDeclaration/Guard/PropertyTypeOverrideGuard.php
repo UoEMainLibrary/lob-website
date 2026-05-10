@@ -11,20 +11,18 @@ final class PropertyTypeOverrideGuard
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Php74\Guard\MakePropertyTypedGuard
      */
-    private $makePropertyTypedGuard;
+    private MakePropertyTypedGuard $makePropertyTypedGuard;
     public function __construct(NodeNameResolver $nodeNameResolver, MakePropertyTypedGuard $makePropertyTypedGuard)
     {
         $this->nodeNameResolver = $nodeNameResolver;
         $this->makePropertyTypedGuard = $makePropertyTypedGuard;
     }
-    public function isLegal(Property $property, ClassReflection $classReflection) : bool
+    public function isLegal(Property $property, ClassReflection $classReflection): bool
     {
         if (!$this->makePropertyTypedGuard->isLegal($property, $classReflection)) {
             return \false;
@@ -37,7 +35,7 @@ final class PropertyTypeOverrideGuard
             }
             $parentPropertyReflection = $nativeReflectionClass->getProperty($propertyName);
             // empty type override is not allowed
-            return (\method_exists($parentPropertyReflection, 'getType') ? $parentPropertyReflection->getType() : null) !== null;
+            return $parentPropertyReflection->getType() !== null;
         }
         return \true;
     }

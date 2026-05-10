@@ -15,14 +15,12 @@ final class ForeachMatcher
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Naming\Matcher\CallMatcher
      */
-    private $callMatcher;
+    private \Rector\Naming\Matcher\CallMatcher $callMatcher;
     public function __construct(NodeNameResolver $nodeNameResolver, \Rector\Naming\Matcher\CallMatcher $callMatcher)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -31,7 +29,7 @@ final class ForeachMatcher
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Expr\Closure|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function match(Foreach_ $foreach, $functionLike) : ?VariableAndCallForeach
+    public function match(Foreach_ $foreach, $functionLike): ?VariableAndCallForeach
     {
         $call = $this->callMatcher->matchCall($foreach);
         if (!$call instanceof Node) {

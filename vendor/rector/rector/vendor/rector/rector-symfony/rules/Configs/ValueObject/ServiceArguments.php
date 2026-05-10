@@ -8,19 +8,18 @@ final class ServiceArguments
 {
     /**
      * @readonly
-     * @var string
      */
-    private $className;
+    private string $className;
     /**
-     * @var array<(string | int), (string | Expr)>
+     * @var array<string|int, string|Expr>
      * @readonly
      */
-    private $params;
+    private array $params;
     /**
-     * @var array<(string | int), (string | Expr)>
+     * @var array<string|int, string|Expr>
      * @readonly
      */
-    private $envs;
+    private array $envs;
     /**
      * @param array<string|int, string|Expr> $params
      * @param array<string|int, string|Expr> $envs
@@ -31,21 +30,21 @@ final class ServiceArguments
         $this->params = $params;
         $this->envs = $envs;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return $this->className;
     }
     /**
      * @return array<string|int, string|Expr>
      */
-    public function getParams() : array
+    public function getParams(): array
     {
         return $this->params;
     }
     /**
      * @return array<string|int, string|Expr>
      */
-    public function getEnvs() : array
+    public function getEnvs(): array
     {
         return $this->envs;
     }

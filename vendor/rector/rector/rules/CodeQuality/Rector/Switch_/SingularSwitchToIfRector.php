@@ -21,16 +21,15 @@ final class SingularSwitchToIfRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Renaming\NodeManipulator\SwitchManipulator
      */
-    private $switchManipulator;
+    private SwitchManipulator $switchManipulator;
     public function __construct(SwitchManipulator $switchManipulator)
     {
         $this->switchManipulator = $switchManipulator;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Change switch with only 1 check to if', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Change `switch` with only 1 check to `if`', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeObject
 {
     public function run($value)
@@ -64,7 +63,7 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Switch_::class];
     }
@@ -74,16 +73,14 @@ CODE_SAMPLE
      */
     public function refactor(Node $node)
     {
-        if (\count($node->cases) !== 1) {
+        if (count($node->cases) !== 1) {
             return null;
         }
         $onlyCase = $node->cases[0];
         // only default → basically unwrap
         if (!$onlyCase->cond instanceof Expr) {
             // remove default clause because it cause syntax error
-            return \array_filter($onlyCase->stmts, static function (Stmt $stmt) : bool {
-                return !$stmt instanceof Break_;
-            });
+            return array_filter($onlyCase->stmts, static fn(Stmt $stmt): bool => !$stmt instanceof Break_);
         }
         $if = new If_(new Identical($node->cond, $onlyCase->cond));
         $if->stmts = $this->switchManipulator->removeBreakNodes($onlyCase->stmts);

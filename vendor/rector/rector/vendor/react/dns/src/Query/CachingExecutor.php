@@ -1,10 +1,10 @@
 <?php
 
-namespace RectorPrefix202411\React\Dns\Query;
+namespace RectorPrefix202604\React\Dns\Query;
 
-use RectorPrefix202411\React\Cache\CacheInterface;
-use RectorPrefix202411\React\Dns\Model\Message;
-use RectorPrefix202411\React\Promise\Promise;
+use RectorPrefix202604\React\Cache\CacheInterface;
+use RectorPrefix202604\React\Dns\Model\Message;
+use RectorPrefix202604\React\Promise\Promise;
 final class CachingExecutor implements ExecutorInterface
 {
     /**
@@ -27,25 +27,25 @@ final class CachingExecutor implements ExecutorInterface
         $that = $this;
         $executor = $this->executor;
         $pending = $cache->get($id);
-        return new Promise(function ($resolve, $reject) use($query, $id, $cache, $executor, &$pending, $that) {
-            $pending->then(function ($message) use($query, $id, $cache, $executor, &$pending, $that) {
+        return new Promise(function ($resolve, $reject) use ($query, $id, $cache, $executor, &$pending, $that) {
+            $pending->then(function ($message) use ($query, $id, $cache, $executor, &$pending, $that) {
                 // return cached response message on cache hit
                 if ($message !== null) {
                     return $message;
                 }
                 // perform DNS lookup if not already cached
-                return $pending = $executor->query($query)->then(function (Message $message) use($cache, $id, $that) {
+                return $pending = $executor->query($query)->then(function (Message $message) use ($cache, $id, $that) {
                     // DNS response message received => store in cache when not truncated and return
                     if (!$message->tc) {
                         $cache->set($id, $message, $that->ttl($message));
                     }
                     return $message;
                 });
-            })->then($resolve, function ($e) use($reject, &$pending) {
+            })->then($resolve, function ($e) use ($reject, &$pending) {
                 $reject($e);
                 $pending = null;
             });
-        }, function ($_, $reject) use(&$pending, $query) {
+        }, function ($_, $reject) use (&$pending, $query) {
             $reject(new \RuntimeException('DNS query for ' . $query->describe() . ' has been cancelled'));
             $pending->cancel();
             $pending = null;

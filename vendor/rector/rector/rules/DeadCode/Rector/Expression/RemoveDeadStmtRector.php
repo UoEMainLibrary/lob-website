@@ -3,17 +3,14 @@
 declare (strict_types=1);
 namespace Rector\DeadCode\Rector\Expression;
 
+use PhpParser\Comment\Doc;
 use PhpParser\Node;
-use PhpParser\Node\Expr\PropertyFetch;
-use PhpParser\Node\Expr\StaticPropertyFetch;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Nop;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Reflection\Php\PhpPropertyReflection;
-use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\DeadCode\NodeManipulator\LivingCodeManipulator;
 use Rector\NodeAnalyzer\PropertyFetchAnalyzer;
-use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\Rector\AbstractRector;
 use Rector\Reflection\ReflectionResolver;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -25,34 +22,25 @@ final class RemoveDeadStmtRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\NodeManipulator\LivingCodeManipulator
      */
-    private $livingCodeManipulator;
+    private LivingCodeManipulator $livingCodeManipulator;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
-    /**
-     * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
-     */
-    private $phpDocInfoFactory;
-    public function __construct(LivingCodeManipulator $livingCodeManipulator, PropertyFetchAnalyzer $propertyFetchAnalyzer, ReflectionResolver $reflectionResolver, PhpDocInfoFactory $phpDocInfoFactory)
+    private ReflectionResolver $reflectionResolver;
+    public function __construct(LivingCodeManipulator $livingCodeManipulator, PropertyFetchAnalyzer $propertyFetchAnalyzer, ReflectionResolver $reflectionResolver)
     {
         $this->livingCodeManipulator = $livingCodeManipulator;
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
         $this->reflectionResolver = $reflectionResolver;
-        $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Removes dead code statements', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Remove dead code statements', [new CodeSample(<<<'CODE_SAMPLE'
 $value = 5;
 $value;
 CODE_SAMPLE
@@ -64,13 +52,13 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Expression::class];
     }
     /**
      * @param Expression $node
-     * @return Node[]|Node|null|int
+     * @return Node[]|Node|null|NodeVisitor::REMOVE_NODE
      */
     public function refactor(Node $node)
     {
@@ -85,7 +73,7 @@ CODE_SAMPLE
             return null;
         }
         $newNode = clone $node;
-        $newNode->expr = \array_shift($livingCode);
+        $newNode->expr = array_shift($livingCode);
         $newNodes = [];
         foreach ($livingCode as $singleLivingCode) {
             $newNodes[] = new Expression($singleLivingCode);
@@ -93,12 +81,11 @@ CODE_SAMPLE
         $newNodes[] = $newNode;
         return $newNodes;
     }
-    private function hasGetMagic(Expression $expression) : bool
+    private function hasGetMagic(Expression $expression): bool
     {
         if (!$this->propertyFetchAnalyzer->isPropertyFetch($expression->expr)) {
             return \false;
         }
-        /** @var PropertyFetch|StaticPropertyFetch $propertyFetch */
         $propertyFetch = $expression->expr;
         $phpPropertyReflection = $this->reflectionResolver->resolvePropertyReflectionFromPropertyFetch($propertyFetch);
         /**
@@ -108,16 +95,15 @@ CODE_SAMPLE
         return !$phpPropertyReflection instanceof PhpPropertyReflection;
     }
     /**
-     * @return int|\PhpParser\Node
+     * @return NodeVisitor::REMOVE_NODE|Node
      */
     private function removeNodeAndKeepComments(Expression $expression)
     {
-        $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($expression);
-        if ($expression->getComments() !== []) {
+        if ($expression->getDocComment() instanceof Doc) {
             $nop = new Nop();
-            $nop->setAttribute(AttributeKey::PHP_DOC_INFO, $phpDocInfo);
+            $nop->setDocComment($expression->getDocComment());
             return $nop;
         }
-        return NodeTraverser::REMOVE_NODE;
+        return NodeVisitor::REMOVE_NODE;
     }
 }

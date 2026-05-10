@@ -21,7 +21,7 @@ use Rector\ValueObject\PhpVersionFeature;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\PHPUnit\Tests\AnnotationsToAttributes\Rector\Class_\AnnotationWithValueToAttributeRector\AnnotationWithValueToAttributeRectorTest
  */
@@ -29,33 +29,29 @@ final class AnnotationWithValueToAttributeRector extends AbstractRector implemen
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\PhpAttributeGroupFactory
      */
-    private $phpAttributeGroupFactory;
+    private PhpAttributeGroupFactory $phpAttributeGroupFactory;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @var AnnotationWithValueToAttribute[]
      */
-    private $annotationWithValueToAttributes = [];
+    private array $annotationWithValueToAttributes = [];
+    private bool $hasChanged = \false;
     public function __construct(PhpDocTagRemover $phpDocTagRemover, PhpAttributeGroupFactory $phpAttributeGroupFactory, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory, TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->phpDocTagRemover = $phpDocTagRemover;
@@ -64,7 +60,7 @@ final class AnnotationWithValueToAttributeRector extends AbstractRector implemen
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change annotations with value to attribute', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -85,57 +81,43 @@ final class SomeTest extends TestCase
 {
 }
 CODE_SAMPLE
-, [new AnnotationWithValueToAttribute('backupGlobals', 'PHPUnit\\Framework\\Attributes\\BackupGlobals', ['enabled' => \true, 'disabled' => \false])])]);
+, [new AnnotationWithValueToAttribute('backupGlobals', 'PHPUnit\Framework\Attributes\BackupGlobals', ['enabled' => \true, 'disabled' => \false])])]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [Class_::class, ClassMethod::class];
+        return [Class_::class];
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::ATTRIBUTES;
     }
     /**
-     * @param Class_|ClassMethod $node
+     * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
         }
-        $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
-        if (!$phpDocInfo instanceof PhpDocInfo) {
+        $this->hasChanged = \false;
+        // handle class level
+        $this->refactorClassMethodOrClass($node, $node);
+        // handle method level
+        foreach ($node->getMethods() as $classMethod) {
+            $this->refactorClassMethodOrClass($classMethod, $node);
+        }
+        if (!$this->hasChanged) {
             return null;
         }
-        $hasChanged = \false;
-        foreach ($this->annotationWithValueToAttributes as $annotationWithValueToAttribute) {
-            /** @var PhpDocTagNode[] $desiredTagValueNodes */
-            $desiredTagValueNodes = $phpDocInfo->getTagsByName($annotationWithValueToAttribute->getAnnotationName());
-            foreach ($desiredTagValueNodes as $desiredTagValueNode) {
-                if (!$desiredTagValueNode->value instanceof GenericTagValueNode) {
-                    continue;
-                }
-                $attributeValue = $this->resolveAttributeValue($desiredTagValueNode->value, $annotationWithValueToAttribute);
-                $attributeGroup = $this->phpAttributeGroupFactory->createFromClassWithItems($annotationWithValueToAttribute->getAttributeClass(), [$attributeValue]);
-                $node->attrGroups[] = $attributeGroup;
-                // cleanup
-                $this->phpDocTagRemover->removeTagValueFromNode($phpDocInfo, $desiredTagValueNode);
-                $hasChanged = \true;
-            }
-        }
-        if ($hasChanged) {
-            $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
-            return $node;
-        }
-        return null;
+        return $node;
     }
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allIsInstanceOf($configuration, AnnotationWithValueToAttribute::class);
         $this->annotationWithValueToAttributes = $configuration;
@@ -150,7 +132,37 @@ CODE_SAMPLE
             // no map? convert value as it is
             return $genericTagValueNode->value;
         }
-        $originalValue = \strtolower($genericTagValueNode->value);
+        $originalValue = strtolower($genericTagValueNode->value);
         return $valueMap[$originalValue];
+    }
+    /**
+     * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Class_ $classOrClass
+     */
+    private function refactorClassMethodOrClass($classOrClass, Class_ $class): void
+    {
+        $phpDocInfo = $this->phpDocInfoFactory->createFromNode($classOrClass);
+        if (!$phpDocInfo instanceof PhpDocInfo) {
+            return;
+        }
+        foreach ($this->annotationWithValueToAttributes as $annotationWithValueToAttribute) {
+            /** @var PhpDocTagNode[] $desiredTagValueNodes */
+            $desiredTagValueNodes = $phpDocInfo->getTagsByName($annotationWithValueToAttribute->getAnnotationName());
+            foreach ($desiredTagValueNodes as $desiredTagValueNode) {
+                if (!$desiredTagValueNode->value instanceof GenericTagValueNode) {
+                    continue;
+                }
+                $attributeValue = $this->resolveAttributeValue($desiredTagValueNode->value, $annotationWithValueToAttribute);
+                $attributeGroup = $this->phpAttributeGroupFactory->createFromClassWithItems($annotationWithValueToAttribute->getAttributeClass(), [$attributeValue]);
+                if ($annotationWithValueToAttribute->getIsOnClassLevel()) {
+                    $class->attrGroups = array_merge($class->attrGroups, [$attributeGroup]);
+                } else {
+                    $classOrClass->attrGroups = array_merge($classOrClass->attrGroups, [$attributeGroup]);
+                }
+                // cleanup
+                $this->phpDocTagRemover->removeTagValueFromNode($phpDocInfo, $desiredTagValueNode);
+                $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($classOrClass);
+                $this->hasChanged = \true;
+            }
+        }
     }
 }

@@ -3,37 +3,39 @@
 declare (strict_types=1);
 namespace Rector\StaticTypeMapper\ValueObject\Type;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
+use Override;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Use_;
-use PhpParser\Node\Stmt\UseUse;
+use PhpParser\Node\UseItem;
 use PHPStan\Type\ObjectType;
+use PHPStan\Type\Type;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 /**
  * @api
  */
 final class FullyQualifiedObjectType extends ObjectType
 {
-    public function getShortNameType() : \Rector\StaticTypeMapper\ValueObject\Type\ShortenedObjectType
+    public function getShortNameType(): \Rector\StaticTypeMapper\ValueObject\Type\ShortenedObjectType
     {
         return new \Rector\StaticTypeMapper\ValueObject\Type\ShortenedObjectType($this->getShortName(), $this->getClassName());
     }
     /**
      * @param \Rector\StaticTypeMapper\ValueObject\Type\AliasedObjectType|$this $comparedObjectType
      */
-    public function areShortNamesEqual($comparedObjectType) : bool
+    public function areShortNamesEqual($comparedObjectType): bool
     {
         return $this->getShortName() === $comparedObjectType->getShortName();
     }
-    public function getShortName() : string
+    public function getShortName(): string
     {
         $className = $this->getClassName();
-        if (\strpos($className, '\\') === \false) {
+        if (strpos($className, '\\') === \false) {
             return $className;
         }
         return (string) Strings::after($className, '\\', -1);
     }
-    public function getShortNameNode() : Name
+    public function getShortNameNode(): Name
     {
         $name = new Name($this->getShortName());
         // keep original to avoid loss on while importing
@@ -43,16 +45,28 @@ final class FullyQualifiedObjectType extends ObjectType
     /**
      * @param Use_::TYPE_* $useType
      */
-    public function getUseNode(int $useType) : Use_
+    public function getUseNode(int $useType): Use_
     {
         $name = new Name($this->getClassName());
-        $useUse = new UseUse($name);
-        $use = new Use_([$useUse]);
+        $useItem = new UseItem($name);
+        $use = new Use_([$useItem]);
         $use->type = $useType;
         return $use;
     }
-    public function getShortNameLowered() : string
+    public function getShortNameLowered(): string
     {
-        return \strtolower($this->getShortName());
+        return strtolower($this->getShortName());
+    }
+    #[Override]
+    public function equals(Type $type): bool
+    {
+        $isEqual = parent::equals($type);
+        if ($isEqual) {
+            return \true;
+        }
+        if ($type instanceof self || get_class($type) === ObjectType::class) {
+            return $type->getClassName() === $this->getClassName();
+        }
+        return \false;
     }
 }

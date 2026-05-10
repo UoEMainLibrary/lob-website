@@ -12,6 +12,7 @@ use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PHPStan\Type\ArrayType;
+use PHPStan\Type\IntersectionType;
 use PHPStan\Type\MixedType;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger;
@@ -29,34 +30,28 @@ final class AddReturnArrayDocblockBasedOnArrayMapRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer
      */
-    private $returnAnalyzer;
+    private ReturnAnalyzer $returnAnalyzer;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     public function __construct(BetterNodeFinder $betterNodeFinder, ReturnAnalyzer $returnAnalyzer, StaticTypeMapper $staticTypeMapper, TypeFactory $typeFactory, PhpDocTypeChanger $phpDocTypeChanger, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -66,7 +61,7 @@ final class AddReturnArrayDocblockBasedOnArrayMapRector extends AbstractRector
         $this->phpDocTypeChanger = $phpDocTypeChanger;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add @return array docblock based on array_map() return strict type', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -95,7 +90,7 @@ class SomeClass
 CODE_SAMPLE
 )]);
     }
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Function_::class];
     }
@@ -134,16 +129,23 @@ CODE_SAMPLE
         $returnType = $this->typeFactory->createMixedPassedOrUnionType($closureReturnTypes);
         $arrayType = new ArrayType(new MixedType(), $returnType);
         $functionLikePhpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($node);
-        $hasChanged = $this->phpDocTypeChanger->changeReturnType($node, $functionLikePhpDocInfo, $arrayType);
-        if ($hasChanged) {
+        $returnOriginalType = $functionLikePhpDocInfo->getReturnType();
+        if ($returnOriginalType instanceof ArrayType && !$returnOriginalType->getItemType() instanceof MixedType) {
             return null;
         }
-        return $node;
+        if ($returnOriginalType instanceof IntersectionType) {
+            return null;
+        }
+        $hasChanged = $this->phpDocTypeChanger->changeReturnType($node, $functionLikePhpDocInfo, $arrayType);
+        if ($hasChanged) {
+            return $node;
+        }
+        return null;
     }
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    private function hasNonArrayReturnType($functionLike) : bool
+    private function hasNonArrayReturnType($functionLike): bool
     {
         if (!$functionLike->returnType instanceof Identifier) {
             return \false;

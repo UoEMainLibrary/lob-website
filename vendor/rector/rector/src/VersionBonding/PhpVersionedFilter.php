@@ -8,35 +8,36 @@ use Rector\Php\PhpVersionProvider;
 use Rector\Php\PolyfillPackagesProvider;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
 use Rector\VersionBonding\Contract\RelatedPolyfillInterface;
+/**
+ * @see \Rector\Tests\VersionBonding\PhpVersionedFilterTest
+ */
 final class PhpVersionedFilter
 {
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     /**
      * @readonly
-     * @var \Rector\Php\PolyfillPackagesProvider
      */
-    private $polyfillPackagesProvider;
+    private PolyfillPackagesProvider $polyfillPackagesProvider;
     public function __construct(PhpVersionProvider $phpVersionProvider, PolyfillPackagesProvider $polyfillPackagesProvider)
     {
         $this->phpVersionProvider = $phpVersionProvider;
         $this->polyfillPackagesProvider = $polyfillPackagesProvider;
     }
     /**
-     * @param array<RectorInterface> $rectors
-     * @return array<RectorInterface>
+     * @param list<RectorInterface> $rectors
+     * @return list<RectorInterface>
      */
-    public function filter(array $rectors) : array
+    public function filter(array $rectors): array
     {
         $minProjectPhpVersion = $this->phpVersionProvider->provide();
         $activeRectors = [];
         foreach ($rectors as $rector) {
             if ($rector instanceof RelatedPolyfillInterface) {
                 $polyfillPackageNames = $this->polyfillPackagesProvider->provide();
-                if (\in_array($rector->providePolyfillPackage(), $polyfillPackageNames, \true)) {
+                if (in_array($rector->providePolyfillPackage(), $polyfillPackageNames, \true)) {
                     $activeRectors[] = $rector;
                     continue;
                 }

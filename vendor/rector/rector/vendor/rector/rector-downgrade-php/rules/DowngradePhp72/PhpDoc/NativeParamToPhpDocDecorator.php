@@ -3,6 +3,7 @@
 declare (strict_types=1);
 namespace Rector\DowngradePhp72\PhpDoc;
 
+use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -18,29 +19,24 @@ final class NativeParamToPhpDocDecorator
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(PhpDocInfoFactory $phpDocInfoFactory, NodeNameResolver $nodeNameResolver, StaticTypeMapper $staticTypeMapper, PhpDocTypeChanger $phpDocTypeChanger, ValueResolver $valueResolver)
     {
         $this->phpDocInfoFactory = $phpDocInfoFactory;
@@ -49,9 +45,9 @@ final class NativeParamToPhpDocDecorator
         $this->phpDocTypeChanger = $phpDocTypeChanger;
         $this->valueResolver = $valueResolver;
     }
-    public function decorate(ClassMethod $classMethod, Param $param) : void
+    public function decorate(ClassMethod $classMethod, Param $param): void
     {
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return;
         }
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($classMethod);
@@ -60,7 +56,7 @@ final class NativeParamToPhpDocDecorator
         $correctedNullableParamType = $this->correctNullableType($param, $mappedCurrentParamType);
         $this->phpDocTypeChanger->changeParamType($classMethod, $phpDocInfo, $correctedNullableParamType, $param, $paramName);
     }
-    private function isParamNullable(Param $param) : bool
+    private function isParamNullable(Param $param): bool
     {
         if (!$param->default instanceof Expr) {
             return \false;

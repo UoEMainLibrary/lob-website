@@ -12,9 +12,8 @@ final class NamingConventionAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -27,7 +26,7 @@ final class NamingConventionAnalyzer
      * $someName = $this->getSomeName();
      * @param \PhpParser\Node\Expr\FuncCall|\PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\MethodCall $expr
      */
-    public function isCallMatchingVariableName($expr, string $currentName, string $expectedName) : bool
+    public function isCallMatchingVariableName($expr, string $currentName, string $expectedName): bool
     {
         // skip "$call = $method->call();" based conventions
         $callName = $this->nodeNameResolver->getName($expr->name);

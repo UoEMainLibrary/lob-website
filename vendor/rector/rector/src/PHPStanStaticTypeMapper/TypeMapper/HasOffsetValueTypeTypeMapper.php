@@ -3,7 +3,6 @@
 declare (strict_types=1);
 namespace Rector\PHPStanStaticTypeMapper\TypeMapper;
 
-use PhpParser\Node;
 use PhpParser\Node\Identifier;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\Type\Accessory\HasOffsetValueType;
@@ -14,21 +13,21 @@ use Rector\PHPStanStaticTypeMapper\Contract\TypeMapperInterface;
  */
 final class HasOffsetValueTypeTypeMapper implements TypeMapperInterface
 {
-    public function getNodeClass() : string
+    public function getNodeClass(): string
     {
         return HasOffsetValueType::class;
     }
     /**
      * @param HasOffsetValueType $type
      */
-    public function mapToPHPStanPhpDocTypeNode(Type $type) : TypeNode
+    public function mapToPHPStanPhpDocTypeNode(Type $type): TypeNode
     {
         return $type->toPhpDocNode();
     }
     /**
      * @param HasOffsetValueType $type
      */
-    public function mapToPhpParserNode(Type $type, string $typeKind) : ?Node
+    public function mapToPhpParserNode(Type $type, string $typeKind): Identifier
     {
         return new Identifier('array');
     }

@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\PhpAttribute\Contract;
 
-use PhpParser\Node\Expr;
+use PhpParser\Node;
 /**
  * @template T as mixed
  */
@@ -12,9 +12,9 @@ interface AnnotationToAttributeMapperInterface
     /**
      * @param mixed $value
      */
-    public function isCandidate($value) : bool;
+    public function isCandidate($value): bool;
     /**
      * @param T $value
      */
-    public function map($value) : Expr;
+    public function map($value): Node;
 }

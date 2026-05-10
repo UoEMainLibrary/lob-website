@@ -3,8 +3,8 @@
 declare (strict_types=1);
 namespace Rector\Doctrine\CodeQuality\AttributeTransformer\ClassAttributeTransformer;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name\FullyQualified;
@@ -19,19 +19,18 @@ final class InheritanceClassAttributeTransformer implements ClassAttributeTransf
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     public function __construct(NodeFactory $nodeFactory)
     {
         $this->nodeFactory = $nodeFactory;
     }
-    public function transform(EntityMapping $entityMapping, Class_ $class) : void
+    public function transform(EntityMapping $entityMapping, Class_ $class): bool
     {
         $classMapping = $entityMapping->getClassMapping();
         $inheritanceType = $classMapping['inheritanceType'] ?? null;
         if ($inheritanceType === null) {
-            return;
+            return \false;
         }
         $class->attrGroups[] = AttributeFactory::createGroup(MappingClass::INHERITANCE_TYPE, [$inheritanceType]);
         if (isset($classMapping['discriminatorColumn'])) {
@@ -40,15 +39,16 @@ final class InheritanceClassAttributeTransformer implements ClassAttributeTransf
         if (isset($classMapping['discriminatorMap'])) {
             $this->addDiscriminatorMap($classMapping['discriminatorMap'], $class);
         }
+        return \true;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return MappingClass::DISCRIMINATOR_MAP;
     }
     /**
      * @param array<string, mixed> $discriminatorMap
      */
-    private function addDiscriminatorMap(array $discriminatorMap, Class_ $class) : void
+    private function addDiscriminatorMap(array $discriminatorMap, Class_ $class): void
     {
         $args = $this->nodeFactory->createArgs([$discriminatorMap]);
         foreach ($args as $arg) {

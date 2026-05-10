@@ -20,20 +20,18 @@ final class AddTestsVoidReturnTypeWhereNoReturnRector extends AbstractRector imp
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SilentVoidResolver
      */
-    private $silentVoidResolver;
+    private SilentVoidResolver $silentVoidResolver;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, SilentVoidResolver $silentVoidResolver)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
         $this->silentVoidResolver = $silentVoidResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add void to PHPUnit test methods', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -60,14 +58,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -95,7 +93,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::VOID_TYPE;
     }

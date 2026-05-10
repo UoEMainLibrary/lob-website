@@ -25,24 +25,21 @@ final class ColumnPropertyTypeResolver
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeAnalyzer\AttributeFinder
      */
-    private $attributeFinder;
+    private AttributeFinder $attributeFinder;
     /**
      * @var array<string, Type>
      * @readonly
      */
-    private $doctrineTypeToScalarType;
+    private array $doctrineTypeToScalarType;
     /**
      * @var string
      */
@@ -51,9 +48,9 @@ final class ColumnPropertyTypeResolver
      * @param array<string, Type> $doctrineTypeToScalarType
      * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/basic-mapping.html#doctrine-mapping-types
      */
-    public function __construct(PhpDocInfoFactory $phpDocInfoFactory, TypeFactory $typeFactory, AttributeFinder $attributeFinder, array $doctrineTypeToScalarType = null)
+    public function __construct(PhpDocInfoFactory $phpDocInfoFactory, TypeFactory $typeFactory, AttributeFinder $attributeFinder, ?array $doctrineTypeToScalarType = null)
     {
-        $doctrineTypeToScalarType = $doctrineTypeToScalarType ?? [
+        $doctrineTypeToScalarType ??= [
             'tinyint' => new BooleanType(),
             'boolean' => new BooleanType(),
             // integers
@@ -95,7 +92,7 @@ final class ColumnPropertyTypeResolver
         $this->attributeFinder = $attributeFinder;
         $this->doctrineTypeToScalarType = $doctrineTypeToScalarType;
     }
-    public function resolve(Property $property, bool $isNullable) : ?Type
+    public function resolve(Property $property, bool $isNullable): ?Type
     {
         $expr = $this->attributeFinder->findAttributeByClassArgByName($property, MappingClass::COLUMN, 'type');
         if ($expr instanceof String_) {
@@ -104,7 +101,7 @@ final class ColumnPropertyTypeResolver
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($property);
         return $this->resolveFromPhpDocInfo($phpDocInfo, $isNullable);
     }
-    private function resolveFromPhpDocInfo(PhpDocInfo $phpDocInfo, bool $isNullable) : ?\PHPStan\Type\Type
+    private function resolveFromPhpDocInfo(PhpDocInfo $phpDocInfo, bool $isNullable): ?\PHPStan\Type\Type
     {
         $doctrineAnnotationTagValueNode = $phpDocInfo->findOneByAnnotationClass(MappingClass::COLUMN);
         if (!$doctrineAnnotationTagValueNode instanceof DoctrineAnnotationTagValueNode) {
@@ -118,12 +115,12 @@ final class ColumnPropertyTypeResolver
         if ($typeValue instanceof StringNode) {
             $typeValue = $typeValue->value;
         }
-        if (!\is_string($typeValue)) {
+        if (!is_string($typeValue)) {
             return null;
         }
         return $this->createPHPStanTypeFromDoctrineStringType($typeValue, $isNullable);
     }
-    private function createPHPStanTypeFromDoctrineStringType(string $type, bool $isNullable) : Type
+    private function createPHPStanTypeFromDoctrineStringType(string $type, bool $isNullable): Type
     {
         $scalarType = $this->doctrineTypeToScalarType[$type] ?? null;
         if (!$scalarType instanceof Type) {

@@ -16,29 +16,24 @@ final class DependencyInjectionMethodCallAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\PropertyNaming
      */
-    private $propertyNaming;
+    private PropertyNaming $propertyNaming;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\ServiceTypeMethodCallResolver
      */
-    private $serviceTypeMethodCallResolver;
+    private \Rector\Symfony\NodeAnalyzer\ServiceTypeMethodCallResolver $serviceTypeMethodCallResolver;
     /**
      * @readonly
-     * @var \Rector\Php80\NodeAnalyzer\PromotedPropertyResolver
      */
-    private $promotedPropertyResolver;
+    private PromotedPropertyResolver $promotedPropertyResolver;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyManipulator
      */
-    private $propertyManipulator;
+    private PropertyManipulator $propertyManipulator;
     public function __construct(PropertyNaming $propertyNaming, \Rector\Symfony\NodeAnalyzer\ServiceTypeMethodCallResolver $serviceTypeMethodCallResolver, PromotedPropertyResolver $promotedPropertyResolver, NodeNameResolver $nodeNameResolver, PropertyManipulator $propertyManipulator)
     {
         $this->propertyNaming = $propertyNaming;
@@ -47,14 +42,14 @@ final class DependencyInjectionMethodCallAnalyzer
         $this->nodeNameResolver = $nodeNameResolver;
         $this->propertyManipulator = $propertyManipulator;
     }
-    public function replaceMethodCallWithPropertyFetchAndDependency(Class_ $class, MethodCall $methodCall) : ?PropertyMetadata
+    public function replaceMethodCallWithPropertyFetchAndDependency(Class_ $class, MethodCall $methodCall): ?PropertyMetadata
     {
         $serviceType = $this->serviceTypeMethodCallResolver->resolve($methodCall);
         if (!$serviceType instanceof ObjectType) {
             return null;
         }
         $resolvedPropertyNameByType = $this->propertyManipulator->resolveExistingClassPropertyNameByType($class, $serviceType);
-        if (\is_string($resolvedPropertyNameByType)) {
+        if (is_string($resolvedPropertyNameByType)) {
             $propertyName = $resolvedPropertyNameByType;
         } else {
             $propertyName = $this->propertyNaming->fqnToVariableName($serviceType);
@@ -62,10 +57,10 @@ final class DependencyInjectionMethodCallAnalyzer
         }
         return new PropertyMetadata($propertyName, $serviceType);
     }
-    private function resolveNewPropertyNameWhenExists(Class_ $class, string $originalPropertyName, string $propertyName, int $count = 1) : string
+    private function resolveNewPropertyNameWhenExists(Class_ $class, string $originalPropertyName, string $propertyName, int $count = 1): string
     {
-        $lastCount = \substr($propertyName, \strlen($originalPropertyName));
-        if (\is_numeric($lastCount)) {
+        $lastCount = (string) substr($propertyName, strlen($originalPropertyName));
+        if (is_numeric($lastCount)) {
             $count = (int) $lastCount;
         }
         $promotedPropertyParams = $this->promotedPropertyResolver->resolveFromClass($class);
@@ -82,7 +77,7 @@ final class DependencyInjectionMethodCallAnalyzer
         $propertyName = $this->resolveIncrementPropertyName($originalPropertyName, $count);
         return $this->resolveNewPropertyNameWhenExists($class, $originalPropertyName, $propertyName, $count);
     }
-    private function resolveIncrementPropertyName(string $originalPropertyName, int $count) : string
+    private function resolveIncrementPropertyName(string $originalPropertyName, int $count): string
     {
         ++$count;
         return $originalPropertyName . $count;

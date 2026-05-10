@@ -13,7 +13,7 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\MixedType;
@@ -40,54 +40,44 @@ final class TrustedClassMethodPropertyTypeInferer
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\ClassMethodPropertyFetchManipulator
      */
-    private $classMethodPropertyFetchManipulator;
+    private ClassMethodPropertyFetchManipulator $classMethodPropertyFetchManipulator;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser
      */
-    private $simpleCallableNodeTraverser;
+    private SimpleCallableNodeTraverser $simpleCallableNodeTraverser;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ParamAnalyzer
      */
-    private $paramAnalyzer;
+    private ParamAnalyzer $paramAnalyzer;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\AssignToPropertyTypeInferer
      */
-    private $assignToPropertyTypeInferer;
+    private AssignToPropertyTypeInferer $assignToPropertyTypeInferer;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\TypeComparator\TypeComparator
      */
-    private $typeComparator;
+    private TypeComparator $typeComparator;
     public function __construct(ClassMethodPropertyFetchManipulator $classMethodPropertyFetchManipulator, ReflectionProvider $reflectionProvider, NodeNameResolver $nodeNameResolver, SimpleCallableNodeTraverser $simpleCallableNodeTraverser, TypeFactory $typeFactory, StaticTypeMapper $staticTypeMapper, NodeTypeResolver $nodeTypeResolver, ParamAnalyzer $paramAnalyzer, AssignToPropertyTypeInferer $assignToPropertyTypeInferer, TypeComparator $typeComparator)
     {
         $this->classMethodPropertyFetchManipulator = $classMethodPropertyFetchManipulator;
@@ -101,7 +91,7 @@ final class TrustedClassMethodPropertyTypeInferer
         $this->assignToPropertyTypeInferer = $assignToPropertyTypeInferer;
         $this->typeComparator = $typeComparator;
     }
-    public function inferProperty(Class_ $class, Property $property, ClassMethod $classMethod) : Type
+    public function inferProperty(Class_ $class, Property $property, ClassMethod $classMethod): Type
     {
         $propertyName = $this->nodeNameResolver->getName($property);
         // 1. direct property = param assign
@@ -119,10 +109,10 @@ final class TrustedClassMethodPropertyTypeInferer
         if ($resolvedTypes === []) {
             return new MixedType();
         }
-        $resolvedType = \count($resolvedTypes) === 1 ? $resolvedTypes[0] : TypeCombinator::union(...$resolvedTypes);
+        $resolvedType = count($resolvedTypes) === 1 ? $resolvedTypes[0] : TypeCombinator::union(...$resolvedTypes);
         return $this->resolveType($property, $propertyName, $class, $resolvedType);
     }
-    private function resolveType(Property $property, string $propertyName, Class_ $class, Type $resolvedType) : Type
+    private function resolveType(Property $property, string $propertyName, Class_ $class, Type $resolvedType): Type
     {
         $exactType = $this->assignToPropertyTypeInferer->inferPropertyInClassLike($property, $propertyName, $class);
         if (!$exactType instanceof UnionType) {
@@ -133,7 +123,7 @@ final class TrustedClassMethodPropertyTypeInferer
         }
         return new MixedType();
     }
-    private function resolveFromParamType(Param $param, ClassMethod $classMethod, string $propertyName) : Type
+    private function resolveFromParamType(Param $param, ClassMethod $classMethod, string $propertyName): Type
     {
         $type = $this->resolveParamTypeToPHPStanType($param);
         if ($type instanceof MixedType) {
@@ -151,9 +141,9 @@ final class TrustedClassMethodPropertyTypeInferer
         }
         return $this->typeFactory->createMixedPassedOrUnionType($types);
     }
-    private function resolveParamTypeToPHPStanType(Param $param) : Type
+    private function resolveParamTypeToPHPStanType(Param $param): Type
     {
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return new MixedType();
         }
         if ($this->paramAnalyzer->isNullable($param)) {
@@ -173,10 +163,10 @@ final class TrustedClassMethodPropertyTypeInferer
         }
         return $this->staticTypeMapper->mapPhpParserNodePHPStanType($param->type);
     }
-    private function getResolveParamStaticTypeAsPHPStanType(ClassMethod $classMethod, string $propertyName) : Type
+    private function getResolveParamStaticTypeAsPHPStanType(ClassMethod $classMethod, string $propertyName): Type
     {
         $paramStaticType = new ArrayType(new MixedType(), new MixedType());
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable((array) $classMethod->stmts, function (Node $node) use($propertyName, &$paramStaticType) : ?int {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable((array) $classMethod->stmts, function (Node $node) use ($propertyName, &$paramStaticType): ?int {
             if (!$node instanceof Variable) {
                 return null;
             }
@@ -184,30 +174,30 @@ final class TrustedClassMethodPropertyTypeInferer
                 return null;
             }
             $paramStaticType = $this->nodeTypeResolver->getType($node);
-            return NodeTraverser::STOP_TRAVERSAL;
+            return NodeVisitor::STOP_TRAVERSAL;
         });
         return $paramStaticType;
     }
-    private function isParamNullable(Param $param) : bool
+    private function isParamNullable(Param $param): bool
     {
         if ($this->paramAnalyzer->isNullable($param)) {
             return \true;
         }
         if ($param->default instanceof Expr) {
             $defaultValueStaticType = $this->nodeTypeResolver->getType($param->default);
-            if ($defaultValueStaticType instanceof NullType) {
+            if ($defaultValueStaticType->isNull()->yes()) {
                 return \true;
             }
         }
         return \false;
     }
-    private function resolveFullyQualifiedOrAliasedObjectType(Param $param) : ?Type
+    private function resolveFullyQualifiedOrAliasedObjectType(Param $param): ?Type
     {
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return null;
         }
         $fullyQualifiedName = $this->nodeNameResolver->getName($param->type);
-        if (!\is_string($fullyQualifiedName)) {
+        if (!is_string($fullyQualifiedName)) {
             return null;
         }
         $originalName = $param->type->getAttribute(AttributeKey::ORIGINAL_NAME);
@@ -215,7 +205,7 @@ final class TrustedClassMethodPropertyTypeInferer
             return null;
         }
         // if the FQN has different ending than the original, it was aliased and we need to return the alias
-        if (\substr_compare($fullyQualifiedName, '\\' . $originalName->toString(), -\strlen('\\' . $originalName->toString())) !== 0) {
+        if (substr_compare($fullyQualifiedName, '\\' . $originalName->toString(), -strlen('\\' . $originalName->toString())) !== 0) {
             $className = $originalName->toString();
             if ($this->reflectionProvider->hasClass($className)) {
                 return new FullyQualifiedObjectType($className);
@@ -225,9 +215,9 @@ final class TrustedClassMethodPropertyTypeInferer
         }
         return null;
     }
-    private function resolveTypeFromParam(Param $param, ClassMethod $classMethod, string $propertyName, Property $property, Class_ $class) : Type
+    private function resolveTypeFromParam(Param $param, ClassMethod $classMethod, string $propertyName, Property $property, Class_ $class): Type
     {
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return new MixedType();
         }
         $resolvedType = $this->resolveFromParamType($param, $classMethod, $propertyName);

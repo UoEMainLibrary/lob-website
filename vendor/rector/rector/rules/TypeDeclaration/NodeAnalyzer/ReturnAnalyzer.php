@@ -12,9 +12,8 @@ final class ReturnAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SilentVoidResolver
      */
-    private $silentVoidResolver;
+    private SilentVoidResolver $silentVoidResolver;
     public function __construct(SilentVoidResolver $silentVoidResolver)
     {
         $this->silentVoidResolver = $silentVoidResolver;
@@ -23,7 +22,7 @@ final class ReturnAnalyzer
      * @param Return_[] $returns
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function hasOnlyReturnWithExpr($functionLike, array $returns) : bool
+    public function hasOnlyReturnWithExpr($functionLike, array $returns): bool
     {
         if ($functionLike->stmts === null) {
             return \false;

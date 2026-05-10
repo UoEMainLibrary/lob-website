@@ -11,14 +11,13 @@ final class EmptyReturnNodeFinder
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     public function __construct(BetterNodeFinder $betterNodeFinder)
     {
         $this->betterNodeFinder = $betterNodeFinder;
     }
-    public function hasNoOrEmptyReturns(ClassMethod $classMethod) : bool
+    public function hasNoOrEmptyReturns(ClassMethod $classMethod): bool
     {
         /** @var Return_[] $returns */
         $returns = $this->betterNodeFinder->findInstancesOfInFunctionLikeScoped($classMethod, Return_::class);

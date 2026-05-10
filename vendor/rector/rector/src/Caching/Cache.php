@@ -9,9 +9,8 @@ final class Cache
 {
     /**
      * @readonly
-     * @var \Rector\Caching\Contract\ValueObject\Storage\CacheStorageInterface
      */
-    private $cacheStorage;
+    private CacheStorageInterface $cacheStorage;
     public function __construct(CacheStorageInterface $cacheStorage)
     {
         $this->cacheStorage = $cacheStorage;
@@ -28,15 +27,15 @@ final class Cache
      * @param CacheKey::* $variableKey
      * @param mixed $data
      */
-    public function save(string $key, string $variableKey, $data) : void
+    public function save(string $key, string $variableKey, $data): void
     {
         $this->cacheStorage->save($key, $variableKey, $data);
     }
-    public function clear() : void
+    public function clear(): void
     {
         $this->cacheStorage->clear();
     }
-    public function clean(string $cacheKey) : void
+    public function clean(string $cacheKey): void
     {
         $this->cacheStorage->clean($cacheKey);
     }

@@ -15,28 +15,24 @@ final class SetterTypeDeclarationPropertyTypeInferer
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ClassMethodAndPropertyAnalyzer
      */
-    private $classMethodAndPropertyAnalyzer;
+    private ClassMethodAndPropertyAnalyzer $classMethodAndPropertyAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(ClassMethodAndPropertyAnalyzer $classMethodAndPropertyAnalyzer, NodeNameResolver $nodeNameResolver, StaticTypeMapper $staticTypeMapper)
     {
         $this->classMethodAndPropertyAnalyzer = $classMethodAndPropertyAnalyzer;
         $this->nodeNameResolver = $nodeNameResolver;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function inferProperty(Property $property, Class_ $class) : ?Type
+    public function inferProperty(Property $property, Class_ $class): ?Type
     {
-        /** @var string $propertyName */
         $propertyName = $this->nodeNameResolver->getName($property);
         foreach ($class->getMethods() as $classMethod) {
             if (!$this->classMethodAndPropertyAnalyzer->hasOnlyPropertyAssign($classMethod, $propertyName)) {

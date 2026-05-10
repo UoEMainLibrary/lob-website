@@ -52,7 +52,7 @@ class GetMockRector extends AbstractRector implements ConfigurableRectorInterfac
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof GetMockConfiguration)) {
+            if (!$value instanceof GetMockConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', GetMockConfiguration::class));
             }
         }
@@ -106,12 +106,10 @@ class GetMockRector extends AbstractRector implements ConfigurableRectorInterfac
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 $this->entityTypeManager = $this->getMock(EntityTypeManagerInterface::class);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $this->entityTypeManager = $this->createMock(EntityTypeManagerInterface::class);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new GetMockConfiguration('Drupal\Tests\BrowserTestBase'),
                     new GetMockConfiguration('Drupal\KernelTests\KernelTestBase'),

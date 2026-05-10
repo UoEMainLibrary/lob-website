@@ -11,9 +11,8 @@ final class DefineFuncCallAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -21,7 +20,7 @@ final class DefineFuncCallAnalyzer
     /**
      * @param string[] $constants
      */
-    public function isDefinedWithConstants(Expr $expr, array $constants) : bool
+    public function isDefinedWithConstants(Expr $expr, array $constants): bool
     {
         if (!$expr instanceof FuncCall) {
             return \false;
@@ -37,6 +36,6 @@ final class DefineFuncCallAnalyzer
             return \false;
         }
         $string = $firstArg->value;
-        return \in_array($string->value, $constants, \true);
+        return in_array($string->value, $constants, \true);
     }
 }

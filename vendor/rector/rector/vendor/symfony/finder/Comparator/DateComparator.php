@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Finder\Comparator;
+namespace RectorPrefix202604\Symfony\Component\Finder\Comparator;
 
 /**
  * DateCompare compiles date comparisons.
@@ -24,7 +24,7 @@ class DateComparator extends Comparator
      */
     public function __construct(string $test)
     {
-        if (!\preg_match('#^\\s*(==|!=|[<>]=?|after|since|before|until)?\\s*(.+?)\\s*$#i', $test, $matches)) {
+        if (!preg_match('#^\s*(==|!=|[<>]=?|after|since|before|until)?\s*(.+?)\s*$#i', $test, $matches)) {
             throw new \InvalidArgumentException(\sprintf('Don\'t understand "%s" as a date test.', $test));
         }
         try {
@@ -33,7 +33,7 @@ class DateComparator extends Comparator
         } catch (\Exception $exception) {
             throw new \InvalidArgumentException(\sprintf('"%s" is not a valid date.', $matches[2]));
         }
-        $operator = $matches[1] ?? '==';
+        $operator = $matches[1] ?: '==';
         if ('since' === $operator || 'after' === $operator) {
             $operator = '>';
         }

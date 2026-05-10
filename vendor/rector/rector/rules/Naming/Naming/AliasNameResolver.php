@@ -11,9 +11,8 @@ final class AliasNameResolver
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\UseImportsResolver
      */
-    private $useImportsResolver;
+    private \Rector\Naming\Naming\UseImportsResolver $useImportsResolver;
     public function __construct(\Rector\Naming\Naming\UseImportsResolver $useImportsResolver)
     {
         $this->useImportsResolver = $useImportsResolver;
@@ -21,7 +20,7 @@ final class AliasNameResolver
     /**
      * @param array<Use_|GroupUse> $uses
      */
-    public function resolveByName(FullyQualified $fullyQualified, array $uses) : ?string
+    public function resolveByName(FullyQualified $fullyQualified, array $uses): ?string
     {
         $nameString = $fullyQualified->toString();
         foreach ($uses as $use) {

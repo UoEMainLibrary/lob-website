@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Process\Messenger;
+namespace RectorPrefix202604\Symfony\Component\Process\Messenger;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -17,19 +17,16 @@ class RunProcessMessage
 {
     /**
      * @readonly
-     * @var mixed[]
      */
-    public $command;
+    public array $command;
     /**
      * @readonly
-     * @var string|null
      */
-    public $cwd;
+    public ?string $cwd = null;
     /**
      * @readonly
-     * @var mixed[]|null
      */
-    public $env;
+    public ?array $env = null;
     /**
      * @readonly
      * @var mixed
@@ -37,9 +34,9 @@ class RunProcessMessage
     public $input = null;
     /**
      * @readonly
-     * @var float|null
      */
-    public $timeout = 60.0;
+    public ?float $timeout = 60.0;
+    public ?string $commandLine = null;
     /**
      * @param mixed $input
      */
@@ -51,8 +48,20 @@ class RunProcessMessage
         $this->input = $input;
         $this->timeout = $timeout;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
-        return \implode(' ', $this->command);
+        return $this->commandLine ?? implode(' ', $this->command);
+    }
+    /**
+     * Create a process message instance that will instantiate a Process using the fromShellCommandline method.
+     *
+     * @see Process::fromShellCommandline
+     * @param mixed $input
+     */
+    public static function fromShellCommandline(string $command, ?string $cwd = null, ?array $env = null, $input = null, ?float $timeout = 60): self
+    {
+        $message = new self([], $cwd, $env, $input, $timeout);
+        $message->commandLine = $command;
+        return $message;
     }
 }

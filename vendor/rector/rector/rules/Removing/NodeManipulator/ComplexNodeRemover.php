@@ -13,24 +13,20 @@ final class ComplexNodeRemover
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     public function __construct(PhpDocInfoFactory $phpDocInfoFactory, PhpDocTagRemover $phpDocTagRemover, NodeNameResolver $nodeNameResolver, DocBlockUpdater $docBlockUpdater)
     {
         $this->phpDocInfoFactory = $phpDocInfoFactory;
@@ -42,9 +38,9 @@ final class ComplexNodeRemover
      * @param int[] $paramKeysToBeRemoved
      * @return int[]
      */
-    public function processRemoveParamWithKeys(ClassMethod $classMethod, array $paramKeysToBeRemoved) : array
+    public function processRemoveParamWithKeys(ClassMethod $classMethod, array $paramKeysToBeRemoved): array
     {
-        $totalKeys = \count($classMethod->params) - 1;
+        $totalKeys = count($classMethod->params) - 1;
         $removedParamKeys = [];
         $phpdocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($classMethod);
         foreach ($paramKeysToBeRemoved as $paramKeyToBeRemoved) {
@@ -54,7 +50,7 @@ final class ComplexNodeRemover
                     // no next param, break the inner loop, remove the param
                     break;
                 }
-                if (\in_array($nextKey, $paramKeysToBeRemoved, \true)) {
+                if (in_array($nextKey, $paramKeysToBeRemoved, \true)) {
                     // keep searching next key not in $paramKeysToBeRemoved
                     continue;
                 }

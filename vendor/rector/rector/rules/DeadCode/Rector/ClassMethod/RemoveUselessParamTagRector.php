@@ -19,20 +19,18 @@ final class RemoveUselessParamTagRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\TagRemover\ParamTagRemover
      */
-    private $paramTagRemover;
+    private ParamTagRemover $paramTagRemover;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     public function __construct(ParamTagRemover $paramTagRemover, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->paramTagRemover = $paramTagRemover;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove @param docblock with same type as parameter type', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -62,17 +60,24 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Function_::class];
     }
     /**
      * @param ClassMethod|Function_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        // skip as no comments
+        if ($node->getComments() === []) {
+            return null;
+        }
         $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
         if (!$phpDocInfo instanceof PhpDocInfo) {
+            return null;
+        }
+        if ($phpDocInfo->getParamTagValueNodes() === []) {
             return null;
         }
         $hasChanged = $this->paramTagRemover->removeParamTagsIfUseless($phpDocInfo, $node);

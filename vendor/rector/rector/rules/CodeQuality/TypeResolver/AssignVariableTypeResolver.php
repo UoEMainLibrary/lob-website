@@ -11,14 +11,13 @@ final class AssignVariableTypeResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
-    public function resolve(Assign $assign) : Type
+    public function resolve(Assign $assign): Type
     {
         $exprType = $this->nodeTypeResolver->getType($assign->expr);
         if ($exprType instanceof UnionType) {

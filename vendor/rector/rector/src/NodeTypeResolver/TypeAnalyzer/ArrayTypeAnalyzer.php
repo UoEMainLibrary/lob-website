@@ -9,14 +9,13 @@ final class ArrayTypeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
-    public function isArrayType(Expr $expr) : bool
+    public function isArrayType(Expr $expr): bool
     {
         $nodeType = $this->nodeTypeResolver->getNativeType($expr);
         return $nodeType->isArray()->yes();

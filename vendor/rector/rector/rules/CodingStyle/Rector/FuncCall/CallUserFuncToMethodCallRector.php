@@ -18,16 +18,15 @@ final class CallUserFuncToMethodCallRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\CodingStyle\NodeFactory\ArrayCallableToMethodCallFactory
      */
-    private $arrayCallableToMethodCallFactory;
+    private ArrayCallableToMethodCallFactory $arrayCallableToMethodCallFactory;
     public function __construct(ArrayCallableToMethodCallFactory $arrayCallableToMethodCallFactory)
     {
         $this->arrayCallableToMethodCallFactory = $arrayCallableToMethodCallFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Refactor call_user_func() on known class method to a method call', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Refactor `call_user_func()` on known class method to a method call', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
 {
     public function run()
@@ -50,14 +49,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node, 'call_user_func')) {
             return null;
@@ -72,12 +71,13 @@ CODE_SAMPLE
         if (!$firstArgValue instanceof Array_) {
             return null;
         }
+        // remove first arg
+        $originalArgs = $node->getArgs();
+        array_shift($originalArgs);
         $methodCall = $this->arrayCallableToMethodCallFactory->create($firstArgValue);
         if (!$methodCall instanceof MethodCall) {
             return null;
         }
-        $originalArgs = $node->args;
-        unset($originalArgs[0]);
         $methodCall->args = $originalArgs;
         return $methodCall;
     }

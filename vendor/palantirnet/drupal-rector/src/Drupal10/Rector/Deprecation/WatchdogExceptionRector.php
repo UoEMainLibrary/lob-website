@@ -31,7 +31,7 @@ class WatchdogExceptionRector extends AbstractDrupalCoreRector
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof DrupalIntroducedVersionConfiguration)) {
+            if (!$value instanceof DrupalIntroducedVersionConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', DrupalIntroducedVersionConfiguration::class));
             }
         }
@@ -78,14 +78,12 @@ class WatchdogExceptionRector extends AbstractDrupalCoreRector
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 watchdog_exception('update', $exception);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 use \Drupal\Core\Utility\Error;
 $logger = \Drupal::logger('update');
 Error::logException($logger, $exception);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new DrupalIntroducedVersionConfiguration('10.1.0'),
                 ]

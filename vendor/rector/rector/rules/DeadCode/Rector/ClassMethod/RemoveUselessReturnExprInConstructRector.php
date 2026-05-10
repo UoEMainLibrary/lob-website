@@ -11,7 +11,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use Rector\NodeAnalyzer\ExprAnalyzer;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\MethodName;
@@ -24,14 +24,13 @@ final class RemoveUselessReturnExprInConstructRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     public function __construct(ExprAnalyzer $exprAnalyzer)
     {
         $this->exprAnalyzer = $exprAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove useless return Expr in __construct()', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -75,14 +74,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -91,9 +90,9 @@ CODE_SAMPLE
             return null;
         }
         $hasChanged = \false;
-        $this->traverseNodesWithCallable($node->stmts, function (Node $subNode) use(&$hasChanged) {
+        $this->traverseNodesWithCallable($node->stmts, function (Node $subNode) use (&$hasChanged) {
             if ($subNode instanceof Class_ || $subNode instanceof Function_ || $subNode instanceof Closure) {
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             if (!$subNode instanceof Return_) {
                 return null;

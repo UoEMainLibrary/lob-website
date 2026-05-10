@@ -4,12 +4,13 @@ declare (strict_types=1);
 namespace Rector\DeadCode\Rector\TryCatch;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Finally_;
 use PhpParser\Node\Stmt\Nop;
-use PhpParser\Node\Stmt\Throw_;
 use PhpParser\Node\Stmt\TryCatch;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -18,7 +19,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class RemoveDeadTryCatchRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove dead try/catch', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -47,13 +48,13 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [TryCatch::class];
     }
     /**
      * @param TryCatch $node
-     * @return Stmt[]|null|TryCatch|int
+     * @return Stmt[]|null|int
      */
     public function refactor(Node $node)
     {
@@ -63,9 +64,9 @@ CODE_SAMPLE
             return null;
         }
         if ($this->isEmpty($node->stmts)) {
-            return NodeTraverser::REMOVE_NODE;
+            return NodeVisitor::REMOVE_NODE;
         }
-        if (\count($node->catches) !== 1) {
+        if (count($node->catches) !== 1) {
             return null;
         }
         $onlyCatch = $node->catches[0];
@@ -73,10 +74,10 @@ CODE_SAMPLE
             return null;
         }
         $onlyCatchStmt = $onlyCatch->stmts[0];
-        if (!$onlyCatchStmt instanceof Throw_) {
+        if (!($onlyCatchStmt instanceof Expression && $onlyCatchStmt->expr instanceof Throw_)) {
             return null;
         }
-        if (!$this->nodeComparator->areNodesEqual($onlyCatch->var, $onlyCatchStmt->expr)) {
+        if (!$this->nodeComparator->areNodesEqual($onlyCatch->var, $onlyCatchStmt->expr->expr)) {
             return null;
         }
         return $node->stmts;
@@ -84,12 +85,12 @@ CODE_SAMPLE
     /**
      * @param Stmt[] $stmts
      */
-    private function isEmpty(array $stmts) : bool
+    private function isEmpty(array $stmts): bool
     {
         if ($stmts === []) {
             return \true;
         }
-        if (\count($stmts) > 1) {
+        if (count($stmts) > 1) {
             return \false;
         }
         return $stmts[0] instanceof Nop;

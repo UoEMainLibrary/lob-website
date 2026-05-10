@@ -14,9 +14,8 @@ final class SkippedPathsResolver
 {
     /**
      * @readonly
-     * @var \Rector\FileSystem\FilePathHelper
      */
-    private $filePathHelper;
+    private FilePathHelper $filePathHelper;
     /**
      * @var null|string[]
      */
@@ -28,7 +27,7 @@ final class SkippedPathsResolver
     /**
      * @return string[]
      */
-    public function resolve() : array
+    public function resolve(): array
     {
         // disable cache in tests
         if (StaticPHPUnitEnvironment::isPHPUnitRun()) {
@@ -41,14 +40,14 @@ final class SkippedPathsResolver
         $skip = SimpleParameterProvider::provideArrayParameter(Option::SKIP);
         $this->skippedPaths = [];
         foreach ($skip as $key => $value) {
-            if (!\is_int($key)) {
+            if (!is_int($key)) {
                 continue;
             }
-            if (\strpos((string) $value, '*') !== \false) {
+            if (strpos((string) $value, '*') !== \false) {
                 $this->skippedPaths[] = $this->filePathHelper->normalizePathAndSchema($value);
                 continue;
             }
-            if (\file_exists($value)) {
+            if (file_exists($value)) {
                 $this->skippedPaths[] = $this->filePathHelper->normalizePathAndSchema($value);
             }
         }

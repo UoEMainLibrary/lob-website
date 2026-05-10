@@ -11,14 +11,15 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
+use PhpParser\Node\Stmt\Goto_;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Type\NullType;
 use PHPStan\Type\UnionType;
-use PHPStan\Type\VoidType;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger;
 use Rector\NodeTypeResolver\PHPStan\Type\TypeFactory;
+use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\Rector\AbstractRector;
 use Rector\TypeDeclaration\TypeInferer\ReturnTypeInferer;
 use Rector\TypeDeclaration\TypeInferer\SilentVoidResolver;
@@ -32,38 +33,38 @@ final class ExplicitReturnNullRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SilentVoidResolver
      */
-    private $silentVoidResolver;
+    private SilentVoidResolver $silentVoidResolver;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\ReturnTypeInferer
      */
-    private $returnTypeInferer;
-    public function __construct(SilentVoidResolver $silentVoidResolver, PhpDocInfoFactory $phpDocInfoFactory, TypeFactory $typeFactory, PhpDocTypeChanger $phpDocTypeChanger, ReturnTypeInferer $returnTypeInferer)
+    private ReturnTypeInferer $returnTypeInferer;
+    /**
+     * @readonly
+     */
+    private BetterNodeFinder $betterNodeFinder;
+    public function __construct(SilentVoidResolver $silentVoidResolver, PhpDocInfoFactory $phpDocInfoFactory, TypeFactory $typeFactory, PhpDocTypeChanger $phpDocTypeChanger, ReturnTypeInferer $returnTypeInferer, BetterNodeFinder $betterNodeFinder)
     {
         $this->silentVoidResolver = $silentVoidResolver;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->typeFactory = $typeFactory;
         $this->phpDocTypeChanger = $phpDocTypeChanger;
         $this->returnTypeInferer = $returnTypeInferer;
+        $this->betterNodeFinder = $betterNodeFinder;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add explicit return null to method/function that returns a value, but missed main return', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -100,14 +101,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Function_::class];
     }
     /**
      * @param ClassMethod|Function_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         // known return type, nothing to improve
         if ($node->returnType instanceof Node) {
@@ -120,10 +121,14 @@ CODE_SAMPLE
         if (!$returnType instanceof UnionType) {
             return null;
         }
+        $hasGoto = (bool) $this->betterNodeFinder->findFirstInFunctionLikeScoped($node, fn(Node $node): bool => $node instanceof Goto_);
+        if ($hasGoto) {
+            return null;
+        }
         $hasChanged = \false;
-        $this->traverseNodesWithCallable((array) $node->stmts, static function (Node $node) use(&$hasChanged) {
+        $this->traverseNodesWithCallable((array) $node->stmts, static function (Node $node) use (&$hasChanged) {
             if ($node instanceof Class_ || $node instanceof Function_ || $node instanceof Closure) {
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             if ($node instanceof Return_ && !$node->expr instanceof Expr) {
                 $hasChanged = \true;
@@ -132,7 +137,9 @@ CODE_SAMPLE
             }
             return null;
         });
-        if (!$this->silentVoidResolver->hasSilentVoid($node)) {
+        // allow non native @return never type use
+        // to avoid noise for addition returns
+        if (!$this->silentVoidResolver->hasSilentVoid($node, \false)) {
             if ($hasChanged) {
                 $this->transformDocUnionVoidToUnionNull($node);
                 return $node;
@@ -146,7 +153,7 @@ CODE_SAMPLE
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $node
      */
-    private function transformDocUnionVoidToUnionNull($node) : void
+    private function transformDocUnionVoidToUnionNull($node): void
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($node);
         $returnType = $phpDocInfo->getReturnType();
@@ -156,7 +163,7 @@ CODE_SAMPLE
         $newTypes = [];
         $hasChanged = \false;
         foreach ($returnType->getTypes() as $type) {
-            if ($type instanceof VoidType) {
+            if ($type->isVoid()->yes()) {
                 $type = new NullType();
                 $hasChanged = \true;
             }

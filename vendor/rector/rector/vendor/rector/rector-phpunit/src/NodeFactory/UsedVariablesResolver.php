@@ -14,14 +14,12 @@ final class UsedVariablesResolver
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(BetterNodeFinder $betterNodeFinder, NodeNameResolver $nodeNameResolver)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -30,17 +28,17 @@ final class UsedVariablesResolver
     /**
      * @return Variable[]
      */
-    public function resolveUsedVariables(MethodCall $withConsecutiveMethodCall, ?Stmt $returnStmt) : array
+    public function resolveUsedVariables(MethodCall $withConsecutiveMethodCall, ?Stmt $returnStmt): array
     {
         $consecutiveArgs = $withConsecutiveMethodCall->getArgs();
         $stmtVariables = $returnStmt instanceof Stmt ? $this->resolveUniqueVariables([$returnStmt]) : [];
-        return $this->resolveUniqueVariables(\array_merge($consecutiveArgs, $stmtVariables));
+        return $this->resolveUniqueVariables(array_merge($consecutiveArgs, $stmtVariables));
     }
     /**
      * @param Node[] $nodes
      * @return Variable[]
      */
-    private function resolveUniqueVariables(array $nodes) : array
+    private function resolveUniqueVariables(array $nodes): array
     {
         /** @var Variable[] $usedVariables */
         $usedVariables = $this->betterNodeFinder->findInstancesOfScoped($nodes, Variable::class);

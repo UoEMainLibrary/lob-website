@@ -17,25 +17,22 @@ use Rector\NodeTypeResolver\NodeTypeResolver;
  */
 final class ParamTypeResolver implements NodeTypeResolverInterface, NodeTypeResolverAwareInterface
 {
-    /**
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
-     */
-    private $nodeTypeResolver;
-    public function autowire(NodeTypeResolver $nodeTypeResolver) : void
+    private NodeTypeResolver $nodeTypeResolver;
+    public function autowire(NodeTypeResolver $nodeTypeResolver): void
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeClasses() : array
+    public function getNodeClasses(): array
     {
         return [Param::class];
     }
     /**
      * @param Param $node
      */
-    public function resolve(Node $node) : Type
+    public function resolve(Node $node): Type
     {
         if ($node->type === null) {
             return new MixedType();

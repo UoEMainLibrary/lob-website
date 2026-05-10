@@ -7,24 +7,21 @@ final class AttributeKeyToClassConstFetch
 {
     /**
      * @readonly
-     * @var string
      */
-    private $attributeClass;
+    private string $attributeClass;
     /**
      * @readonly
-     * @var string
      */
-    private $attributeKey;
+    private string $attributeKey;
     /**
      * @readonly
-     * @var string
      */
-    private $constantClass;
+    private string $constantClass;
     /**
      * @var array<string, string>
      * @readonly
      */
-    private $valuesToConstantsMap;
+    private array $valuesToConstantsMap;
     /**
      * @param array<string, string> $valuesToConstantsMap
      */
@@ -35,22 +32,22 @@ final class AttributeKeyToClassConstFetch
         $this->constantClass = $constantClass;
         $this->valuesToConstantsMap = $valuesToConstantsMap;
     }
-    public function getAttributeClass() : string
+    public function getAttributeClass(): string
     {
         return $this->attributeClass;
     }
-    public function getAttributeKey() : string
+    public function getAttributeKey(): string
     {
         return $this->attributeKey;
     }
-    public function getConstantClass() : string
+    public function getConstantClass(): string
     {
         return $this->constantClass;
     }
     /**
      * @return array<string, string>
      */
-    public function getValuesToConstantsMap() : array
+    public function getValuesToConstantsMap(): array
     {
         return $this->valuesToConstantsMap;
     }

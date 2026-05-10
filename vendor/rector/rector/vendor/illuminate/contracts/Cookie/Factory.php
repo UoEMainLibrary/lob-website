@@ -1,6 +1,6 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Contracts\Cookie;
+namespace RectorPrefix202604\Illuminate\Contracts\Cookie;
 
 interface Factory
 {
@@ -20,7 +20,7 @@ interface Factory
      */
     public function make($name, $value, $minutes = 0, $path = null, $domain = null, $secure = null, $httpOnly = \true, $raw = \false, $sameSite = null);
     /**
-     * Create a cookie that lasts "forever" (five years).
+     * Create a cookie that lasts "forever" (400 days).
      *
      * @param  string  $name
      * @param  string  $value

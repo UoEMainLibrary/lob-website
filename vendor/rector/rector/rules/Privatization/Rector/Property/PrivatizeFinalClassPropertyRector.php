@@ -23,26 +23,23 @@ final class PrivatizeFinalClassPropertyRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Privatization\NodeManipulator\VisibilityManipulator
      */
-    private $visibilityManipulator;
+    private VisibilityManipulator $visibilityManipulator;
     /**
      * @readonly
-     * @var \Rector\Privatization\Guard\ParentPropertyLookupGuard
      */
-    private $parentPropertyLookupGuard;
+    private ParentPropertyLookupGuard $parentPropertyLookupGuard;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(VisibilityManipulator $visibilityManipulator, ParentPropertyLookupGuard $parentPropertyLookupGuard, ReflectionResolver $reflectionResolver)
     {
         $this->visibilityManipulator = $visibilityManipulator;
         $this->parentPropertyLookupGuard = $parentPropertyLookupGuard;
         $this->reflectionResolver = $reflectionResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change property to private if possible', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
@@ -61,14 +58,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->isFinal()) {
             return null;
@@ -91,7 +88,7 @@ CODE_SAMPLE
         $construct = $node->getMethod(MethodName::CONSTRUCT);
         if ($construct instanceof ClassMethod) {
             foreach ($construct->params as $param) {
-                if ($param->flags === 0) {
+                if (!$param->isPromoted()) {
                     continue;
                 }
                 if (!$this->visibilityManipulator->hasVisibility($param, Visibility::PROTECTED)) {
@@ -109,9 +106,9 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function shouldSkipProperty(Property $property) : bool
+    private function shouldSkipProperty(Property $property): bool
     {
-        if (\count($property->props) !== 1) {
+        if (count($property->props) !== 1) {
             return \true;
         }
         return !$property->isProtected();

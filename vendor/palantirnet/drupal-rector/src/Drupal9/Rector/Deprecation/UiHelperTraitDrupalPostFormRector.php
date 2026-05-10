@@ -22,8 +22,7 @@ $edit['action'] = 'action_goto_action';
 $this->drupalPostForm('admin/config/system/actions', $edit, 'Create');
 $edit['action'] = 'action_goto_action_1';
 $this->drupalPostForm(null, $edit, 'Edit');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $edit = [];
 $edit['action'] = 'action_goto_action';
@@ -48,7 +47,7 @@ CODE_AFTER
      *
      * @throws ShouldNotHappenException
      *
-     * @return array<int, ?\PhpParser\Node\Arg>
+     * @return array<int, ?Node\Arg>
      */
     private function safeArgDestructure(Node\Expr\MethodCall $node): array
     {
@@ -72,11 +71,14 @@ CODE_AFTER
         throw new ShouldNotHappenException('Unexpected argument count for drupalPostForm');
     }
 
+    /**
+     * @return Node[]|null
+     */
     public function refactor(Node $node)
     {
         assert($node instanceof Node\Stmt\Expression);
 
-        if (!($node->expr instanceof Node\Expr\MethodCall)) {
+        if (!$node->expr instanceof Node\Expr\MethodCall) {
             return null;
         }
 

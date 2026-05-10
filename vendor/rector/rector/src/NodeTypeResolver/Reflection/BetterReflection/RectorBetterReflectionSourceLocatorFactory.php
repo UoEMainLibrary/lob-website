@@ -14,20 +14,18 @@ final class RectorBetterReflectionSourceLocatorFactory
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\BetterReflection\BetterReflectionSourceLocatorFactory
      */
-    private $betterReflectionSourceLocatorFactory;
+    private BetterReflectionSourceLocatorFactory $betterReflectionSourceLocatorFactory;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\Reflection\BetterReflection\SourceLocator\IntermediateSourceLocator
      */
-    private $intermediateSourceLocator;
+    private IntermediateSourceLocator $intermediateSourceLocator;
     public function __construct(BetterReflectionSourceLocatorFactory $betterReflectionSourceLocatorFactory, IntermediateSourceLocator $intermediateSourceLocator)
     {
         $this->betterReflectionSourceLocatorFactory = $betterReflectionSourceLocatorFactory;
         $this->intermediateSourceLocator = $intermediateSourceLocator;
     }
-    public function create() : MemoizingSourceLocator
+    public function create(): MemoizingSourceLocator
     {
         $phpStanSourceLocator = $this->betterReflectionSourceLocatorFactory->create();
         // make PHPStan first source locator, so we avoid parsing every single file - huge performance hit!

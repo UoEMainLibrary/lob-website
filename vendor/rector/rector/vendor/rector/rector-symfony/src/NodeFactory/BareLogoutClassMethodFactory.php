@@ -15,20 +15,18 @@ final class BareLogoutClassMethodFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     public function __construct(NodeFactory $nodeFactory, PhpVersionProvider $phpVersionProvider)
     {
         $this->nodeFactory = $nodeFactory;
         $this->phpVersionProvider = $phpVersionProvider;
     }
-    public function create() : ClassMethod
+    public function create(): ClassMethod
     {
         $classMethod = $this->nodeFactory->createPublicMethod('onLogout');
         $variable = new Variable('logoutEvent');
@@ -38,10 +36,10 @@ final class BareLogoutClassMethodFactory
         }
         return $classMethod;
     }
-    private function createLogoutEventParam(Variable $variable) : Param
+    private function createLogoutEventParam(Variable $variable): Param
     {
         $param = new Param($variable);
-        $param->type = new FullyQualified('Symfony\\Component\\Security\\Http\\Event\\LogoutEvent');
+        $param->type = new FullyQualified('Symfony\Component\Security\Http\Event\LogoutEvent');
         return $param;
     }
 }

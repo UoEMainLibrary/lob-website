@@ -12,9 +12,8 @@ final class ReturnTagRemover
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\DeadReturnTagValueNodeAnalyzer
      */
-    private $deadReturnTagValueNodeAnalyzer;
+    private DeadReturnTagValueNodeAnalyzer $deadReturnTagValueNodeAnalyzer;
     public function __construct(DeadReturnTagValueNodeAnalyzer $deadReturnTagValueNodeAnalyzer)
     {
         $this->deadReturnTagValueNodeAnalyzer = $deadReturnTagValueNodeAnalyzer;
@@ -22,7 +21,7 @@ final class ReturnTagRemover
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function removeReturnTagIfUseless(PhpDocInfo $phpDocInfo, $functionLike) : bool
+    public function removeReturnTagIfUseless(PhpDocInfo $phpDocInfo, $functionLike): bool
     {
         // remove existing type
         $returnTagValueNode = $phpDocInfo->getReturnTagValue();

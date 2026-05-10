@@ -5,13 +5,16 @@
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
 declare (strict_types=1);
-namespace RectorPrefix202411\Nette;
+namespace RectorPrefix202604\Nette;
 
+/**
+ * Represents object convertible to HTML string.
+ */
 interface HtmlStringable
 {
     /**
-     * Returns string in HTML format
+     * Returns string in HTML format.
      */
-    function __toString() : string;
+    function __toString(): string;
 }
-\interface_exists(Utils\IHtmlString::class);
+interface_exists(Utils\IHtmlString::class);

@@ -1,8 +1,8 @@
 <?php
 
-namespace RectorPrefix202411\React\Socket;
+namespace RectorPrefix202604\React\Socket;
 
-use RectorPrefix202411\Evenement\EventEmitter;
+use RectorPrefix202604\Evenement\EventEmitter;
 use Exception;
 use OverflowException;
 /**
@@ -151,7 +151,7 @@ class LimitingServer extends EventEmitter implements ServerInterface
         }
         $this->connections[] = $connection;
         $that = $this;
-        $connection->on('close', function () use($that, $connection) {
+        $connection->on('close', function () use ($that, $connection) {
             $that->handleDisconnection($connection);
         });
         // pause accepting new connections if limit exceeded

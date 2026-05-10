@@ -20,9 +20,8 @@ final class DowngradePhp81ResourceReturnToObjectRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DowngradePhp81\NodeManipulator\ObjectToResourceReturn
      */
-    private $objectToResourceReturn;
+    private ObjectToResourceReturn $objectToResourceReturn;
     /**
      * @var string[]|class-string<finfo>[]
      */
@@ -30,26 +29,26 @@ final class DowngradePhp81ResourceReturnToObjectRector extends AbstractRector
         // finfo
         'finfo',
         // ftp
-        'FTP\\Connection',
+        'FTP\Connection',
         // imap_open
-        'IMAP\\Connection',
+        'IMAP\Connection',
         // pspell
-        'PSpell\\Config',
-        'PSpell\\Dictionary',
+        'PSpell\Config',
+        'PSpell\Dictionary',
         // ldap
-        'LDAP\\Connection',
-        'LDAP\\Result',
-        'LDAP\\ResultEntry',
+        'LDAP\Connection',
+        'LDAP\Result',
+        'LDAP\ResultEntry',
         // psql
-        'PgSql\\Connection',
-        'PgSql\\Result',
-        'PgSql\\Lob',
+        'PgSql\Connection',
+        'PgSql\Result',
+        'PgSql\Lob',
     ];
     public function __construct(ObjectToResourceReturn $objectToResourceReturn)
     {
         $this->objectToResourceReturn = $objectToResourceReturn;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('change instanceof Object to is_resource', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -74,14 +73,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [BinaryOp::class, Instanceof_::class];
     }
     /**
      * @param BinaryOp|Instanceof_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         return $this->objectToResourceReturn->refactor($node, self::COLLECTION_OBJECT_TO_RESOURCE);
     }

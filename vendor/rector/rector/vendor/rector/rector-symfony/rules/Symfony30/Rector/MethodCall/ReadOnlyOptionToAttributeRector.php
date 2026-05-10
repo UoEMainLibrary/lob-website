@@ -4,8 +4,8 @@ declare (strict_types=1);
 namespace Rector\Symfony\Symfony30\Rector\MethodCall;
 
 use PhpParser\Node;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\String_;
 use Rector\Rector\AbstractRector;
@@ -21,26 +21,23 @@ final class ReadOnlyOptionToAttributeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeManipulator\ArrayManipulator
      */
-    private $arrayManipulator;
+    private ArrayManipulator $arrayManipulator;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormAddMethodCallAnalyzer
      */
-    private $formAddMethodCallAnalyzer;
+    private FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormOptionsArrayMatcher
      */
-    private $formOptionsArrayMatcher;
+    private FormOptionsArrayMatcher $formOptionsArrayMatcher;
     public function __construct(ArrayManipulator $arrayManipulator, FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer, FormOptionsArrayMatcher $formOptionsArrayMatcher)
     {
         $this->arrayManipulator = $arrayManipulator;
         $this->formAddMethodCallAnalyzer = $formAddMethodCallAnalyzer;
         $this->formOptionsArrayMatcher = $formOptionsArrayMatcher;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change "read_only" option in form to attribute', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Form\FormBuilderInterface;
@@ -63,14 +60,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->formAddMethodCallAnalyzer->isMatching($node)) {
             return null;

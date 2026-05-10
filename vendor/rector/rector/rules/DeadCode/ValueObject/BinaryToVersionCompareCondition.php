@@ -8,14 +8,12 @@ final class BinaryToVersionCompareCondition implements ConditionInterface
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\ValueObject\VersionCompareCondition
      */
-    private $versionCompareCondition;
+    private \Rector\DeadCode\ValueObject\VersionCompareCondition $versionCompareCondition;
     /**
      * @readonly
-     * @var string
      */
-    private $binaryClass;
+    private string $binaryClass;
     /**
      * @readonly
      * @var mixed
@@ -30,11 +28,11 @@ final class BinaryToVersionCompareCondition implements ConditionInterface
         $this->binaryClass = $binaryClass;
         $this->expectedValue = $expectedValue;
     }
-    public function getVersionCompareCondition() : \Rector\DeadCode\ValueObject\VersionCompareCondition
+    public function getVersionCompareCondition(): \Rector\DeadCode\ValueObject\VersionCompareCondition
     {
         return $this->versionCompareCondition;
     }
-    public function getBinaryClass() : string
+    public function getBinaryClass(): string
     {
         return $this->binaryClass;
     }

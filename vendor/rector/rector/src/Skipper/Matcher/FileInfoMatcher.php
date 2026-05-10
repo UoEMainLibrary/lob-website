@@ -11,19 +11,16 @@ final class FileInfoMatcher
 {
     /**
      * @readonly
-     * @var \Rector\Skipper\FileSystem\FnMatchPathNormalizer
      */
-    private $fnMatchPathNormalizer;
+    private FnMatchPathNormalizer $fnMatchPathNormalizer;
     /**
      * @readonly
-     * @var \Rector\Skipper\Fnmatcher
      */
-    private $fnmatcher;
+    private Fnmatcher $fnmatcher;
     /**
      * @readonly
-     * @var \Rector\Skipper\RealpathMatcher
      */
-    private $realpathMatcher;
+    private RealpathMatcher $realpathMatcher;
     public function __construct(FnMatchPathNormalizer $fnMatchPathNormalizer, Fnmatcher $fnmatcher, RealpathMatcher $realpathMatcher)
     {
         $this->fnMatchPathNormalizer = $fnMatchPathNormalizer;
@@ -33,7 +30,7 @@ final class FileInfoMatcher
     /**
      * @param string[] $filePatterns
      */
-    public function doesFileInfoMatchPatterns(string $filePath, array $filePatterns) : bool
+    public function doesFileInfoMatchPatterns(string $filePath, array $filePatterns): bool
     {
         $filePath = PathNormalizer::normalize($filePath);
         foreach ($filePatterns as $filePattern) {
@@ -47,7 +44,7 @@ final class FileInfoMatcher
     /**
      * Supports both relative and absolute $file path. They differ for PHP-CS-Fixer and PHP_CodeSniffer.
      */
-    private function doesFileMatchPattern(string $filePath, string $ignoredPath) : bool
+    private function doesFileMatchPattern(string $filePath, string $ignoredPath): bool
     {
         // in rector.php, the path can be absolute
         if ($filePath === $ignoredPath) {
@@ -57,10 +54,10 @@ final class FileInfoMatcher
         if ($ignoredPath === '') {
             return \false;
         }
-        if (\strncmp($filePath, $ignoredPath, \strlen($ignoredPath)) === 0) {
+        if (strncmp($filePath, $ignoredPath, strlen($ignoredPath)) === 0) {
             return \true;
         }
-        if (\substr_compare($filePath, $ignoredPath, -\strlen($ignoredPath)) === 0) {
+        if (substr_compare($filePath, $ignoredPath, -strlen($ignoredPath)) === 0) {
             return \true;
         }
         if ($this->fnmatcher->match($ignoredPath, $filePath)) {

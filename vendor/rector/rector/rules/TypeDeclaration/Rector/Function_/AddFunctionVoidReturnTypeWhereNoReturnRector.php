@@ -19,14 +19,13 @@ final class AddFunctionVoidReturnTypeWhereNoReturnRector extends AbstractRector 
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SilentVoidResolver
      */
-    private $silentVoidResolver;
+    private SilentVoidResolver $silentVoidResolver;
     public function __construct(SilentVoidResolver $silentVoidResolver)
     {
         $this->silentVoidResolver = $silentVoidResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add function return type void if there is no return', [new CodeSample(<<<'CODE_SAMPLE'
 function restore() {
@@ -41,14 +40,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Function_::class];
     }
     /**
      * @param Function_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         // already has return type → skip
         if ($node->returnType instanceof Node) {
@@ -60,7 +59,7 @@ CODE_SAMPLE
         $node->returnType = new Identifier('void');
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::VOID_TYPE;
     }

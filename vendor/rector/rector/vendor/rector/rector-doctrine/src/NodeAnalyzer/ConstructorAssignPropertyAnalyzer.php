@@ -16,26 +16,23 @@ final class ConstructorAssignPropertyAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
     public function __construct(BetterNodeFinder $betterNodeFinder, NodeNameResolver $nodeNameResolver, PropertyFetchAnalyzer $propertyFetchAnalyzer)
     {
         $this->betterNodeFinder = $betterNodeFinder;
         $this->nodeNameResolver = $nodeNameResolver;
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
     }
-    public function resolveConstructorAssign(Class_ $class, Property $property) : ?Node
+    public function resolveConstructorAssign(Class_ $class, Property $property): ?Node
     {
         $constructClassMethod = $class->getMethod(MethodName::CONSTRUCT);
         if (!$constructClassMethod instanceof ClassMethod) {
@@ -43,7 +40,7 @@ final class ConstructorAssignPropertyAnalyzer
         }
         /** @var string $propertyName */
         $propertyName = $this->nodeNameResolver->getName($property);
-        return $this->betterNodeFinder->findFirst((array) $constructClassMethod->stmts, function (Node $node) use($propertyName) : bool {
+        return $this->betterNodeFinder->findFirst((array) $constructClassMethod->stmts, function (Node $node) use ($propertyName): bool {
             if (!$node instanceof Assign) {
                 return \false;
             }

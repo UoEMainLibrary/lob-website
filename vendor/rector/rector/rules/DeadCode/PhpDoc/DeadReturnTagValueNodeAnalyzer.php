@@ -9,6 +9,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PHPStan\Analyser\Scope;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
+use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\ThisTypeNode;
 use PHPStan\Type\TypeCombinator;
@@ -26,39 +27,32 @@ final class DeadReturnTagValueNodeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\TypeComparator\TypeComparator
      */
-    private $typeComparator;
+    private TypeComparator $typeComparator;
     /**
      * @readonly
-     * @var \Rector\DeadCode\TypeNodeAnalyzer\GenericTypeNodeAnalyzer
      */
-    private $genericTypeNodeAnalyzer;
+    private GenericTypeNodeAnalyzer $genericTypeNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\DeadCode\TypeNodeAnalyzer\MixedArrayTypeNodeAnalyzer
      */
-    private $mixedArrayTypeNodeAnalyzer;
+    private MixedArrayTypeNodeAnalyzer $mixedArrayTypeNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\Guard\StandaloneTypeRemovalGuard
      */
-    private $standaloneTypeRemovalGuard;
+    private StandaloneTypeRemovalGuard $standaloneTypeRemovalGuard;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\Guard\TemplateTypeRemovalGuard
      */
-    private $templateTypeRemovalGuard;
+    private TemplateTypeRemovalGuard $templateTypeRemovalGuard;
     public function __construct(TypeComparator $typeComparator, GenericTypeNodeAnalyzer $genericTypeNodeAnalyzer, MixedArrayTypeNodeAnalyzer $mixedArrayTypeNodeAnalyzer, StandaloneTypeRemovalGuard $standaloneTypeRemovalGuard, PhpDocTypeChanger $phpDocTypeChanger, StaticTypeMapper $staticTypeMapper, TemplateTypeRemovalGuard $templateTypeRemovalGuard)
     {
         $this->typeComparator = $typeComparator;
@@ -72,13 +66,16 @@ final class DeadReturnTagValueNodeAnalyzer
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function isDead(ReturnTagValueNode $returnTagValueNode, $functionLike) : bool
+    public function isDead(ReturnTagValueNode $returnTagValueNode, $functionLike): bool
     {
         $returnType = $functionLike->getReturnType();
         if ($returnType === null) {
             return \false;
         }
         if ($returnTagValueNode->description !== '') {
+            return \false;
+        }
+        if ($returnTagValueNode->type instanceof GenericTypeNode) {
             return \false;
         }
         $docType = $this->staticTypeMapper->mapPHPStanPhpDocTypeNodeToPHPStanType($returnTagValueNode->type, $functionLike);
@@ -106,38 +103,38 @@ final class DeadReturnTagValueNodeAnalyzer
         }
         return !$this->hasTrueFalsePseudoType($returnTagValueNode->type);
     }
-    private function isVoidReturnType(Node $node) : bool
+    private function isVoidReturnType(Node $node): bool
     {
         return $node instanceof Identifier && $node->toString() === 'void';
     }
-    private function isNeverReturnType(Node $node) : bool
+    private function isNeverReturnType(Node $node): bool
     {
         return $node instanceof Identifier && $node->toString() === 'never';
     }
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    private function isDeadNotEqual(ReturnTagValueNode $returnTagValueNode, Node $node, $functionLike) : bool
+    private function isDeadNotEqual(ReturnTagValueNode $returnTagValueNode, Node $node, $functionLike): bool
     {
         if ($returnTagValueNode->type instanceof IdentifierTypeNode && (string) $returnTagValueNode->type === 'void') {
             return \true;
         }
-        if (!$this->hasUsefullPhpdocType($returnTagValueNode, $node)) {
+        if (!$this->hasUsefulPhpdocType($returnTagValueNode, $node)) {
             return \true;
         }
         $nodeType = $this->staticTypeMapper->mapPhpParserNodePHPStanType($node);
         $docType = $this->staticTypeMapper->mapPHPStanPhpDocTypeNodeToPHPStanType($returnTagValueNode->type, $functionLike);
         return $docType instanceof UnionType && $this->typeComparator->areTypesEqual(TypeCombinator::removeNull($docType), $nodeType);
     }
-    private function hasTrueFalsePseudoType(BracketsAwareUnionTypeNode $bracketsAwareUnionTypeNode) : bool
+    private function hasTrueFalsePseudoType(BracketsAwareUnionTypeNode $bracketsAwareUnionTypeNode): bool
     {
         $unionTypes = $bracketsAwareUnionTypeNode->types;
         foreach ($unionTypes as $unionType) {
             if (!$unionType instanceof IdentifierTypeNode) {
                 continue;
             }
-            $name = \strtolower((string) $unionType);
-            if (\in_array($name, ['true', 'false'], \true)) {
+            $name = strtolower((string) $unionType);
+            if (in_array($name, ['true', 'false'], \true)) {
                 return \true;
             }
         }
@@ -147,7 +144,7 @@ final class DeadReturnTagValueNodeAnalyzer
      * exact different between @return and node return type
      * @param mixed $returnType
      */
-    private function hasUsefullPhpdocType(ReturnTagValueNode $returnTagValueNode, $returnType) : bool
+    private function hasUsefulPhpdocType(ReturnTagValueNode $returnTagValueNode, $returnType): bool
     {
         if ($returnTagValueNode->type instanceof IdentifierTypeNode && $returnTagValueNode->type->name === 'mixed') {
             return \false;

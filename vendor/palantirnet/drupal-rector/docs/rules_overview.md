@@ -1,16 +1,16 @@
-# 54 Rules Overview
+# 56 Rules Overview
 
 <br>
 
 ## Categories
 
-- [Drupal10](#drupal10) (3)
+- [Drupal10](#drupal10) (4)
 
 - [Drupal8](#drupal8) (18)
 
 - [Drupal9](#drupal9) (26)
 
-- [DrupalRector](#drupalrector) (7)
+- [DrupalRector](#drupalrector) (8)
 
 <br>
 
@@ -68,6 +68,21 @@ Fixes deprecated `system_time_zones()` calls
 +\Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsListByRegion();
 +\Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsList(NULL);
 +\Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsList(TRUE);
+```
+
+<br>
+
+### VersionedFunctionToServiceRector
+
+Fixes deprecated function to service calls, used in Drupal 8 and 9 deprecations
+
+:wrench: **configure it!**
+
+- class: [`DrupalRector\Drupal10\Rector\Deprecation\VersionedFunctionToServiceRector`](../src/Drupal10/Rector/Deprecation/VersionedFunctionToServiceRector.php)
+
+```diff
+-_drupal_flush_css_js();
++\Drupal::service('asset.query_string')->reset();
 ```
 
 <br>
@@ -1083,6 +1098,50 @@ Fixes deprecated `file_directory_os_temp()` calls, used in Drupal 8, 9 and 10 de
  $filename = 'simple_filename.yaml';
 -drupal_rewrite_settings($settings, $filename);
 +SettingsEditor::rewrite($filename, $settings);
+```
+
+<br>
+
+### HookConvertRector
+
+Hook conversion script
+
+- class: [`DrupalRector\Rector\Convert\HookConvertRector`](../src/Rector/Convert/HookConvertRector.php)
+
+```diff
+ /**
+- * Implements hook_user_cancel().
++ * Hook implementations for hookconvertrector.
+  */
+-function hookconvertrector_user_cancel($edit, UserInterface $account, $method) {
+-    $red = 'red';
+-    $method = ['red', 'green', 'blue'];
+-    $edit = [
+-        'red' => 'red',
+-        'green' => 'green',
+-        'blue' => 'blue',
+-    ];
++class HookconvertrectorHooks
++{
++    /**
++     * Implements hook_user_cancel().
++     */
++    #[Hook('user_cancel')]
++    public function userCancel($edit, \UserInterface $account, $method)
++    {
++        $red = 'red';
++        $method = [
++            'red',
++            'green',
++            'blue',
++        ];
++        $edit = [
++            'red' => 'red',
++            'green' => 'green',
++            'blue' => 'blue',
++        ];
++    }
+ }
 ```
 
 <br>

@@ -10,9 +10,8 @@ final class UnusedParameterResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ParamAnalyzer
      */
-    private $paramAnalyzer;
+    private ParamAnalyzer $paramAnalyzer;
     public function __construct(ParamAnalyzer $paramAnalyzer)
     {
         $this->paramAnalyzer = $paramAnalyzer;
@@ -20,16 +19,11 @@ final class UnusedParameterResolver
     /**
      * @return array<int, Param>
      */
-    public function resolve(ClassMethod $classMethod) : array
+    public function resolve(ClassMethod $classMethod): array
     {
         /** @var array<int, Param> $unusedParameters */
         $unusedParameters = [];
         foreach ($classMethod->params as $i => $param) {
-            // skip property promotion
-            /** @var Param $param */
-            if ($param->flags !== 0) {
-                continue;
-            }
             if ($this->paramAnalyzer->isParamUsedInClassMethod($classMethod, $param)) {
                 continue;
             }

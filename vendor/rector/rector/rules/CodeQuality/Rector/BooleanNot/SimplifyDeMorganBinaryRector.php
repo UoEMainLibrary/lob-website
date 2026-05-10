@@ -18,14 +18,13 @@ final class SimplifyDeMorganBinaryRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\BinaryOpManipulator
      */
-    private $binaryOpManipulator;
+    private BinaryOpManipulator $binaryOpManipulator;
     public function __construct(BinaryOpManipulator $binaryOpManipulator)
     {
         $this->binaryOpManipulator = $binaryOpManipulator;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Simplify negated conditions with de Morgan theorem', [new CodeSample(<<<'CODE_SAMPLE'
 $a = 5;
@@ -42,14 +41,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [BooleanNot::class];
     }
     /**
      * @param BooleanNot $node
      */
-    public function refactor(Node $node) : ?BinaryOp
+    public function refactor(Node $node): ?BinaryOp
     {
         if (!$node->expr instanceof BooleanOr) {
             return null;

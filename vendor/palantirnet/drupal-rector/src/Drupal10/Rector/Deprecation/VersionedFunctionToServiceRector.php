@@ -24,7 +24,7 @@ class VersionedFunctionToServiceRector extends AbstractDrupalCoreRector
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof VersionedFunctionToServiceConfiguration)) {
+            if (!$value instanceof VersionedFunctionToServiceConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', VersionedFunctionToServiceConfiguration::class));
             }
         }
@@ -69,12 +69,10 @@ class VersionedFunctionToServiceRector extends AbstractDrupalCoreRector
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 _drupal_flush_css_js();
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal::service('asset.query_string')->reset();
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new VersionedFunctionToServiceConfiguration('10.2.0', '_drupal_flush_css_js', 'asset.query_string', 'reset'),
                 ]

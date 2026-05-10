@@ -3,9 +3,9 @@
 declare (strict_types=1);
 namespace Rector\Symfony\NodeAnalyzer;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Type\IntegerType;
@@ -22,14 +22,12 @@ final class RouteRequiredParamNameToTypesResolver
 {
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeAnalyzer\AttrinationFinder
      */
-    private $attrinationFinder;
+    private AttrinationFinder $attrinationFinder;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(AttrinationFinder $attrinationFinder, NodeNameResolver $nodeNameResolver)
     {
         $this->attrinationFinder = $attrinationFinder;
@@ -38,7 +36,7 @@ final class RouteRequiredParamNameToTypesResolver
     /**
      * @return array<string, Type>
      */
-    public function resolve(ClassMethod $classMethod) : array
+    public function resolve(ClassMethod $classMethod): array
     {
         if ($classMethod->getParams() === []) {
             return [];
@@ -50,11 +48,11 @@ final class RouteRequiredParamNameToTypesResolver
         }
         $paramsToTypes = [];
         foreach ($paramsToRegexes as $paramName => $paramRegex) {
-            if (\in_array($paramRegex, ['\\d+', '\\d'], \true)) {
+            if (in_array($paramRegex, ['d+', 'd'], \true)) {
                 $paramsToTypes[$paramName] = new IntegerType();
                 continue;
             }
-            if ($paramRegex === '\\w+') {
+            if ($paramRegex === 'w+') {
                 $paramsToTypes[$paramName] = new StringType();
                 continue;
             }
@@ -67,7 +65,7 @@ final class RouteRequiredParamNameToTypesResolver
      * @return array<string, string>
      * @param \Rector\BetterPhpDocParser\PhpDoc\DoctrineAnnotationTagValueNode|\PhpParser\Node\Attribute|null $routeAttrination
      */
-    private function resolveParamsToRegexes($routeAttrination) : array
+    private function resolveParamsToRegexes($routeAttrination): array
     {
         if ($routeAttrination instanceof DoctrineAnnotationTagValueNode) {
             return $this->resolveFromAnnotation($routeAttrination);
@@ -80,7 +78,7 @@ final class RouteRequiredParamNameToTypesResolver
     /**
      * @return array<string, string>
      */
-    private function resolveFromAnnotation(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode) : array
+    private function resolveFromAnnotation(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode): array
     {
         $paramsToRegexes = [];
         $requirementsArrayItemNode = $doctrineAnnotationTagValueNode->getValue('requirements');
@@ -95,14 +93,14 @@ final class RouteRequiredParamNameToTypesResolver
             if ($paramRegex instanceof StringNode) {
                 $paramRegex = $paramRegex->value;
             }
-            if (!\is_string($paramRegex)) {
+            if (!is_string($paramRegex)) {
                 continue;
             }
             $paramName = $nestedArrayItemNode->key;
             if ($paramName instanceof StringNode) {
                 $paramName = $paramName->value;
             }
-            if (!\is_string($paramName)) {
+            if (!is_string($paramName)) {
                 continue;
             }
             $paramsToRegexes[$paramName] = $paramRegex;
@@ -112,7 +110,7 @@ final class RouteRequiredParamNameToTypesResolver
     /**
      * @return array<string, string>
      */
-    private function resolveFromAttribute(Attribute $attribute) : array
+    private function resolveFromAttribute(Attribute $attribute): array
     {
         $paramsToRegexes = [];
         foreach ($attribute->args as $arg) {

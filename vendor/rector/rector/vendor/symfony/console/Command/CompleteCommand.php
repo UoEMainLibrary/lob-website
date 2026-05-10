@@ -8,20 +8,20 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Command;
+namespace RectorPrefix202604\Symfony\Component\Console\Command;
 
-use RectorPrefix202411\Symfony\Component\Console\Attribute\AsCommand;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionInput;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionSuggestions;
-use RectorPrefix202411\Symfony\Component\Console\Completion\Output\BashCompletionOutput;
-use RectorPrefix202411\Symfony\Component\Console\Completion\Output\CompletionOutputInterface;
-use RectorPrefix202411\Symfony\Component\Console\Completion\Output\FishCompletionOutput;
-use RectorPrefix202411\Symfony\Component\Console\Completion\Output\ZshCompletionOutput;
-use RectorPrefix202411\Symfony\Component\Console\Exception\CommandNotFoundException;
-use RectorPrefix202411\Symfony\Component\Console\Exception\ExceptionInterface;
-use RectorPrefix202411\Symfony\Component\Console\Input\InputInterface;
-use RectorPrefix202411\Symfony\Component\Console\Input\InputOption;
-use RectorPrefix202411\Symfony\Component\Console\Output\OutputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Attribute\AsCommand;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionInput;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionSuggestions;
+use RectorPrefix202604\Symfony\Component\Console\Completion\Output\BashCompletionOutput;
+use RectorPrefix202604\Symfony\Component\Console\Completion\Output\CompletionOutputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Completion\Output\FishCompletionOutput;
+use RectorPrefix202604\Symfony\Component\Console\Completion\Output\ZshCompletionOutput;
+use RectorPrefix202604\Symfony\Component\Console\Exception\CommandNotFoundException;
+use RectorPrefix202604\Symfony\Component\Console\Exception\ExceptionInterface;
+use RectorPrefix202604\Symfony\Component\Console\Input\InputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Input\InputOption;
+use RectorPrefix202604\Symfony\Component\Console\Output\OutputInterface;
 /**
  * Responsible for providing the values to the shell completion.
  *
@@ -38,14 +38,8 @@ final class CompleteCommand extends Command
      * @deprecated since Symfony 6.1
      */
     protected static $defaultDescription = 'Internal command to provide shell completion suggestions';
-    /**
-     * @var mixed[]
-     */
-    private $completionOutputs;
-    /**
-     * @var bool
-     */
-    private $isDebug = \false;
+    private array $completionOutputs;
+    private bool $isDebug = \false;
     /**
      * @param array<string, class-string<CompletionOutputInterface>> $completionOutputs A list of additional completion outputs, with shell name as key and FQCN as value
      */
@@ -55,20 +49,20 @@ final class CompleteCommand extends Command
         $this->completionOutputs = $completionOutputs + ['bash' => BashCompletionOutput::class, 'fish' => FishCompletionOutput::class, 'zsh' => ZshCompletionOutput::class];
         parent::__construct();
     }
-    protected function configure() : void
+    protected function configure(): void
     {
-        $this->addOption('shell', 's', InputOption::VALUE_REQUIRED, 'The shell type ("' . \implode('", "', \array_keys($this->completionOutputs)) . '")')->addOption('input', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'An array of input tokens (e.g. COMP_WORDS or argv)')->addOption('current', 'c', InputOption::VALUE_REQUIRED, 'The index of the "input" array that the cursor is in (e.g. COMP_CWORD)')->addOption('api-version', 'a', InputOption::VALUE_REQUIRED, 'The API version of the completion script')->addOption('symfony', 'S', InputOption::VALUE_REQUIRED, 'deprecated');
+        $this->addOption('shell', 's', InputOption::VALUE_REQUIRED, 'The shell type ("' . implode('", "', array_keys($this->completionOutputs)) . '")')->addOption('input', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'An array of input tokens (e.g. COMP_WORDS or argv)')->addOption('current', 'c', InputOption::VALUE_REQUIRED, 'The index of the "input" array that the cursor is in (e.g. COMP_CWORD)')->addOption('api-version', 'a', InputOption::VALUE_REQUIRED, 'The API version of the completion script')->addOption('symfony', 'S', InputOption::VALUE_REQUIRED, 'deprecated');
     }
-    protected function initialize(InputInterface $input, OutputInterface $output) : void
+    protected function initialize(InputInterface $input, OutputInterface $output): void
     {
-        $this->isDebug = \filter_var(\getenv('SYMFONY_COMPLETION_DEBUG'), \FILTER_VALIDATE_BOOL);
+        $this->isDebug = filter_var(getenv('SYMFONY_COMPLETION_DEBUG'), \FILTER_VALIDATE_BOOL);
     }
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             // "symfony" must be kept for compat with the shell scripts generated by Symfony Console 5.4 - 6.1
             $version = $input->getOption('symfony') ? '1' : $input->getOption('api-version');
-            if ($version && \version_compare($version, self::COMPLETION_API_VERSION, '<')) {
+            if ($version && version_compare($version, self::COMPLETION_API_VERSION, '<')) {
                 $message = \sprintf('Completion script version is not supported ("%s" given, ">=%s" required).', $version, self::COMPLETION_API_VERSION);
                 $this->log($message);
                 $output->writeln($message . ' Install the Symfony completion script again by using the "completion" command.');
@@ -78,43 +72,47 @@ final class CompleteCommand extends Command
             if (!$shell) {
                 throw new \RuntimeException('The "--shell" option must be set.');
             }
-            if (!($completionOutput = $this->completionOutputs[$shell] ?? \false)) {
-                throw new \RuntimeException(\sprintf('Shell completion is not supported for your shell: "%s" (supported: "%s").', $shell, \implode('", "', \array_keys($this->completionOutputs))));
+            if (!$completionOutput = $this->completionOutputs[$shell] ?? \false) {
+                throw new \RuntimeException(\sprintf('Shell completion is not supported for your shell: "%s" (supported: "%s").', $shell, implode('", "', array_keys($this->completionOutputs))));
             }
             $completionInput = $this->createCompletionInput($input);
             $suggestions = new CompletionSuggestions();
-            $this->log(['', '<comment>' . \date('Y-m-d H:i:s') . '</>', '<info>Input:</> <comment>("|" indicates the cursor position)</>', '  ' . (string) $completionInput, '<info>Command:</>', '  ' . (string) \implode(' ', $_SERVER['argv']), '<info>Messages:</>']);
-            $command = $this->findCommand($completionInput, $output);
+            $this->log(['', '<comment>' . date('Y-m-d H:i:s') . '</>', '<info>Input:</> <comment>("|" indicates the cursor position)</>', '  ' . (string) $completionInput, '<info>Command:</>', '  ' . (string) implode(' ', $_SERVER['argv']), '<info>Messages:</>']);
+            if ($command = $this->findCommand($completionInput, $output)) {
+                $command->mergeApplicationDefinition();
+                $completionInput->bind($command->getDefinition());
+            }
             if (null === $command) {
                 $this->log('  No command found, completing using the Application class.');
                 $this->getApplication()->complete($completionInput, $suggestions);
-            } elseif ($completionInput->mustSuggestArgumentValuesFor('command') && $command->getName() !== $completionInput->getCompletionValue() && !\in_array($completionInput->getCompletionValue(), $command->getAliases(), \true)) {
-                $this->log('  No command found, completing using the Application class.');
+            } elseif ($completionInput->mustSuggestArgumentValuesFor('command')) {
+                $this->log('  Command found, completing command name.');
                 // expand shortcut names ("cache:cl<TAB>") into their full name ("cache:clear")
-                $suggestions->suggestValues(\array_filter(\array_merge([$command->getName()], $command->getAliases())));
-            } else {
-                $command->mergeApplicationDefinition();
-                $completionInput->bind($command->getDefinition());
-                if (CompletionInput::TYPE_OPTION_NAME === $completionInput->getCompletionType()) {
-                    $this->log('  Completing option names for the <comment>' . \get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> command.');
-                    $suggestions->suggestOptions($command->getDefinition()->getOptions());
-                } else {
-                    $this->log(['  Completing using the <comment>' . \get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> class.', '  Completing <comment>' . $completionInput->getCompletionType() . '</> for <comment>' . $completionInput->getCompletionName() . '</>']);
-                    if (null !== ($compval = $completionInput->getCompletionValue())) {
-                        $this->log('  Current value: <comment>' . $compval . '</>');
+                $commandNames = array_filter(array_merge([$command->getName()], $command->getAliases()));
+                foreach ($commandNames as $name) {
+                    if (strncmp($name, $completionInput->getCompletionValue(), strlen($completionInput->getCompletionValue())) === 0) {
+                        $commandNames = [$name];
+                        break;
                     }
-                    $command->complete($completionInput, $suggestions);
                 }
+                $suggestions->suggestValues($commandNames);
+            } else if (CompletionInput::TYPE_OPTION_NAME === $completionInput->getCompletionType()) {
+                $this->log('  Completing option names for the <comment>' . get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> command.');
+                $suggestions->suggestOptions($command->getDefinition()->getOptions());
+            } else {
+                $this->log(['  Completing using the <comment>' . get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> class.', '  Completing <comment>' . $completionInput->getCompletionType() . '</> for <comment>' . $completionInput->getCompletionName() . '</>']);
+                if (null !== $compval = $completionInput->getCompletionValue()) {
+                    $this->log('  Current value: <comment>' . $compval . '</>');
+                }
+                $command->complete($completionInput, $suggestions);
             }
             /** @var CompletionOutputInterface $completionOutput */
             $completionOutput = new $completionOutput();
             $this->log('<info>Suggestions:</>');
             if ($options = $suggestions->getOptionSuggestions()) {
-                $this->log('  --' . \implode(' --', \array_map(function ($o) {
-                    return $o->getName();
-                }, $options)));
+                $this->log('  --' . implode(' --', array_map(fn($o) => $o->getName(), $options)));
             } elseif ($values = $suggestions->getValueSuggestions()) {
-                $this->log('  ' . \implode(' ', $values));
+                $this->log('  ' . implode(' ', $values));
             } else {
                 $this->log('  <comment>No suggestions were provided</>');
             }
@@ -128,10 +126,10 @@ final class CompleteCommand extends Command
         }
         return 0;
     }
-    private function createCompletionInput(InputInterface $input) : CompletionInput
+    private function createCompletionInput(InputInterface $input): CompletionInput
     {
         $currentIndex = $input->getOption('current');
-        if (!$currentIndex || !\ctype_digit($currentIndex)) {
+        if (!$currentIndex || !ctype_digit($currentIndex)) {
             throw new \RuntimeException('The "--current" option must be set and it must be an integer.');
         }
         $completionInput = CompletionInput::fromTokens($input->getOption('input'), (int) $currentIndex);
@@ -141,7 +139,7 @@ final class CompleteCommand extends Command
         }
         return $completionInput;
     }
-    private function findCommand(CompletionInput $completionInput, OutputInterface $output) : ?Command
+    private function findCommand(CompletionInput $completionInput, OutputInterface $output): ?Command
     {
         try {
             $inputName = $completionInput->getFirstArgument();
@@ -153,12 +151,12 @@ final class CompleteCommand extends Command
         }
         return null;
     }
-    private function log($messages) : void
+    private function log($messages): void
     {
         if (!$this->isDebug) {
             return;
         }
-        $commandName = \basename($_SERVER['argv'][0]);
-        \file_put_contents(\sys_get_temp_dir() . '/sf_' . $commandName . '.log', \implode(\PHP_EOL, (array) $messages) . \PHP_EOL, \FILE_APPEND);
+        $commandName = basename($_SERVER['argv'][0]);
+        file_put_contents(sys_get_temp_dir() . '/sf_' . $commandName . '.log', implode(\PHP_EOL, (array) $messages) . \PHP_EOL, \FILE_APPEND);
     }
 }

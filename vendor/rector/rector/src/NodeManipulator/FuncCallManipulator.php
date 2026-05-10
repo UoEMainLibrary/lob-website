@@ -10,9 +10,8 @@ final class FuncCallManipulator
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
@@ -21,7 +20,7 @@ final class FuncCallManipulator
      * @param FuncCall[] $compactFuncCalls
      * @return string[]
      */
-    public function extractArgumentsFromCompactFuncCalls(array $compactFuncCalls) : array
+    public function extractArgumentsFromCompactFuncCalls(array $compactFuncCalls): array
     {
         $arguments = [];
         foreach ($compactFuncCalls as $compactFuncCall) {

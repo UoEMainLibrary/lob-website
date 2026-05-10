@@ -5,6 +5,7 @@ namespace Rector\Doctrine\CodeQuality\Rector\Class_;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
+use Rector\Doctrine\Enum\MappingClass;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
@@ -15,14 +16,14 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class RemoveEmptyTableAttributeRector extends AbstractRector implements MinPhpVersionInterface
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition("Remove empty Table attribute on entities because it's useless", [new CodeSample(<<<'CODE_SAMPLE'
 <?php
 
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
-use RectorPrefix202411\Doctrine\ORM\Mapping as ORM;
+use RectorPrefix202604\Doctrine\ORM\Mapping as ORM;
 #[ORM\Table]
 #[ORM\Entity]
 class Product
@@ -33,9 +34,9 @@ CODE_SAMPLE
 , <<<'CODE_SAMPLE'
 <?php
 
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
-use RectorPrefix202411\Doctrine\ORM\Mapping as ORM;
+use RectorPrefix202604\Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 class Product
 {
@@ -47,19 +48,19 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $hasChanged = \false;
         foreach ($node->attrGroups as $attrGroupKey => $attrGroup) {
             foreach ($attrGroup->attrs as $key => $attribute) {
-                if (!$this->nodeNameResolver->isName($attribute, 'Doctrine\\ORM\\Mapping\\Table')) {
+                if (!$this->isName($attribute, MappingClass::TABLE)) {
                     continue;
                 }
                 if ($attribute->args !== []) {
@@ -77,7 +78,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::ATTRIBUTES;
     }

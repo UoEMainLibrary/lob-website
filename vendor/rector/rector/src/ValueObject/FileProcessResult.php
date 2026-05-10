@@ -5,37 +5,45 @@ namespace Rector\ValueObject;
 
 use Rector\ValueObject\Error\SystemError;
 use Rector\ValueObject\Reporting\FileDiff;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 final class FileProcessResult
 {
     /**
      * @var SystemError[]
      * @readonly
      */
-    private $systemErrors;
+    private array $systemErrors;
     /**
      * @readonly
-     * @var \Rector\ValueObject\Reporting\FileDiff|null
      */
-    private $fileDiff;
+    private ?FileDiff $fileDiff;
+    /**
+     * @readonly
+     */
+    private bool $hasChanged;
     /**
      * @param SystemError[] $systemErrors
      */
-    public function __construct(array $systemErrors, ?FileDiff $fileDiff)
+    public function __construct(array $systemErrors, ?FileDiff $fileDiff, bool $hasChanged)
     {
         $this->systemErrors = $systemErrors;
         $this->fileDiff = $fileDiff;
+        $this->hasChanged = $hasChanged;
         Assert::allIsInstanceOf($systemErrors, SystemError::class);
     }
     /**
      * @return SystemError[]
      */
-    public function getSystemErrors() : array
+    public function getSystemErrors(): array
     {
         return $this->systemErrors;
     }
-    public function getFileDiff() : ?FileDiff
+    public function getFileDiff(): ?FileDiff
     {
         return $this->fileDiff;
+    }
+    public function hasChanged(): bool
+    {
+        return $this->hasChanged;
     }
 }

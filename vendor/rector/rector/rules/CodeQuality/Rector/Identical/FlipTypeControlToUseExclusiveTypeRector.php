@@ -13,6 +13,7 @@ use PhpParser\Node\Name\FullyQualified;
 use PHPStan\Type\ObjectType;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
+use Rector\StaticTypeMapper\ValueObject\Type\AliasedObjectType;
 use Rector\StaticTypeMapper\ValueObject\Type\ShortenedObjectType;
 use Rector\TypeDeclaration\TypeAnalyzer\NullableTypeAnalyzer;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -24,20 +25,18 @@ final class FlipTypeControlToUseExclusiveTypeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeAnalyzer\NullableTypeAnalyzer
      */
-    private $nullableTypeAnalyzer;
+    private NullableTypeAnalyzer $nullableTypeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(NullableTypeAnalyzer $nullableTypeAnalyzer, ValueResolver $valueResolver)
     {
         $this->nullableTypeAnalyzer = $nullableTypeAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Flip type control from null compare to use exclusive instanceof object', [new CodeSample(<<<'CODE_SAMPLE'
 function process(?DateTime $dateTime)
@@ -60,14 +59,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Identical::class, NotIdentical::class];
     }
     /**
      * @param Identical|NotIdentical $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $expr = $this->matchNullComparedExpr($node);
         if (!$expr instanceof Expr) {
@@ -85,7 +84,7 @@ CODE_SAMPLE
      */
     private function processConvertToExclusiveType(ObjectType $objectType, Expr $expr, $binaryOp)
     {
-        $fullyQualifiedType = $objectType instanceof ShortenedObjectType ? $objectType->getFullyQualifiedName() : $objectType->getClassName();
+        $fullyQualifiedType = $objectType instanceof ShortenedObjectType || $objectType instanceof AliasedObjectType ? $objectType->getFullyQualifiedName() : $objectType->getClassName();
         $instanceof = new Instanceof_($expr, new FullyQualified($fullyQualifiedType));
         if ($binaryOp instanceof NotIdentical) {
             return $instanceof;
@@ -95,7 +94,7 @@ CODE_SAMPLE
     /**
      * @param \PhpParser\Node\Expr\BinaryOp\Identical|\PhpParser\Node\Expr\BinaryOp\NotIdentical $binaryOp
      */
-    private function matchNullComparedExpr($binaryOp) : ?Expr
+    private function matchNullComparedExpr($binaryOp): ?Expr
     {
         if ($this->valueResolver->isNull($binaryOp->left)) {
             return $binaryOp->right;

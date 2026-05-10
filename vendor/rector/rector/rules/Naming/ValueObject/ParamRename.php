@@ -9,24 +9,20 @@ final class ParamRename
 {
     /**
      * @readonly
-     * @var string
      */
-    private $currentName;
+    private string $currentName;
     /**
      * @readonly
-     * @var string
      */
-    private $expectedName;
+    private string $expectedName;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\Variable
      */
-    private $variable;
+    private Variable $variable;
     /**
      * @readonly
-     * @var \PhpParser\Node\FunctionLike
      */
-    private $functionLike;
+    private FunctionLike $functionLike;
     public function __construct(string $currentName, string $expectedName, Variable $variable, FunctionLike $functionLike)
     {
         $this->currentName = $currentName;
@@ -34,19 +30,19 @@ final class ParamRename
         $this->variable = $variable;
         $this->functionLike = $functionLike;
     }
-    public function getCurrentName() : string
+    public function getCurrentName(): string
     {
         return $this->currentName;
     }
-    public function getExpectedName() : string
+    public function getExpectedName(): string
     {
         return $this->expectedName;
     }
-    public function getFunctionLike() : FunctionLike
+    public function getFunctionLike(): FunctionLike
     {
         return $this->functionLike;
     }
-    public function getVariable() : Variable
+    public function getVariable(): Variable
     {
         return $this->variable;
     }

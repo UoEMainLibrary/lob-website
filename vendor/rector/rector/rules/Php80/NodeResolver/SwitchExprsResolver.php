@@ -5,12 +5,12 @@ namespace Rector\Php80\NodeResolver;
 
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Stmt\Break_;
 use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Switch_;
-use PhpParser\Node\Stmt\Throw_;
 use Rector\Php80\Enum\MatchKind;
 use Rector\Php80\ValueObject\CondAndExpr;
 final class SwitchExprsResolver
@@ -18,7 +18,7 @@ final class SwitchExprsResolver
     /**
      * @return CondAndExpr[]
      */
-    public function resolve(Switch_ $switch) : array
+    public function resolve(Switch_ $switch): array
     {
         $newSwitch = clone $switch;
         $condAndExpr = [];
@@ -32,7 +32,7 @@ final class SwitchExprsResolver
                 continue;
             }
             if (!$case->cond instanceof Expr) {
-                continue;
+                return [];
             }
             $collectionEmptyCasesCond[$key] = $case->cond;
         }
@@ -41,6 +41,7 @@ final class SwitchExprsResolver
                 continue;
             }
             $expr = $case->stmts[0];
+            $comments = $expr->getComments();
             if ($expr instanceof Expression) {
                 $expr = $expr->expr;
             }
@@ -57,26 +58,25 @@ final class SwitchExprsResolver
                 $condExprs = $emptyCasesCond;
                 $condExprs[] = $case->cond;
             }
-            if ($expr instanceof Return_) {
+            if ($expr instanceof Throw_) {
+                $condAndExpr[] = new CondAndExpr($condExprs, $expr, MatchKind::THROW, $comments);
+            } elseif ($expr instanceof Return_) {
                 $returnedExpr = $expr->expr;
                 if (!$returnedExpr instanceof Expr) {
                     return [];
                 }
-                $condAndExpr[] = new CondAndExpr($condExprs, $returnedExpr, MatchKind::RETURN);
+                $condAndExpr[] = new CondAndExpr($condExprs, $returnedExpr, MatchKind::RETURN, $comments);
             } elseif ($expr instanceof Assign) {
-                $condAndExpr[] = new CondAndExpr($condExprs, $expr, MatchKind::ASSIGN);
+                $condAndExpr[] = new CondAndExpr($condExprs, $expr, MatchKind::ASSIGN, $comments);
             } elseif ($expr instanceof Expr) {
-                $condAndExpr[] = new CondAndExpr($condExprs, $expr, MatchKind::NORMAL);
-            } elseif ($expr instanceof Throw_) {
-                $throwExpr = new Expr\Throw_($expr->expr);
-                $condAndExpr[] = new CondAndExpr($condExprs, $throwExpr, MatchKind::THROW);
+                $condAndExpr[] = new CondAndExpr($condExprs, $expr, MatchKind::NORMAL, $comments);
             } else {
                 return [];
             }
         }
         return $condAndExpr;
     }
-    private function moveDefaultCaseToLast(Switch_ $switch) : void
+    private function moveDefaultCaseToLast(Switch_ $switch): void
     {
         foreach ($switch->cases as $key => $case) {
             if ($case->cond instanceof Expr) {
@@ -102,20 +102,20 @@ final class SwitchExprsResolver
             break;
         }
     }
-    private function isValidCase(Case_ $case) : bool
+    private function isValidCase(Case_ $case): bool
     {
         // prepend to previous one
         if ($case->stmts === []) {
             return \true;
         }
-        if (\count($case->stmts) === 2 && $case->stmts[1] instanceof Break_) {
+        if (count($case->stmts) === 2 && $case->stmts[1] instanceof Break_) {
             return \true;
         }
         // default throws stmts
-        if (\count($case->stmts) !== 1) {
+        if (count($case->stmts) !== 1) {
             return \false;
         }
-        // throws expressoin
+        // throws expression
         if ($case->stmts[0] instanceof Throw_) {
             return \true;
         }
@@ -126,7 +126,7 @@ final class SwitchExprsResolver
         // default value
         return !$case->cond instanceof Expr;
     }
-    private function areCasesValid(Switch_ $newSwitch) : bool
+    private function areCasesValid(Switch_ $newSwitch): bool
     {
         foreach ($newSwitch->cases as $case) {
             if (!$this->isValidCase($case)) {

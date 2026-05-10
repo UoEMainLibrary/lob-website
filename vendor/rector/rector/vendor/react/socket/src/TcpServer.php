@@ -1,10 +1,10 @@
 <?php
 
-namespace RectorPrefix202411\React\Socket;
+namespace RectorPrefix202604\React\Socket;
 
-use RectorPrefix202411\Evenement\EventEmitter;
-use RectorPrefix202411\React\EventLoop\Loop;
-use RectorPrefix202411\React\EventLoop\LoopInterface;
+use RectorPrefix202604\Evenement\EventEmitter;
+use RectorPrefix202604\React\EventLoop\Loop;
+use RectorPrefix202604\React\EventLoop\LoopInterface;
 use InvalidArgumentException;
 use RuntimeException;
 /**
@@ -130,7 +130,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
     {
         if ($loop !== null && !$loop instanceof LoopInterface) {
             // manual type check to support legacy PHP < 7.1
-            throw new \InvalidArgumentException('Argument #2 ($loop) expected null|React\\EventLoop\\LoopInterface');
+            throw new \InvalidArgumentException('Argument #2 ($loop) expected null|React\EventLoop\LoopInterface');
         }
         $this->loop = $loop ?: Loop::get();
         // a single port has been given => assume localhost
@@ -143,7 +143,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
         }
         // parse_url() does not accept null ports (random port assignment) => manually remove
         if (\substr($uri, -2) === ':0') {
-            $parts = \parse_url(\substr($uri, 0, -2));
+            $parts = \parse_url((string) \substr($uri, 0, -2));
             if ($parts) {
                 $parts['port'] = 0;
             }
@@ -197,7 +197,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
             return;
         }
         $that = $this;
-        $this->loop->addReadStream($this->master, function ($master) use($that) {
+        $this->loop->addReadStream($this->master, function ($master) use ($that) {
             try {
                 $newSocket = SocketServer::accept($master);
             } catch (\RuntimeException $e) {

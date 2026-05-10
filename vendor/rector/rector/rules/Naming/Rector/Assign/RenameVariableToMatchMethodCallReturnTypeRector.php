@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\Naming\Rector\Assign;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Closure;
@@ -30,54 +30,46 @@ final class RenameVariableToMatchMethodCallReturnTypeRector extends AbstractRect
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Guard\BreakingVariableRenameGuard
      */
-    private $breakingVariableRenameGuard;
+    private BreakingVariableRenameGuard $breakingVariableRenameGuard;
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\ExpectedNameResolver
      */
-    private $expectedNameResolver;
+    private ExpectedNameResolver $expectedNameResolver;
     /**
      * @readonly
-     * @var \Rector\Naming\NamingConvention\NamingConventionAnalyzer
      */
-    private $namingConventionAnalyzer;
+    private NamingConventionAnalyzer $namingConventionAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Naming\PhpDoc\VarTagValueNodeRenamer
      */
-    private $varTagValueNodeRenamer;
+    private VarTagValueNodeRenamer $varTagValueNodeRenamer;
     /**
      * @readonly
-     * @var \Rector\Naming\Matcher\VariableAndCallAssignMatcher
      */
-    private $variableAndCallAssignMatcher;
+    private VariableAndCallAssignMatcher $variableAndCallAssignMatcher;
     /**
      * @readonly
-     * @var \Rector\Naming\VariableRenamer
      */
-    private $variableRenamer;
+    private VariableRenamer $variableRenamer;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
-     * @var string
      * @see https://regex101.com/r/JG5w9j/1
+     * @var string
      */
     private const OR_BETWEEN_WORDS_REGEX = '#[a-z]Or[A-Z]#';
     /**
-     * @var string
      * @see https://regex101.com/r/TV8YXZ/1
+     * @var string
      */
-    private const VALID_VARIABLE_NAME_REGEX = '#^[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*$#';
+    private const VALID_VARIABLE_NAME_REGEX = '#^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$#';
     public function __construct(BreakingVariableRenameGuard $breakingVariableRenameGuard, ExpectedNameResolver $expectedNameResolver, NamingConventionAnalyzer $namingConventionAnalyzer, VarTagValueNodeRenamer $varTagValueNodeRenamer, VariableAndCallAssignMatcher $variableAndCallAssignMatcher, VariableRenamer $variableRenamer, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->breakingVariableRenameGuard = $breakingVariableRenameGuard;
@@ -89,7 +81,7 @@ final class RenameVariableToMatchMethodCallReturnTypeRector extends AbstractRect
         $this->docBlockUpdater = $docBlockUpdater;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Rename variable to match method return type', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -124,14 +116,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Closure::class, Function_::class];
     }
     /**
      * @param ClassMethod|Closure|Function_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -168,7 +160,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function shouldSkip(VariableAndCallAssign $variableAndCallAssign, string $expectedName) : bool
+    private function shouldSkip(VariableAndCallAssign $variableAndCallAssign, string $expectedName): bool
     {
         if (Strings::match($expectedName, self::VALID_VARIABLE_NAME_REGEX) === null) {
             return \true;
@@ -182,7 +174,7 @@ CODE_SAMPLE
         }
         return $this->breakingVariableRenameGuard->shouldSkipVariable($variableAndCallAssign->getVariableName(), $expectedName, $variableAndCallAssign->getFunctionLike(), $variableAndCallAssign->getVariable());
     }
-    private function renameVariable(VariableAndCallAssign $variableAndCallAssign, string $expectedName, Expression $expression) : void
+    private function renameVariable(VariableAndCallAssign $variableAndCallAssign, string $expectedName, Expression $expression): void
     {
         $this->variableRenamer->renameVariableInFunctionLike($variableAndCallAssign->getFunctionLike(), $variableAndCallAssign->getVariableName(), $expectedName, $variableAndCallAssign->getAssign());
         $assignPhpDocInfo = $this->phpDocInfoFactory->createFromNode($expression);

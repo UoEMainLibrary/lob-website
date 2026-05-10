@@ -20,16 +20,15 @@ final class DateTimeMethodCallToCarbonRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Carbon\NodeFactory\CarbonCallFactory
      */
-    private $carbonCallFactory;
+    private CarbonCallFactory $carbonCallFactory;
     public function __construct(CarbonCallFactory $carbonCallFactory)
     {
         $this->carbonCallFactory = $carbonCallFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Convert new DateTime() with a method call to Carbon::*()', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Convert `new DateTime()` with a method call to `Carbon::*()`', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     public function run()
@@ -52,14 +51,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->var instanceof New_) {
             return null;
@@ -74,7 +73,7 @@ CODE_SAMPLE
         if ($new->isFirstClassCallable()) {
             return null;
         }
-        if (\count($new->getArgs()) !== 1) {
+        if (count($new->getArgs()) !== 1) {
             // @todo handle in separate static call
             return null;
         }
@@ -83,9 +82,9 @@ CODE_SAMPLE
             return null;
         }
         if ($this->isName($new->class, 'DateTime')) {
-            $carbonFullyQualified = new FullyQualified('Carbon\\Carbon');
+            $carbonFullyQualified = new FullyQualified('Carbon\Carbon');
         } else {
-            $carbonFullyQualified = new FullyQualified('Carbon\\CarbonImmutable');
+            $carbonFullyQualified = new FullyQualified('Carbon\CarbonImmutable');
         }
         $carbonCall = $this->carbonCallFactory->createFromDateTimeString($carbonFullyQualified, $firstArg->value);
         $node->var = $carbonCall;

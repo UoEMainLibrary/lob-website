@@ -18,20 +18,18 @@ final class UnionTypeNodePhpDocNodeVisitor extends AbstractPhpDocNodeVisitor imp
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\DataProvider\CurrentTokenIteratorProvider
      */
-    private $currentTokenIteratorProvider;
+    private CurrentTokenIteratorProvider $currentTokenIteratorProvider;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\Attributes\AttributeMirrorer
      */
-    private $attributeMirrorer;
+    private AttributeMirrorer $attributeMirrorer;
     public function __construct(CurrentTokenIteratorProvider $currentTokenIteratorProvider, AttributeMirrorer $attributeMirrorer)
     {
         $this->currentTokenIteratorProvider = $currentTokenIteratorProvider;
         $this->attributeMirrorer = $attributeMirrorer;
     }
-    public function enterNode(Node $node) : ?Node
+    public function enterNode(Node $node): ?Node
     {
         if (!$node instanceof UnionTypeNode) {
             return null;
@@ -39,9 +37,11 @@ final class UnionTypeNodePhpDocNodeVisitor extends AbstractPhpDocNodeVisitor imp
         if ($node instanceof BracketsAwareUnionTypeNode) {
             return null;
         }
-        $startAndEnd = $this->resolveStardAndEnd($node);
+        $startAndEnd = $this->resolveStartAndEnd($node);
         if (!$startAndEnd instanceof StartAndEnd) {
-            return null;
+            $firstKey = array_key_first($node->types);
+            $lastKey = array_key_last($node->types);
+            $startAndEnd = new StartAndEnd($node->types[$firstKey]->getAttribute('startIndex'), $node->types[$lastKey]->getAttribute('endIndex'));
         }
         $betterTokenProvider = $this->currentTokenIteratorProvider->provide();
         $isWrappedInCurlyBrackets = $this->isWrappedInCurlyBrackets($betterTokenProvider, $startAndEnd);
@@ -49,7 +49,7 @@ final class UnionTypeNodePhpDocNodeVisitor extends AbstractPhpDocNodeVisitor imp
         $this->attributeMirrorer->mirror($node, $bracketsAwareUnionTypeNode);
         return $bracketsAwareUnionTypeNode;
     }
-    private function isWrappedInCurlyBrackets(BetterTokenIterator $betterTokenProvider, StartAndEnd $startAndEnd) : bool
+    private function isWrappedInCurlyBrackets(BetterTokenIterator $betterTokenProvider, StartAndEnd $startAndEnd): bool
     {
         $previousPosition = $startAndEnd->getStart() - 1;
         if ($betterTokenProvider->isTokenTypeOnPosition(Lexer::TOKEN_OPEN_PARENTHESES, $previousPosition)) {
@@ -58,7 +58,7 @@ final class UnionTypeNodePhpDocNodeVisitor extends AbstractPhpDocNodeVisitor imp
         // there is no + 1, as end is right at the next token
         return $betterTokenProvider->isTokenTypeOnPosition(Lexer::TOKEN_CLOSE_PARENTHESES, $startAndEnd->getEnd());
     }
-    private function resolveStardAndEnd(UnionTypeNode $unionTypeNode) : ?StartAndEnd
+    private function resolveStartAndEnd(UnionTypeNode $unionTypeNode): ?StartAndEnd
     {
         $starAndEnd = $unionTypeNode->getAttribute(PhpDocAttributeKey::START_AND_END);
         if ($starAndEnd instanceof StartAndEnd) {

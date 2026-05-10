@@ -18,29 +18,24 @@ final class UnionTypeNodeMapper implements PhpParserNodeMapperInterface
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper
      */
-    private $fullyQualifiedNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper $fullyQualifiedNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\NameNodeMapper
      */
-    private $nameNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\NameNodeMapper $nameNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper
      */
-    private $identifierNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper $identifierNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\IntersectionTypeNodeMapper
      */
-    private $intersectionTypeNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\IntersectionTypeNodeMapper $intersectionTypeNodeMapper;
     public function __construct(TypeFactory $typeFactory, \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper $fullyQualifiedNodeMapper, \Rector\StaticTypeMapper\PhpParser\NameNodeMapper $nameNodeMapper, \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper $identifierNodeMapper, \Rector\StaticTypeMapper\PhpParser\IntersectionTypeNodeMapper $intersectionTypeNodeMapper)
     {
         $this->typeFactory = $typeFactory;
@@ -49,14 +44,14 @@ final class UnionTypeNodeMapper implements PhpParserNodeMapperInterface
         $this->identifierNodeMapper = $identifierNodeMapper;
         $this->intersectionTypeNodeMapper = $intersectionTypeNodeMapper;
     }
-    public function getNodeType() : string
+    public function getNodeType(): string
     {
         return UnionType::class;
     }
     /**
      * @param UnionType $node
      */
-    public function mapToPHPStan(Node $node) : Type
+    public function mapToPHPStan(Node $node): Type
     {
         $types = [];
         foreach ($node->types as $unionedType) {

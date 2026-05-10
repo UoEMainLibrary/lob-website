@@ -9,58 +9,47 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\SebastianBergmann\Diff;
+namespace RectorPrefix202604\SebastianBergmann\Diff;
 
 final class Line
 {
-    public const ADDED = 1;
-    public const REMOVED = 2;
-    public const UNCHANGED = 3;
     /**
      * @var int
      */
-    private $type;
+    public const ADDED = 1;
     /**
-     * @var string
+     * @var int
      */
-    private $content;
+    public const REMOVED = 2;
+    /**
+     * @var int
+     */
+    public const UNCHANGED = 3;
+    private int $type;
+    private string $content;
     public function __construct(int $type = self::UNCHANGED, string $content = '')
     {
         $this->type = $type;
         $this->content = $content;
     }
-    public function content() : string
+    public function content(): string
     {
         return $this->content;
     }
-    public function type() : int
+    public function type(): int
     {
         return $this->type;
     }
-    public function isAdded() : bool
+    public function isAdded(): bool
     {
         return $this->type === self::ADDED;
     }
-    public function isRemoved() : bool
+    public function isRemoved(): bool
     {
         return $this->type === self::REMOVED;
     }
-    public function isUnchanged() : bool
+    public function isUnchanged(): bool
     {
         return $this->type === self::UNCHANGED;
-    }
-    /**
-     * @deprecated
-     */
-    public function getContent() : string
-    {
-        return $this->content;
-    }
-    /**
-     * @deprecated
-     */
-    public function getType() : int
-    {
-        return $this->type;
     }
 }

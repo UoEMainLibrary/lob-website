@@ -3,13 +3,14 @@
 declare (strict_types=1);
 namespace Rector\Symfony\Symfony30\Rector\ClassMethod;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Return_;
+use Rector\CodingStyle\Naming\ClassNaming;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -23,14 +24,18 @@ final class RemoveDefaultGetBlockPrefixRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
-    public function __construct(ValueResolver $valueResolver)
+    private ValueResolver $valueResolver;
+    /**
+     * @readonly
+     */
+    private ClassNaming $classNaming;
+    public function __construct(ValueResolver $valueResolver, ClassNaming $classNaming)
     {
         $this->valueResolver = $valueResolver;
+        $this->classNaming = $classNaming;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Rename `getBlockPrefix()` if it returns the default value - class to underscore, e.g. UserFormType = user_form', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Form\AbstractType;
@@ -55,20 +60,20 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node)
+    public function refactor(Node $node): ?Class_
     {
         if (!$node->extends instanceof Name) {
             return null;
         }
         // work only with direct parent, as other can provide aliases on purpose
-        if (!$this->isName($node->extends, 'Symfony\\Component\\Form\\AbstractType')) {
+        if (!$this->isName($node->extends, 'Symfony\Component\Form\AbstractType')) {
             return null;
         }
         foreach ($node->stmts as $key => $classStmt) {
@@ -83,12 +88,12 @@ CODE_SAMPLE
                 return null;
             }
             $returnedValue = $this->valueResolver->getValue($returnedExpr);
-            $className = $this->nodeNameResolver->getName($node);
-            if (!\is_string($className)) {
+            $className = $this->getName($node);
+            if (!is_string($className)) {
                 continue;
             }
-            $shortClassName = $this->nodeNameResolver->getShortName($className);
-            if (\substr_compare($shortClassName, 'Type', -\strlen('Type')) === 0) {
+            $shortClassName = $this->classNaming->getShortName($className);
+            if (substr_compare($shortClassName, 'Type', -strlen('Type')) === 0) {
                 $shortClassName = (string) Strings::before($shortClassName, 'Type');
             }
             $underscoredClassShortName = $this->camelToSnake($shortClassName);
@@ -101,16 +106,16 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function camelToSnake(string $content) : string
+    private function camelToSnake(string $content): string
     {
-        return \mb_strtolower(Strings::replace($content, '#([a-z])([A-Z])#', '$1_$2'));
+        return mb_strtolower(Strings::replace($content, '#([a-z])([A-Z])#', '$1_$2'));
     }
     /**
      * return <$thisValue>;
      */
-    private function resolveOnlyStmtReturnExpr(ClassMethod $classMethod) : ?Expr
+    private function resolveOnlyStmtReturnExpr(ClassMethod $classMethod): ?Expr
     {
-        if (\count((array) $classMethod->stmts) !== 1) {
+        if (count((array) $classMethod->stmts) !== 1) {
             return null;
         }
         $onlyStmt = $classMethod->stmts[0] ?? null;

@@ -5,16 +5,21 @@ namespace PhpParser;
 
 class JsonDecoder
 {
-    /** @var \ReflectionClass[] Node type to reflection class map */
-    private $reflectionClassCache;
+    /** @var \ReflectionClass<Node>[] Node type to reflection class map */
+    private array $reflectionClassCache;
+    /** @return mixed */
     public function decode(string $json)
     {
-        $value = \json_decode($json, \true);
-        if (\json_last_error()) {
-            throw new \RuntimeException('JSON decoding error: ' . \json_last_error_msg());
+        $value = json_decode($json, \true);
+        if (json_last_error()) {
+            throw new \RuntimeException('JSON decoding error: ' . json_last_error_msg());
         }
         return $this->decodeRecursive($value);
     }
+    /**
+     * @param mixed $value
+     * @return mixed
+     */
     private function decodeRecursive($value)
     {
         if (\is_array($value)) {
@@ -28,7 +33,7 @@ class JsonDecoder
         }
         return $value;
     }
-    private function decodeArray(array $array) : array
+    private function decodeArray(array $array): array
     {
         $decodedArray = [];
         foreach ($array as $key => $value) {
@@ -36,14 +41,13 @@ class JsonDecoder
         }
         return $decodedArray;
     }
-    private function decodeNode(array $value) : \PhpParser\Node
+    private function decodeNode(array $value): \PhpParser\Node
     {
         $nodeType = $value['nodeType'];
         if (!\is_string($nodeType)) {
             throw new \RuntimeException('Node type must be a string');
         }
         $reflectionClass = $this->reflectionClassFromNodeType($nodeType);
-        /** @var Node $node */
         $node = $reflectionClass->newInstanceWithoutConstructor();
         if (isset($value['attributes'])) {
             if (!\is_array($value['attributes'])) {
@@ -59,7 +63,7 @@ class JsonDecoder
         }
         return $node;
     }
-    private function decodeComment(array $value) : \PhpParser\Comment
+    private function decodeComment(array $value): \PhpParser\Comment
     {
         $className = $value['nodeType'] === 'Comment' ? \PhpParser\Comment::class : \PhpParser\Comment\Doc::class;
         if (!isset($value['text'])) {
@@ -67,7 +71,8 @@ class JsonDecoder
         }
         return new $className($value['text'], $value['line'] ?? -1, $value['filePos'] ?? -1, $value['tokenPos'] ?? -1, $value['endLine'] ?? -1, $value['endFilePos'] ?? -1, $value['endTokenPos'] ?? -1);
     }
-    private function reflectionClassFromNodeType(string $nodeType) : \ReflectionClass
+    /** @return \ReflectionClass<Node> */
+    private function reflectionClassFromNodeType(string $nodeType): \ReflectionClass
     {
         if (!isset($this->reflectionClassCache[$nodeType])) {
             $className = $this->classNameFromNodeType($nodeType);
@@ -75,14 +80,15 @@ class JsonDecoder
         }
         return $this->reflectionClassCache[$nodeType];
     }
-    private function classNameFromNodeType(string $nodeType) : string
+    /** @return class-string<Node> */
+    private function classNameFromNodeType(string $nodeType): string
     {
-        $className = 'PhpParser\\Node\\' . \strtr($nodeType, '_', '\\');
-        if (\class_exists($className)) {
+        $className = 'PhpParser\Node\\' . strtr($nodeType, '_', '\\');
+        if (class_exists($className)) {
             return $className;
         }
         $className .= '_';
-        if (\class_exists($className)) {
+        if (class_exists($className)) {
             return $className;
         }
         throw new \RuntimeException("Unknown node type \"{$nodeType}\"");

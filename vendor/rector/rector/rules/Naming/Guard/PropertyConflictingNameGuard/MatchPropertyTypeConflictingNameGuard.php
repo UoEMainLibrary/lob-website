@@ -12,34 +12,31 @@ final class MatchPropertyTypeConflictingNameGuard
 {
     /**
      * @readonly
-     * @var \Rector\Naming\ExpectedNameResolver\MatchPropertyTypeExpectedNameResolver
      */
-    private $matchPropertyTypeExpectedNameResolver;
+    private MatchPropertyTypeExpectedNameResolver $matchPropertyTypeExpectedNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Naming\PhpArray\ArrayFilter
      */
-    private $arrayFilter;
+    private ArrayFilter $arrayFilter;
     public function __construct(MatchPropertyTypeExpectedNameResolver $matchPropertyTypeExpectedNameResolver, NodeNameResolver $nodeNameResolver, ArrayFilter $arrayFilter)
     {
         $this->matchPropertyTypeExpectedNameResolver = $matchPropertyTypeExpectedNameResolver;
         $this->nodeNameResolver = $nodeNameResolver;
         $this->arrayFilter = $arrayFilter;
     }
-    public function isConflicting(PropertyRename $propertyRename) : bool
+    public function isConflicting(PropertyRename $propertyRename): bool
     {
         $conflictingPropertyNames = $this->resolve($propertyRename->getClassLike());
-        return \in_array($propertyRename->getExpectedName(), $conflictingPropertyNames, \true);
+        return in_array($propertyRename->getExpectedName(), $conflictingPropertyNames, \true);
     }
     /**
      * @return string[]
      */
-    private function resolve(ClassLike $classLike) : array
+    private function resolve(ClassLike $classLike): array
     {
         $expectedNames = [];
         foreach ($classLike->getProperties() as $property) {
@@ -50,6 +47,6 @@ final class MatchPropertyTypeConflictingNameGuard
             }
             $expectedNames[] = $expectedName;
         }
-        return $this->arrayFilter->filterWithAtLeastTwoOccurences($expectedNames);
+        return $this->arrayFilter->filterWithAtLeastTwoOccurrences($expectedNames);
     }
 }

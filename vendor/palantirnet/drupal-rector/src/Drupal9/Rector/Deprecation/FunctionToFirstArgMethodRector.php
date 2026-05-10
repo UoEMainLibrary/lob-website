@@ -31,7 +31,7 @@ final class FunctionToFirstArgMethodRector extends AbstractRector implements Con
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof FunctionToFirstArgMethodConfiguration)) {
+            if (!$value instanceof FunctionToFirstArgMethodConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', FunctionToFirstArgMethodConfiguration::class));
             }
         }
@@ -71,13 +71,11 @@ final class FunctionToFirstArgMethodRector extends AbstractRector implements Con
                 <<<'CODE_BEFORE'
 $url = taxonomy_term_uri($term);
 $name = taxonomy_term_title($term);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $url = $term->toUrl();
 $name = $term->label();
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new FunctionToFirstArgMethodConfiguration('taxonomy_term_uri', 'toUrl'),
                     new FunctionToFirstArgMethodConfiguration('taxonomy_term_title', 'label'),

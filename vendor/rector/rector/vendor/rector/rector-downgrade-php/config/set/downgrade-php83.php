@@ -1,12 +1,15 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use Rector\Config\RectorConfig;
+use Rector\DowngradePhp83\Rector\Class_\DowngradeReadonlyAnonymousClassRector;
 use Rector\ValueObject\PhpVersion;
 use Rector\DowngradePhp83\Rector\ClassConst\DowngradeTypedClassConstRector;
-return static function (RectorConfig $rectorConfig) : void {
+use Rector\DowngradePhp83\Rector\ClassConstFetch\DowngradeDynamicClassConstFetchRector;
+use Rector\DowngradePhp83\Rector\FuncCall\DowngradeJsonValidateRector;
+return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->phpVersion(PhpVersion::PHP_82);
-    $rectorConfig->rules([DowngradeTypedClassConstRector::class]);
+    $rectorConfig->rules([DowngradeTypedClassConstRector::class, DowngradeReadonlyAnonymousClassRector::class, DowngradeDynamicClassConstFetchRector::class, DowngradeJsonValidateRector::class]);
 };

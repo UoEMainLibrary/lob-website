@@ -10,24 +10,20 @@ final class ArgumentAdderWithoutDefaultValue
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     /**
      * @readonly
-     * @var int
      */
-    private $position;
+    private int $position;
     /**
      * @readonly
-     * @var string|null
      */
-    private $argumentName;
+    private ?string $argumentName = null;
     /**
      * @readonly
      * @var \PHPStan\Type\Type|null
@@ -35,9 +31,8 @@ final class ArgumentAdderWithoutDefaultValue
     private $argumentType = null;
     /**
      * @readonly
-     * @var string|null
      */
-    private $scope;
+    private ?string $scope = null;
     public function __construct(string $class, string $method, int $position, ?string $argumentName = null, ?\PHPStan\Type\Type $argumentType = null, ?string $scope = null)
     {
         $this->class = $class;
@@ -48,27 +43,27 @@ final class ArgumentAdderWithoutDefaultValue
         $this->scope = $scope;
         RectorAssert::className($class);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->class);
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getPosition() : int
+    public function getPosition(): int
     {
         return $this->position;
     }
-    public function getArgumentName() : ?string
+    public function getArgumentName(): ?string
     {
         return $this->argumentName;
     }
-    public function getArgumentType() : ?Type
+    public function getArgumentType(): ?Type
     {
         return $this->argumentType;
     }
-    public function getScope() : ?string
+    public function getScope(): ?string
     {
         return $this->scope;
     }

@@ -23,24 +23,22 @@ final class PregReplaceEModifierRector extends AbstractRector implements MinPhpV
 {
     /**
      * @readonly
-     * @var \Rector\Php72\NodeFactory\AnonymousFunctionFactory
      */
-    private $anonymousFunctionFactory;
+    private AnonymousFunctionFactory $anonymousFunctionFactory;
     /**
      * @readonly
-     * @var \Rector\Php55\RegexMatcher
      */
-    private $regexMatcher;
+    private RegexMatcher $regexMatcher;
     public function __construct(AnonymousFunctionFactory $anonymousFunctionFactory, RegexMatcher $regexMatcher)
     {
         $this->anonymousFunctionFactory = $anonymousFunctionFactory;
         $this->regexMatcher = $regexMatcher;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::PREG_REPLACE_CALLBACK_E_MODIFIER;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('The /e modifier is no longer supported, use preg_replace_callback instead', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -67,14 +65,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node, 'preg_replace')) {
             return null;
@@ -82,7 +80,7 @@ CODE_SAMPLE
         if ($node->isFirstClassCallable()) {
             return null;
         }
-        if (\count($node->getArgs()) < 2) {
+        if (count($node->getArgs()) < 2) {
             return null;
         }
         $firstArgument = $node->getArgs()[0];
@@ -101,7 +99,7 @@ CODE_SAMPLE
         $secondArgument->value = $anonymousFunction;
         return $node;
     }
-    private function createAnonymousFunction(Arg $arg) : ?Closure
+    private function createAnonymousFunction(Arg $arg): ?Closure
     {
         return $this->anonymousFunctionFactory->createAnonymousFunctionFromExpr($arg->value);
     }

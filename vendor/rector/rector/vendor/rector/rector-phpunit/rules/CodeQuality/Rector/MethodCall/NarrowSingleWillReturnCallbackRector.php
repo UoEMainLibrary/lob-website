@@ -11,7 +11,7 @@ use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Return_;
 use Rector\PHPUnit\CodeQuality\ValueObject\MatchAndReturnMatch;
@@ -26,14 +26,13 @@ final class NarrowSingleWillReturnCallbackRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Narrow single-value match willReturnCallback() to with() and willReturn() call', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -72,14 +71,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<MethodCall>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?\PhpParser\Node\Expr\MethodCall
+    public function refactor(Node $node): ?\PhpParser\Node\Expr\MethodCall
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -90,7 +89,7 @@ CODE_SAMPLE
         if ($node->isFirstClassCallable()) {
             return null;
         }
-        if (\count($node->getArgs()) !== 1) {
+        if (count($node->getArgs()) !== 1) {
             return null;
         }
         $firstArg = $node->getArgs()[0];
@@ -120,13 +119,13 @@ CODE_SAMPLE
         }
         return $node;
     }
-    private function matchClosureSingleStmtMatch(Expr $expr) : ?MatchAndReturnMatch
+    private function matchClosureSingleStmtMatch(Expr $expr): ?MatchAndReturnMatch
     {
         if (!$expr instanceof Closure) {
             return null;
         }
         // we need match or match + return match
-        if (\count($expr->stmts) < 1 || \count($expr->stmts) > 2) {
+        if (count($expr->stmts) < 1 || count($expr->stmts) > 2) {
             return null;
         }
         $onlyStmts = $expr->stmts[0];
@@ -137,7 +136,7 @@ CODE_SAMPLE
             return null;
         }
         $returnMatch = null;
-        if (\count($expr->stmts) === 2) {
+        if (count($expr->stmts) === 2) {
             $secondStmt = $expr->stmts[1];
             if (!$secondStmt instanceof Return_) {
                 return null;
@@ -149,14 +148,14 @@ CODE_SAMPLE
         }
         return new MatchAndReturnMatch($onlyStmts->expr, $returnMatch);
     }
-    private function matchSingleMatchArmBodyWithConditionOne(Match_ $match) : ?Expr
+    private function matchSingleMatchArmBodyWithConditionOne(Match_ $match): ?Expr
     {
         // has more options
-        if (\count($match->arms) !== 1) {
+        if (count($match->arms) !== 1) {
             return null;
         }
         $onlyArm = $match->arms[0];
-        if ($onlyArm->conds === null || \count($onlyArm->conds) !== 1) {
+        if ($onlyArm->conds === null || count($onlyArm->conds) !== 1) {
             return null;
         }
         $onlyArmCond = $onlyArm->conds[0];
@@ -165,9 +164,9 @@ CODE_SAMPLE
         }
         return $onlyArm->body;
     }
-    private function isNumberOne(Expr $expr) : bool
+    private function isNumberOne(Expr $expr): bool
     {
-        if (!$expr instanceof LNumber) {
+        if (!$expr instanceof Int_) {
             return \false;
         }
         return $expr->value === 1;

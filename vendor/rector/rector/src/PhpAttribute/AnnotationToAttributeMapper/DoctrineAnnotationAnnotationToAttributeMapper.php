@@ -20,18 +20,13 @@ final class DoctrineAnnotationAnnotationToAttributeMapper implements AnnotationT
 {
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\AttributeArrayNameInliner
      */
-    private $attributeArrayNameInliner;
-    /**
-     * @var \Rector\PhpAttribute\AnnotationToAttributeMapper
-     */
-    private $annotationToAttributeMapper;
+    private AttributeArrayNameInliner $attributeArrayNameInliner;
+    private AnnotationToAttributeMapper $annotationToAttributeMapper;
     public function __construct(PhpVersionProvider $phpVersionProvider, AttributeArrayNameInliner $attributeArrayNameInliner)
     {
         $this->phpVersionProvider = $phpVersionProvider;
@@ -40,14 +35,14 @@ final class DoctrineAnnotationAnnotationToAttributeMapper implements AnnotationT
     /**
      * Avoid circular reference
      */
-    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper) : void
+    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper): void
     {
         $this->annotationToAttributeMapper = $annotationToAttributeMapper;
     }
     /**
      * @param mixed $value
      */
-    public function isCandidate($value) : bool
+    public function isCandidate($value): bool
     {
         if (!$value instanceof DoctrineAnnotationTagValueNode) {
             return \false;
@@ -57,7 +52,7 @@ final class DoctrineAnnotationAnnotationToAttributeMapper implements AnnotationT
     /**
      * @param DoctrineAnnotationTagValueNode $value
      */
-    public function map($value) : \PhpParser\Node\Expr
+    public function map($value): New_
     {
         $annotationShortName = $this->resolveAnnotationName($value);
         $values = $value->getValues();
@@ -74,9 +69,9 @@ final class DoctrineAnnotationAnnotationToAttributeMapper implements AnnotationT
         }
         return new New_(new Name($annotationShortName), $args);
     }
-    private function resolveAnnotationName(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode) : string
+    private function resolveAnnotationName(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode): string
     {
         $annotationShortName = $doctrineAnnotationTagValueNode->identifierTypeNode->name;
-        return \ltrim($annotationShortName, '@');
+        return ltrim($annotationShortName, '@');
     }
 }

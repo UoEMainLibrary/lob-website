@@ -8,14 +8,14 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Input;
+namespace RectorPrefix202604\Symfony\Component\Console\Input;
 
-use RectorPrefix202411\Symfony\Component\Console\Command\Command;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionInput;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionSuggestions;
-use RectorPrefix202411\Symfony\Component\Console\Completion\Suggestion;
-use RectorPrefix202411\Symfony\Component\Console\Exception\InvalidArgumentException;
-use RectorPrefix202411\Symfony\Component\Console\Exception\LogicException;
+use RectorPrefix202604\Symfony\Component\Console\Command\Command;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionInput;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionSuggestions;
+use RectorPrefix202604\Symfony\Component\Console\Completion\Suggestion;
+use RectorPrefix202604\Symfony\Component\Console\Exception\InvalidArgumentException;
+use RectorPrefix202604\Symfony\Component\Console\Exception\LogicException;
 /**
  * Represents a command line argument.
  *
@@ -26,14 +26,8 @@ class InputArgument
     public const REQUIRED = 1;
     public const OPTIONAL = 2;
     public const IS_ARRAY = 4;
-    /**
-     * @var string
-     */
-    private $name;
-    /**
-     * @var int
-     */
-    private $mode;
+    private string $name;
+    private int $mode;
     /**
      * @var mixed[]|bool|float|int|string|null
      */
@@ -42,10 +36,7 @@ class InputArgument
      * @var mixed[]|\Closure
      */
     private $suggestedValues;
-    /**
-     * @var string
-     */
-    private $description;
+    private string $description;
     /**
      * @param string                                                                        $name            The argument name
      * @param int|null                                                                      $mode            The argument mode: a bit mask of self::REQUIRED, self::OPTIONAL and self::IS_ARRAY
@@ -71,7 +62,7 @@ class InputArgument
     /**
      * Returns the argument name.
      */
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -80,7 +71,7 @@ class InputArgument
      *
      * @return bool true if parameter mode is self::REQUIRED, false otherwise
      */
-    public function isRequired() : bool
+    public function isRequired(): bool
     {
         return self::REQUIRED === (self::REQUIRED & $this->mode);
     }
@@ -89,7 +80,7 @@ class InputArgument
      *
      * @return bool true if mode is self::IS_ARRAY, false otherwise
      */
-    public function isArray() : bool
+    public function isArray(): bool
     {
         return self::IS_ARRAY === (self::IS_ARRAY & $this->mode);
     }
@@ -126,7 +117,7 @@ class InputArgument
     {
         return $this->default;
     }
-    public function hasCompletion() : bool
+    public function hasCompletion(): bool
     {
         return [] !== $this->suggestedValues;
     }
@@ -135,11 +126,11 @@ class InputArgument
      *
      * @see Command::complete()
      */
-    public function complete(CompletionInput $input, CompletionSuggestions $suggestions) : void
+    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         $values = $this->suggestedValues;
         if ($values instanceof \Closure && !\is_array($values = $values($input))) {
-            throw new LogicException(\sprintf('Closure for argument "%s" must return an array. Got "%s".', $this->name, \get_debug_type($values)));
+            throw new LogicException(\sprintf('Closure for argument "%s" must return an array. Got "%s".', $this->name, get_debug_type($values)));
         }
         if ($values) {
             $suggestions->suggestValues($values);
@@ -148,7 +139,7 @@ class InputArgument
     /**
      * Returns the description text.
      */
-    public function getDescription() : string
+    public function getDescription(): string
     {
         return $this->description;
     }

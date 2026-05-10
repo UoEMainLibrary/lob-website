@@ -9,11 +9,14 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Reflection\ReflectionProvider;
+use Rector\BetterPhpDocParser\PhpDoc\DoctrineAnnotationTagValueNode;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfo;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover;
 use Rector\Comments\NodeDocBlock\DocBlockUpdater;
 use Rector\PhpAttribute\NodeFactory\PhpAttributeGroupFactory;
+use Rector\PHPUnit\Enum\PHPUnitAttribute;
 use Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer;
 use Rector\Rector\AbstractRector;
 use Rector\Reflection\ReflectionResolver;
@@ -28,35 +31,33 @@ final class DataProviderAnnotationToAttributeRector extends AbstractRector imple
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\PhpAttributeGroupFactory
      */
-    private $phpAttributeGroupFactory;
+    private PhpAttributeGroupFactory $phpAttributeGroupFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
-    public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, PhpAttributeGroupFactory $phpAttributeGroupFactory, PhpDocTagRemover $phpDocTagRemover, ReflectionResolver $reflectionResolver, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory)
+    private PhpDocInfoFactory $phpDocInfoFactory;
+    /**
+     * @readonly
+     */
+    private ReflectionProvider $reflectionProvider;
+    public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, PhpAttributeGroupFactory $phpAttributeGroupFactory, PhpDocTagRemover $phpDocTagRemover, ReflectionResolver $reflectionResolver, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory, ReflectionProvider $reflectionProvider)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
         $this->phpAttributeGroupFactory = $phpAttributeGroupFactory;
@@ -64,8 +65,9 @@ final class DataProviderAnnotationToAttributeRector extends AbstractRector imple
         $this->reflectionResolver = $reflectionResolver;
         $this->docBlockUpdater = $docBlockUpdater;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
+        $this->reflectionProvider = $reflectionProvider;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change dataProvider annotations to attribute', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -96,11 +98,11 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         /**
          * This rule just work for phpunit 10,
@@ -113,9 +115,12 @@ CODE_SAMPLE
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
+            return null;
+        }
+        if (!$this->reflectionProvider->hasClass(PHPUnitAttribute::DATA_PROVIDER)) {
             return null;
         }
         $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
@@ -135,30 +140,48 @@ CODE_SAMPLE
             return null;
         }
         foreach ($desiredTagValueNodes as $desiredTagValueNode) {
-            if (!$desiredTagValueNode->value instanceof GenericTagValueNode) {
+            if (!$desiredTagValueNode->value instanceof GenericTagValueNode && !$desiredTagValueNode->value instanceof DoctrineAnnotationTagValueNode) {
                 continue;
             }
-            $originalAttributeValue = $desiredTagValueNode->value->value;
-            $node->attrGroups[] = $this->createAttributeGroup($originalAttributeValue);
+            if ($desiredTagValueNode->value instanceof GenericTagValueNode) {
+                $originalAttributeValue = $desiredTagValueNode->value->value;
+            } else {
+                $originalAttributeValue = $desiredTagValueNode->value->getOriginalContent();
+            }
+            $originalAttributeValueToken = strtok($originalAttributeValue ?: '', " \t\n\r\x00\v");
+            if ($originalAttributeValueToken === \false) {
+                continue;
+            }
+            $attributeGroup = $this->createAttributeGroup($node, $originalAttributeValueToken);
+            if ($attributeGroup instanceof AttributeGroup) {
+                $node->attrGroups[] = $attributeGroup;
+            }
             // cleanup
             $this->phpDocTagRemover->removeTagValueFromNode($phpDocInfo, $desiredTagValueNode);
         }
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
         return $node;
     }
-    private function createAttributeGroup(string $originalAttributeValue) : AttributeGroup
+    private function createAttributeGroup(ClassMethod $classMethod, string $originalAttributeValue): ?AttributeGroup
     {
-        $methodName = \trim($originalAttributeValue, '()');
+        $methodName = trim($originalAttributeValue, '()');
         $className = '';
-        if (\strpos($methodName, '::') !== \false) {
-            [$className, $methodName] = \explode('::', $methodName, 2);
+        if (strpos($methodName, '::') !== \false) {
+            [$className, $methodName] = explode('::', $methodName, 2);
         }
         if ($className !== '') {
             if ($className[0] !== '\\') {
                 $className = '\\' . $className;
             }
-            return $this->phpAttributeGroupFactory->createFromClassWithItems('PHPUnit\\Framework\\Attributes\\DataProviderExternal', [$className . '::class', $methodName]);
+            $attributeGroup = $this->phpAttributeGroupFactory->createFromClassWithItems('PHPUnit\Framework\Attributes\DataProviderExternal', [$className . '::class', $methodName]);
+        } else {
+            $attributeGroup = $this->phpAttributeGroupFactory->createFromClassWithItems(PHPUnitAttribute::DATA_PROVIDER, [$methodName]);
         }
-        return $this->phpAttributeGroupFactory->createFromClassWithItems('PHPUnit\\Framework\\Attributes\\DataProvider', [$methodName]);
+        foreach ($classMethod->attrGroups as $existingAttributeGroup) {
+            if ($this->nodeComparator->areNodesEqual($existingAttributeGroup, $attributeGroup)) {
+                return null;
+            }
+        }
+        return $attributeGroup;
     }
 }

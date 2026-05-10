@@ -11,14 +11,13 @@ final class PropertyFetchFactory
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\PropertyNaming
      */
-    private $propertyNaming;
+    private PropertyNaming $propertyNaming;
     public function __construct(PropertyNaming $propertyNaming)
     {
         $this->propertyNaming = $propertyNaming;
     }
-    public function createFromType(ObjectType $objectType) : PropertyFetch
+    public function createFromType(ObjectType $objectType): PropertyFetch
     {
         $thisVariable = new Variable('this');
         $propertyName = $this->propertyNaming->fqnToVariableName($objectType->getClassName());

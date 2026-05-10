@@ -30,9 +30,7 @@ final class ProtectedStaticModulesPropertyRector extends AbstractRector
 class SomeClassTest {
   public static $modules = [];
 }
-CODE_SAMPLE
-
-                ,
+CODE_SAMPLE,
                 <<<'CODE_SAMPLE'
 class SomeClassTest {
   protected static $modules = [];
@@ -53,9 +51,8 @@ CODE_SAMPLE
     /**
      * @param Node\Stmt\Property $node
      */
-    public function refactor(Node $node): ?Node
+    public function refactor(Node $node): Node
     {
-        assert($node instanceof Node\Stmt\Property);
         if (!$this->isName($node, 'modules')) {
             return $node;
         }

@@ -7,24 +7,21 @@ use PhpParser\NodeTraverser;
 use Rector\Symfony\Configs\NodeVisitor\CollectServiceArgumentsNodeVisitor;
 use Rector\Symfony\Configs\ValueObject\ServiceArguments;
 use Rector\Symfony\PhpParser\NamedSimplePhpParser;
-use RectorPrefix202411\Symfony\Component\Finder\SplFileInfo;
+use RectorPrefix202604\Symfony\Component\Finder\SplFileInfo;
 final class ConfigServiceArgumentsResolver
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\PhpParser\NamedSimplePhpParser
      */
-    private $namedSimplePhpParser;
+    private NamedSimplePhpParser $namedSimplePhpParser;
     /**
      * @readonly
-     * @var \PhpParser\NodeTraverser
      */
-    private $nodeTraverser;
+    private NodeTraverser $nodeTraverser;
     /**
      * @readonly
-     * @var \Rector\Symfony\Configs\NodeVisitor\CollectServiceArgumentsNodeVisitor
      */
-    private $collectServiceArgumentsNodeVisitor;
+    private CollectServiceArgumentsNodeVisitor $collectServiceArgumentsNodeVisitor;
     public function __construct(NamedSimplePhpParser $namedSimplePhpParser)
     {
         $this->namedSimplePhpParser = $namedSimplePhpParser;
@@ -36,14 +33,14 @@ final class ConfigServiceArgumentsResolver
      * @param SplFileInfo[] $phpConfigFileInfos
      * @return ServiceArguments[]
      */
-    public function resolve(array $phpConfigFileInfos) : array
+    public function resolve(array $phpConfigFileInfos): array
     {
         $servicesArguments = [];
         foreach ($phpConfigFileInfos as $phpConfigFileInfo) {
             // traverse and collect data
             $configStmts = $this->namedSimplePhpParser->parseString($phpConfigFileInfo->getContents());
             $this->nodeTraverser->traverse($configStmts);
-            $servicesArguments = \array_merge($servicesArguments, $this->collectServiceArgumentsNodeVisitor->getServicesArguments());
+            $servicesArguments = array_merge($servicesArguments, $this->collectServiceArgumentsNodeVisitor->getServicesArguments());
         }
         return $servicesArguments;
     }

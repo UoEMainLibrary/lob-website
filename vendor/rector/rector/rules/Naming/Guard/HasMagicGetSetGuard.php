@@ -9,14 +9,13 @@ final class HasMagicGetSetGuard
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(ReflectionProvider $reflectionProvider)
     {
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function isConflicting(PropertyRename $propertyRename) : bool
+    public function isConflicting(PropertyRename $propertyRename): bool
     {
         if (!$this->reflectionProvider->hasClass($propertyRename->getClassLikeName())) {
             return \false;

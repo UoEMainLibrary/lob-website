@@ -19,8 +19,7 @@ final class AssertFieldByNameRector extends AbstractRector
 $this->assertFieldByName('field_name', 'expected_value');
 $this->assertFieldByName("field_name[0][value][date]", '', 'Date element found.');
 $this->assertFieldByName("field_name[0][value][time]", null, 'Time element found.');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $this->assertSession()->fieldValueEquals('field_name', 'expected_value');
 $this->assertSession()->fieldValueEquals("field_name[0][value][date]", '');
@@ -37,7 +36,7 @@ CODE_AFTER
         ];
     }
 
-    public function refactor(Node $node)
+    public function refactor(Node $node): ?Node\Expr\MethodCall
     {
         assert($node instanceof Node\Expr\MethodCall);
         if ($this->getName($node->name) !== 'assertFieldByName') {

@@ -7,24 +7,22 @@ final class ClassNameAndFilePath
 {
     /**
      * @readonly
-     * @var string
      */
-    private $className;
+    private string $className;
     /**
      * @readonly
-     * @var string
      */
-    private $filePath;
+    private string $filePath;
     public function __construct(string $className, string $filePath)
     {
         $this->className = $className;
         $this->filePath = $filePath;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return $this->className;
     }
-    public function getFilePath() : string
+    public function getFilePath(): string
     {
         return $this->filePath;
     }

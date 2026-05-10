@@ -33,54 +33,44 @@ final class TypedPropertyFromStrictConstructorRector extends AbstractRector impl
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\PropertyTypeInferer\TrustedClassMethodPropertyTypeInferer
      */
-    private $trustedClassMethodPropertyTypeInferer;
+    private TrustedClassMethodPropertyTypeInferer $trustedClassMethodPropertyTypeInferer;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\TagRemover\VarTagRemover
      */
-    private $varTagRemover;
+    private VarTagRemover $varTagRemover;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\AlreadyAssignDetector\ConstructorAssignDetector
      */
-    private $constructorAssignDetector;
+    private ConstructorAssignDetector $constructorAssignDetector;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\Guard\PropertyTypeOverrideGuard
      */
-    private $propertyTypeOverrideGuard;
+    private PropertyTypeOverrideGuard $propertyTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\PHPStanStaticTypeMapper\DoctrineTypeAnalyzer
      */
-    private $doctrineTypeAnalyzer;
+    private DoctrineTypeAnalyzer $doctrineTypeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeAnalyzer\PropertyTypeDefaultValueAnalyzer
      */
-    private $propertyTypeDefaultValueAnalyzer;
+    private PropertyTypeDefaultValueAnalyzer $propertyTypeDefaultValueAnalyzer;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(TrustedClassMethodPropertyTypeInferer $trustedClassMethodPropertyTypeInferer, VarTagRemover $varTagRemover, PhpDocTypeChanger $phpDocTypeChanger, ConstructorAssignDetector $constructorAssignDetector, PropertyTypeOverrideGuard $propertyTypeOverrideGuard, ReflectionResolver $reflectionResolver, DoctrineTypeAnalyzer $doctrineTypeAnalyzer, PropertyTypeDefaultValueAnalyzer $propertyTypeDefaultValueAnalyzer, PhpDocInfoFactory $phpDocInfoFactory, StaticTypeMapper $staticTypeMapper)
     {
         $this->trustedClassMethodPropertyTypeInferer = $trustedClassMethodPropertyTypeInferer;
@@ -94,7 +84,7 @@ final class TypedPropertyFromStrictConstructorRector extends AbstractRector impl
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add typed properties based only on strict constructor types', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeObject
@@ -123,17 +113,20 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $constructClassMethod = $node->getMethod(MethodName::CONSTRUCT);
-        if (!$constructClassMethod instanceof ClassMethod || $node->getProperties() === []) {
+        if (!$constructClassMethod instanceof ClassMethod) {
+            return null;
+        }
+        if (!$this->hasSomeUntypedProperties($node)) {
             return null;
         }
         $classReflection = $this->reflectionResolver->resolveClassReflection($node);
@@ -164,7 +157,7 @@ CODE_SAMPLE
                 continue;
             }
             $propertyProperty = $property->props[0];
-            $propertyName = $this->nodeNameResolver->getName($property);
+            $propertyName = $this->getName($property);
             if ($this->constructorAssignDetector->isPropertyAssigned($node, $propertyName)) {
                 $propertyProperty->default = null;
                 $hasChanged = \true;
@@ -181,15 +174,25 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::TYPED_PROPERTIES;
     }
-    private function shouldSkipPropertyType(Type $propertyType) : bool
+    private function shouldSkipPropertyType(Type $propertyType): bool
     {
         if ($propertyType instanceof MixedType) {
             return \true;
         }
         return $this->doctrineTypeAnalyzer->isInstanceOfCollectionType($propertyType);
+    }
+    private function hasSomeUntypedProperties(Class_ $class): bool
+    {
+        foreach ($class->getProperties() as $property) {
+            if ($property->type instanceof Node) {
+                continue;
+            }
+            return \true;
+        }
+        return \false;
     }
 }

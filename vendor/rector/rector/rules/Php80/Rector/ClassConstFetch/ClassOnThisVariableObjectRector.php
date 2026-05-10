@@ -9,8 +9,7 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
-use PHPStan\Analyser\Scope;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -21,9 +20,9 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  *
  * @see \Rector\Tests\Php80\Rector\ClassConstFetch\ClassOnThisVariableObjectRector\ClassOnThisVariableObjectRectorTest
  */
-final class ClassOnThisVariableObjectRector extends AbstractScopeAwareRector implements MinPhpVersionInterface
+final class ClassOnThisVariableObjectRector extends AbstractRector implements MinPhpVersionInterface
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change $this::class to static::class or self::class depends on class modifier', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -48,18 +47,18 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $className = $node->isFinal() ? 'self' : 'static';
         $hasChanged = \false;
-        $this->traverseNodesWithCallable($node, function (Node $node) use(&$hasChanged, $className) : ?ClassConstFetch {
+        $this->traverseNodesWithCallable($node, function (Node $node) use (&$hasChanged, $className): ?ClassConstFetch {
             if (!$node instanceof ClassConstFetch) {
                 return null;
             }
@@ -75,16 +74,16 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::CLASS_ON_OBJECT;
     }
-    private function shouldSkip(ClassConstFetch $classConstFetch) : bool
+    private function shouldSkip(ClassConstFetch $classConstFetch): bool
     {
         if (!$classConstFetch->class instanceof Variable) {
             return \true;
         }
-        if (!\is_string($classConstFetch->class->name)) {
+        if (!is_string($classConstFetch->class->name)) {
             return \true;
         }
         if (!$this->isName($classConstFetch->class, 'this')) {

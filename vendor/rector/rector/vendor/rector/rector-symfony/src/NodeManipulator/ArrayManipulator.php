@@ -3,12 +3,12 @@
 declare (strict_types=1);
 namespace Rector\Symfony\NodeManipulator;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Scalar\String_;
 final class ArrayManipulator
 {
-    public function addItemToArrayUnderKey(Array_ $array, ArrayItem $newArrayItem, string $key) : void
+    public function addItemToArrayUnderKey(Array_ $array, ArrayItem $newArrayItem, string $key): void
     {
         foreach ($array->items as $item) {
             if (!$item instanceof ArrayItem) {
@@ -24,7 +24,7 @@ final class ArrayManipulator
         }
         $array->items[] = new ArrayItem(new Array_([$newArrayItem]), new String_($key));
     }
-    public function findItemInInArrayByKeyAndUnset(Array_ $array, string $keyName) : ?ArrayItem
+    public function findItemInInArrayByKeyAndUnset(Array_ $array, string $keyName): ?ArrayItem
     {
         foreach ($array->items as $i => $item) {
             if (!$item instanceof ArrayItem) {
@@ -43,7 +43,7 @@ final class ArrayManipulator
         }
         return null;
     }
-    private function hasKeyName(ArrayItem $arrayItem, string $name) : bool
+    private function hasKeyName(ArrayItem $arrayItem, string $name): bool
     {
         if (!$arrayItem->key instanceof String_) {
             return \false;

@@ -3,41 +3,87 @@
 declare (strict_types=1);
 namespace Rector\Composer;
 
-use RectorPrefix202411\Nette\Utils\FileSystem;
-use RectorPrefix202411\Nette\Utils\Json;
+use RectorPrefix202604\Nette\Utils\FileSystem;
+use RectorPrefix202604\Nette\Utils\Json;
 use Rector\Composer\ValueObject\InstalledPackage;
 use Rector\Exception\ShouldNotHappenException;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use Rector\Skipper\FileSystem\PathNormalizer;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\Composer\InstalledPackageResolverTest
  */
 final class InstalledPackageResolver
 {
     /**
-     * @var array<string, InstalledPackage[]>
+     * @readonly
      */
-    private $resolvedInstalledPackages = [];
+    private ?string $projectDirectory = null;
     /**
-     * @return InstalledPackage[]
+     * @var null|array<string, InstalledPackage>
      */
-    public function resolve(string $projectDirectory) : array
+    private ?array $resolvedInstalledPackages = null;
+    public function __construct(?string $projectDirectory = null)
     {
-        // cache
-        if (isset($this->resolvedInstalledPackages[$projectDirectory])) {
-            return $this->resolvedInstalledPackages[$projectDirectory];
+        $this->projectDirectory = $projectDirectory;
+        // fallback to root project directory
+        if ($projectDirectory === null) {
+            $projectDirectory = getcwd();
         }
         Assert::directory($projectDirectory);
-        $installedPackagesFilePath = $projectDirectory . '/vendor/composer/installed.json';
-        if (!\file_exists($installedPackagesFilePath)) {
-            throw new ShouldNotHappenException('The installed package json not found. Make sure you run `composer update` and "vendor/composer/installed.json" file exists');
+    }
+    /**
+     * @return array<string, InstalledPackage>
+     */
+    public function resolve(): array
+    {
+        // already cached, even only empty array
+        if ($this->resolvedInstalledPackages !== null) {
+            return $this->resolvedInstalledPackages;
+        }
+        $installedPackagesFilePath = $this->resolveVendorDir() . '/composer/installed.json';
+        if (!file_exists($installedPackagesFilePath)) {
+            throw new ShouldNotHappenException('The installed package json not found. Make sure you run `composer update` and the "vendor/composer/installed.json" file exists');
         }
         $installedPackageFileContents = FileSystem::read($installedPackagesFilePath);
         $installedPackagesFilePath = Json::decode($installedPackageFileContents, \true);
-        $installedPackages = [];
-        foreach ($installedPackagesFilePath['packages'] as $installedPackage) {
-            $installedPackages[] = new InstalledPackage($installedPackage['name'], $installedPackage['version_normalized']);
-        }
-        $this->resolvedInstalledPackages[$projectDirectory] = $installedPackages;
+        $installedPackages = $this->createInstalledPackages($installedPackagesFilePath['packages']);
+        $this->resolvedInstalledPackages = $installedPackages;
         return $installedPackages;
+    }
+    public function resolvePackageVersion(string $packageName): ?string
+    {
+        $package = $this->resolve()[$packageName] ?? null;
+        if (!$package instanceof InstalledPackage) {
+            return null;
+        }
+        return $package->getVersion();
+    }
+    /**
+     * @param mixed[] $packages
+     * @return array<string, InstalledPackage>
+     */
+    private function createInstalledPackages(array $packages): array
+    {
+        $installedPackages = [];
+        foreach ($packages as $package) {
+            $name = $package['name'];
+            $installedPackages[$name] = new InstalledPackage($name, $package['version_normalized']);
+        }
+        return $installedPackages;
+    }
+    private function resolveVendorDir(): string
+    {
+        $projectComposerJsonFilePath = $this->projectDirectory . '/composer.json';
+        if (\file_exists($projectComposerJsonFilePath)) {
+            $projectComposerContents = FileSystem::read($projectComposerJsonFilePath);
+            $projectComposerJson = Json::decode($projectComposerContents, \true);
+            if (isset($projectComposerJson['config']['vendor-dir']) && is_string($projectComposerJson['config']['vendor-dir'])) {
+                $realPathVendorDir = realpath($projectComposerJson['config']['vendor-dir']) ?: '';
+                $normalizedRealPathVendorDir = PathNormalizer::normalize($realPathVendorDir);
+                $normalizedVendorDir = PathNormalizer::normalize($projectComposerJson['config']['vendor-dir']);
+                return $normalizedRealPathVendorDir === $normalizedVendorDir ? $projectComposerJson['config']['vendor-dir'] : $this->projectDirectory . '/' . $projectComposerJson['config']['vendor-dir'];
+            }
+        }
+        return $this->projectDirectory . '/vendor';
     }
 }

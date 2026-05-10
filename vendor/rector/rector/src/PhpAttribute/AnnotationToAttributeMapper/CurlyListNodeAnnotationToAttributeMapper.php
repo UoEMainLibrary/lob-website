@@ -3,41 +3,38 @@
 declare (strict_types=1);
 namespace Rector\PhpAttribute\AnnotationToAttributeMapper;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use Rector\BetterPhpDocParser\ValueObject\PhpDoc\DoctrineAnnotation\CurlyListNode;
 use Rector\PhpAttribute\AnnotationToAttributeMapper;
 use Rector\PhpAttribute\Contract\AnnotationToAttributeMapperInterface;
 use Rector\PhpAttribute\Enum\DocTagNodeState;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @implements AnnotationToAttributeMapperInterface<CurlyListNode>
  */
 final class CurlyListNodeAnnotationToAttributeMapper implements AnnotationToAttributeMapperInterface
 {
-    /**
-     * @var \Rector\PhpAttribute\AnnotationToAttributeMapper
-     */
-    private $annotationToAttributeMapper;
+    private AnnotationToAttributeMapper $annotationToAttributeMapper;
     /**
      * Avoid circular reference
      */
-    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper) : void
+    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper): void
     {
         $this->annotationToAttributeMapper = $annotationToAttributeMapper;
     }
     /**
      * @param mixed $value
      */
-    public function isCandidate($value) : bool
+    public function isCandidate($value): bool
     {
         return $value instanceof CurlyListNode;
     }
     /**
      * @param CurlyListNode $value
      */
-    public function map($value) : \PhpParser\Node\Expr
+    public function map($value): Array_
     {
         $arrayItems = [];
         $arrayItemNodes = $value->getValues();
@@ -49,7 +46,7 @@ final class CurlyListNodeAnnotationToAttributeMapper implements AnnotationToAttr
                 continue;
             }
             Assert::isInstanceOf($valueExpr, ArrayItem::class);
-            if (!\is_numeric($arrayItemNode->key)) {
+            if (!is_numeric($arrayItemNode->key)) {
                 $arrayItems[] = $valueExpr;
                 continue;
             }
@@ -59,7 +56,7 @@ final class CurlyListNodeAnnotationToAttributeMapper implements AnnotationToAttr
                 $arrayItems[] = $valueExpr;
                 continue;
             }
-            $valueExpr->key = new LNumber($arrayItemNodeKey);
+            $valueExpr->key = new Int_($arrayItemNodeKey);
             $arrayItems[] = $valueExpr;
         }
         return new Array_($arrayItems);

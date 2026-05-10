@@ -24,9 +24,8 @@ final class ClassAndInterfaceTypeResolver implements NodeTypeResolverInterface
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -34,14 +33,14 @@ final class ClassAndInterfaceTypeResolver implements NodeTypeResolverInterface
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeClasses() : array
+    public function getNodeClasses(): array
     {
         return [Class_::class, Interface_::class];
     }
     /**
      * @param Class_|Interface_ $node
      */
-    public function resolve(Node $node) : Type
+    public function resolve(Node $node): Type
     {
         $scope = $node->getAttribute(AttributeKey::SCOPE);
         if (!$scope instanceof Scope) {

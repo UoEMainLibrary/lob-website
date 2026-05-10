@@ -4,7 +4,6 @@ declare (strict_types=1);
 namespace Rector\NodeTypeResolver\PHPStan;
 
 use PHPStan\Type\ArrayType;
-use PHPStan\Type\ConstantType;
 use PHPStan\Type\Generic\GenericObjectType;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\ObjectType;
@@ -17,17 +16,17 @@ use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
 use Rector\StaticTypeMapper\ValueObject\Type\ShortenedObjectType;
 final class TypeHasher
 {
-    public function areTypesEqual(Type $firstType, Type $secondType) : bool
+    public function areTypesEqual(Type $firstType, Type $secondType): bool
     {
         return $this->createTypeHash($firstType) === $this->createTypeHash($secondType);
     }
-    public function createTypeHash(Type $type) : string
+    public function createTypeHash(Type $type): string
     {
         if ($type instanceof MixedType) {
             return $type->describe(VerbosityLevel::precise()) . $type->isExplicitMixed();
         }
         if ($type instanceof ArrayType) {
-            return $this->createTypeHash($type->getItemType()) . $this->createTypeHash($type->getKeyType()) . '[]';
+            return $this->createTypeHash($type->getIterableValueType()) . $this->createTypeHash($type->getIterableKeyType()) . $type->getItemType()->describe(VerbosityLevel::precise()) . '[]';
         }
         if ($type instanceof GenericObjectType) {
             return $type->describe(VerbosityLevel::precise());
@@ -35,13 +34,13 @@ final class TypeHasher
         if ($type instanceof TypeWithClassName) {
             return $this->resolveUniqueTypeWithClassNameHash($type);
         }
-        if ($type instanceof ConstantType) {
-            return \get_class($type);
+        if ($type->isConstantValue()->yes()) {
+            return get_class($type);
         }
         $type = $this->normalizeObjectType($type);
         return $type->describe(VerbosityLevel::value());
     }
-    private function resolveUniqueTypeWithClassNameHash(TypeWithClassName $typeWithClassName) : string
+    private function resolveUniqueTypeWithClassNameHash(TypeWithClassName $typeWithClassName): string
     {
         if ($typeWithClassName instanceof ShortenedObjectType) {
             return $typeWithClassName->getFullyQualifiedName();
@@ -51,9 +50,9 @@ final class TypeHasher
         }
         return $typeWithClassName->getClassName();
     }
-    private function normalizeObjectType(Type $type) : Type
+    private function normalizeObjectType(Type $type): Type
     {
-        return TypeTraverser::map($type, static function (Type $currentType, callable $traverseCallback) : Type {
+        return TypeTraverser::map($type, static function (Type $currentType, callable $traverseCallback): Type {
             if ($currentType instanceof ShortenedObjectType) {
                 return new FullyQualifiedObjectType($currentType->getFullyQualifiedName());
             }

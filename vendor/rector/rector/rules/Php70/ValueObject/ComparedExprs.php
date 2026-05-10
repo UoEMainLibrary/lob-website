@@ -8,24 +8,22 @@ final class ComparedExprs
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $firstExpr;
+    private Expr $firstExpr;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $secondExpr;
+    private Expr $secondExpr;
     public function __construct(Expr $firstExpr, Expr $secondExpr)
     {
         $this->firstExpr = $firstExpr;
         $this->secondExpr = $secondExpr;
     }
-    public function getFirstExpr() : Expr
+    public function getFirstExpr(): Expr
     {
         return $this->firstExpr;
     }
-    public function getSecondExpr() : Expr
+    public function getSecondExpr(): Expr
     {
         return $this->secondExpr;
     }

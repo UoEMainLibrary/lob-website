@@ -4,14 +4,14 @@ declare (strict_types=1);
 namespace Rector\CodeQuality\Rector\Foreach_;
 
 use PhpParser\Node;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
+use PhpParser\Node\Expr\List_;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\Foreach_;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\DeadCode\NodeAnalyzer\ExprUsedInNodeAnalyzer;
 use Rector\NodeManipulator\StmtsManipulator;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -23,26 +23,23 @@ final class UnusedForeachValueToArrayKeysRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\NodeAnalyzer\ExprUsedInNodeAnalyzer
      */
-    private $exprUsedInNodeAnalyzer;
+    private ExprUsedInNodeAnalyzer $exprUsedInNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\StmtsManipulator
      */
-    private $stmtsManipulator;
+    private StmtsManipulator $stmtsManipulator;
     public function __construct(ExprUsedInNodeAnalyzer $exprUsedInNodeAnalyzer, BetterNodeFinder $betterNodeFinder, StmtsManipulator $stmtsManipulator)
     {
         $this->exprUsedInNodeAnalyzer = $exprUsedInNodeAnalyzer;
         $this->betterNodeFinder = $betterNodeFinder;
         $this->stmtsManipulator = $stmtsManipulator;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change foreach with unused $value but only $key, to array_keys()', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -73,14 +70,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $stmts = $node->stmts;
         if ($stmts === null) {
@@ -98,13 +95,14 @@ CODE_SAMPLE
                 continue;
             }
             // special case of nested array items
-            if ($stmt->valueVar instanceof Array_) {
+            if ($stmt->valueVar instanceof List_) {
                 $valueArray = $this->refactorArrayForeachValue($stmt->valueVar, $stmt);
-                if ($valueArray instanceof Array_) {
-                    $stmt->valueVar = $valueArray;
+                if (!$valueArray instanceof List_) {
+                    continue;
                 }
+                $stmt->valueVar = $valueArray;
                 // not sure what does this mean :)
-                if ($stmt->valueVar->items !== []) {
+                if ($valueArray->items !== []) {
                     continue;
                 }
                 $hasChanged = \true;
@@ -117,7 +115,7 @@ CODE_SAMPLE
             if ($this->isVariableUsedInForeach($stmt->valueVar, $stmt)) {
                 continue;
             }
-            if ($this->stmtsManipulator->isVariableUsedInNextStmt($stmts, $key + 1, (string) $this->getName($stmt->valueVar))) {
+            if ($this->stmtsManipulator->isVariableUsedInNextStmt($node, $key + 1, (string) $this->getName($stmt->valueVar))) {
                 continue;
             }
             $hasChanged = \true;
@@ -131,11 +129,11 @@ CODE_SAMPLE
     /**
      * @param int[] $removedKeys
      */
-    private function isArrayItemsRemovalWithoutChangingOrder(Array_ $array, array $removedKeys) : bool
+    private function isArrayItemsRemovalWithoutChangingOrder(List_ $list, array $removedKeys): bool
     {
         $hasRemovingStarted = \false;
-        foreach (\array_keys($array->items) as $key) {
-            if (\in_array($key, $removedKeys, \true)) {
+        foreach (array_keys($list->items) as $key) {
+            if (in_array($key, $removedKeys, \true)) {
                 $hasRemovingStarted = \true;
             } elseif ($hasRemovingStarted) {
                 // we cannot remove the previous item, and not remove the next one, because that would change the order
@@ -144,11 +142,11 @@ CODE_SAMPLE
         }
         return \true;
     }
-    private function refactorArrayForeachValue(Array_ $array, Foreach_ $foreach) : ?Array_
+    private function refactorArrayForeachValue(List_ $list, Foreach_ $foreach): ?List_
     {
         // only last items can be removed, without changing the order
         $removedKeys = [];
-        foreach ($array->items as $key => $arrayItem) {
+        foreach ($list->items as $key => $arrayItem) {
             if (!$arrayItem instanceof ArrayItem) {
                 // only known values can be processes
                 return null;
@@ -163,22 +161,20 @@ CODE_SAMPLE
             }
             $removedKeys[] = $key;
         }
-        if (!$this->isArrayItemsRemovalWithoutChangingOrder($array, $removedKeys)) {
+        if (!$this->isArrayItemsRemovalWithoutChangingOrder($list, $removedKeys)) {
             return null;
         }
         // clear removed items
         foreach ($removedKeys as $removedKey) {
-            unset($array->items[$removedKey]);
+            unset($list->items[$removedKey]);
         }
-        return $array;
+        return $list;
     }
-    private function isVariableUsedInForeach(Variable $variable, Foreach_ $foreach) : bool
+    private function isVariableUsedInForeach(Variable $variable, Foreach_ $foreach): bool
     {
-        return (bool) $this->betterNodeFinder->findFirst($foreach->stmts, function (Node $node) use($variable) : bool {
-            return $this->exprUsedInNodeAnalyzer->isUsed($node, $variable);
-        });
+        return (bool) $this->betterNodeFinder->findFirst($foreach->stmts, fn(Node $node): bool => $this->exprUsedInNodeAnalyzer->isUsed($node, $variable));
     }
-    private function removeForeachValueAndUseArrayKeys(Foreach_ $foreach, Expr $keyVarExpr) : void
+    private function removeForeachValueAndUseArrayKeys(Foreach_ $foreach, Expr $keyVarExpr): void
     {
         // remove key value
         $foreach->valueVar = $keyVarExpr;

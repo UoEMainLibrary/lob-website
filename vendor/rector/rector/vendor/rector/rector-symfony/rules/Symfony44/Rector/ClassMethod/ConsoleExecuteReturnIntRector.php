@@ -10,11 +10,10 @@ use PhpParser\Node\Expr\Cast\Int_;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\FunctionLike;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Type\IntegerType;
 use PHPStan\Type\ObjectType;
 use Rector\NodeAnalyzer\TerminatedNodeAnalyzer;
@@ -30,24 +29,19 @@ final class ConsoleExecuteReturnIntRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\TerminatedNodeAnalyzer
      */
-    private $terminatedNodeAnalyzer;
+    private TerminatedNodeAnalyzer $terminatedNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
-    /**
-     * @var bool
-     */
-    private $hasChanged = \false;
+    private ValueResolver $valueResolver;
+    private bool $hasChanged = \false;
     public function __construct(TerminatedNodeAnalyzer $terminatedNodeAnalyzer, ValueResolver $valueResolver)
     {
         $this->terminatedNodeAnalyzer = $terminatedNodeAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Returns int from Command::execute() command', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Console\Command\Command;
@@ -76,22 +70,23 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        if (!$this->isObjectType($node, new ObjectType('Symfony\\Component\\Console\\Command\\Command'))) {
+        if (!$this->isObjectType($node, new ObjectType('Symfony\Component\Console\Command\Command'))) {
             return null;
         }
         $executeClassMethod = $node->getMethod('execute');
         if (!$executeClassMethod instanceof ClassMethod) {
             return null;
         }
+        $this->hasChanged = \false;
         $this->refactorReturnTypeDeclaration($executeClassMethod);
         $this->addReturn0ToExecuteClassMethod($executeClassMethod);
         if ($this->hasChanged) {
@@ -99,24 +94,24 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function refactorReturnTypeDeclaration(ClassMethod $classMethod) : void
+    private function refactorReturnTypeDeclaration(ClassMethod $classMethod): void
     {
         // already set
-        if ($classMethod->returnType !== null && $this->isName($classMethod->returnType, 'int')) {
+        if ($classMethod->returnType instanceof Node && $this->isName($classMethod->returnType, 'int')) {
             return;
         }
         $classMethod->returnType = new Identifier('int');
         $this->hasChanged = \true;
     }
-    private function addReturn0ToExecuteClassMethod(ClassMethod $classMethod) : void
+    private function addReturn0ToExecuteClassMethod(ClassMethod $classMethod): void
     {
         if ($classMethod->stmts === null) {
             return;
         }
-        $this->traverseNodesWithCallable($classMethod->stmts, function (Node $node) : ?int {
+        $this->traverseNodesWithCallable($classMethod->stmts, function (Node $node): ?int {
             // skip anonymous class/function
             if ($node instanceof FunctionLike || $node instanceof Class_) {
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             if (!$node instanceof Return_) {
                 return null;
@@ -132,7 +127,7 @@ CODE_SAMPLE
         });
         $this->processReturn0ToMethod($classMethod);
     }
-    private function isReturnIntegerType(?Expr $expr) : bool
+    private function isReturnIntegerType(?Expr $expr): bool
     {
         if ($expr instanceof Int_) {
             return \true;
@@ -145,43 +140,38 @@ CODE_SAMPLE
         }
         return \false;
     }
-    private function isIntegerTernaryIfElse(Ternary $ternary) : bool
+    private function isIntegerTernaryIfElse(Ternary $ternary): bool
     {
-        /** @var Expr|null $if */
         $if = $ternary->if;
         if (!$if instanceof Expr) {
             $if = $ternary->cond;
         }
-        /** @var Expr $else */
         $else = $ternary->else;
         $ifType = $this->getType($if);
         $elseType = $this->getType($else);
         return $ifType instanceof IntegerType && $elseType instanceof IntegerType;
     }
-    private function processReturn0ToMethod(ClassMethod $classMethod) : void
+    private function processReturn0ToMethod(ClassMethod $classMethod): void
     {
-        $stmts = (array) $classMethod->stmts;
-        \end($stmts);
-        $lastKey = \key($stmts);
-        \reset($stmts);
-        $return = new Return_(new LNumber(0));
+        $lastKey = array_key_last((array) $classMethod->stmts);
+        $return = new Return_(new \PhpParser\Node\Scalar\Int_(0));
         if ($lastKey !== null && (isset($classMethod->stmts[$lastKey]) && $this->terminatedNodeAnalyzer->isAlwaysTerminated($classMethod, $classMethod->stmts[$lastKey], $return))) {
             return;
         }
         $classMethod->stmts[] = $return;
     }
-    private function setReturnTo0InsteadOfNull(Return_ $return) : void
+    private function setReturnTo0InsteadOfNull(Return_ $return): void
     {
         if (!$return->expr instanceof Expr) {
-            $return->expr = new LNumber(0);
+            $return->expr = new \PhpParser\Node\Scalar\Int_(0);
             return;
         }
         if ($this->valueResolver->isNull($return->expr)) {
-            $return->expr = new LNumber(0);
+            $return->expr = new \PhpParser\Node\Scalar\Int_(0);
             return;
         }
         if ($return->expr instanceof Coalesce && $this->valueResolver->isNull($return->expr->right)) {
-            $return->expr->right = new LNumber(0);
+            $return->expr->right = new \PhpParser\Node\Scalar\Int_(0);
             return;
         }
         if ($return->expr instanceof Ternary) {
@@ -195,15 +185,15 @@ CODE_SAMPLE
             $return->expr = new Int_($return->expr);
         }
     }
-    private function isSuccessfulRefactorTernaryReturn(Ternary $ternary) : bool
+    private function isSuccessfulRefactorTernaryReturn(Ternary $ternary): bool
     {
         $hasChanged = \false;
         if ($ternary->if instanceof Expr && $this->valueResolver->isNull($ternary->if)) {
-            $ternary->if = new LNumber(0);
+            $ternary->if = new \PhpParser\Node\Scalar\Int_(0);
             $hasChanged = \true;
         }
         if ($this->valueResolver->isNull($ternary->else)) {
-            $ternary->else = new LNumber(0);
+            $ternary->else = new \PhpParser\Node\Scalar\Int_(0);
             $hasChanged = \true;
         }
         return $hasChanged;

@@ -1,10 +1,9 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use Rector\Config\RectorConfig;
-use Rector\Doctrine\Bundle210\Rector\Class_\EventSubscriberInterfaceToAttributeRector;
-return static function (RectorConfig $rectorConfig) : void {
-    $rectorConfig->rule(EventSubscriberInterfaceToAttributeRector::class);
+return static function (RectorConfig $rectorConfig): void {
+    // only for BC
 };

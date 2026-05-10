@@ -13,14 +13,13 @@ final class ArrayTypePhpDocNodeVisitor extends AbstractPhpDocNodeVisitor impleme
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\Attributes\AttributeMirrorer
      */
-    private $attributeMirrorer;
+    private AttributeMirrorer $attributeMirrorer;
     public function __construct(AttributeMirrorer $attributeMirrorer)
     {
         $this->attributeMirrorer = $attributeMirrorer;
     }
-    public function enterNode(Node $node) : ?Node
+    public function enterNode(Node $node): ?Node
     {
         if (!$node instanceof ArrayTypeNode) {
             return null;

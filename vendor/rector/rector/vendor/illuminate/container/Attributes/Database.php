@@ -1,21 +1,23 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Container\Attributes;
+namespace RectorPrefix202604\Illuminate\Container\Attributes;
 
 use Attribute;
-use RectorPrefix202411\Illuminate\Contracts\Container\Container;
-use RectorPrefix202411\Illuminate\Contracts\Container\ContextualAttribute;
+use RectorPrefix202604\Illuminate\Contracts\Container\Container;
+use RectorPrefix202604\Illuminate\Contracts\Container\ContextualAttribute;
+use UnitEnum;
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Database implements ContextualAttribute
 {
     /**
-     * @var string|null
+     * @var \UnitEnum|string|null
      */
-    public $connection;
+    public $connection = null;
     /**
      * Create a new class instance.
+     * @param \UnitEnum|string|null $connection
      */
-    public function __construct(?string $connection = null)
+    public function __construct($connection = null)
     {
         $this->connection = $connection;
     }

@@ -18,14 +18,13 @@ final class RemoveExpectAnyFromMockRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove `expect($this->any())` from mocks as it has no added value', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -59,14 +58,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -77,7 +76,7 @@ CODE_SAMPLE
         if ($node->isFirstClassCallable()) {
             return null;
         }
-        if (\count($node->args) !== 1) {
+        if (count($node->args) !== 1) {
             return null;
         }
         $onlyArgument = $node->getArgs()[0]->value;
@@ -86,7 +85,7 @@ CODE_SAMPLE
         }
         return $node->var;
     }
-    private function isMethodCallOnVariableNamed(Expr $expr, string $variableName, string $methodName) : bool
+    private function isMethodCallOnVariableNamed(Expr $expr, string $variableName, string $methodName): bool
     {
         if (!$expr instanceof MethodCall) {
             return \false;

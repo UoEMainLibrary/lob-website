@@ -10,7 +10,7 @@ use Rector\BetterPhpDocParser\ValueObject\Parser\BetterTokenIterator;
 use Rector\PhpDocParser\PhpDocParser\PhpDocNodeTraverser;
 use Rector\PhpDocParser\PhpDocParser\PhpDocNodeVisitor\CloningPhpDocNodeVisitor;
 use Rector\PhpDocParser\PhpDocParser\PhpDocNodeVisitor\ParentConnectingPhpDocNodeVisitor;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\BetterPhpDocParser\PhpDocNodeMapperTest
  */
@@ -18,19 +18,17 @@ final class PhpDocNodeMapper
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\DataProvider\CurrentTokenIteratorProvider
      */
-    private $currentTokenIteratorProvider;
+    private CurrentTokenIteratorProvider $currentTokenIteratorProvider;
     /**
      * @var BasePhpDocNodeVisitorInterface[]
      * @readonly
      */
-    private $phpDocNodeVisitors;
+    private array $phpDocNodeVisitors;
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\PhpDocParser\PhpDocNodeTraverser
      */
-    private $phpDocNodeTraverser;
+    private PhpDocNodeTraverser $phpDocNodeTraverser;
     /**
      * @param BasePhpDocNodeVisitorInterface[] $phpDocNodeVisitors
      */
@@ -46,7 +44,7 @@ final class PhpDocNodeMapper
             $this->phpDocNodeTraverser->addPhpDocNodeVisitor($phpDocNodeVisitor);
         }
     }
-    public function transform(PhpDocNode $phpDocNode, BetterTokenIterator $betterTokenIterator) : void
+    public function transform(PhpDocNode $phpDocNode, BetterTokenIterator $betterTokenIterator): void
     {
         $this->currentTokenIteratorProvider->setBetterTokenIterator($betterTokenIterator);
         $this->phpDocNodeTraverser->traverse($phpDocNode);

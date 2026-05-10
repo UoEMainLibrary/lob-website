@@ -15,7 +15,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Analyser\Scope;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\TypeCombinator;
@@ -28,24 +28,20 @@ final class AddReturnTypeFromParam
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser
      */
-    private $simpleCallableNodeTraverser;
+    private SimpleCallableNodeTraverser $simpleCallableNodeTraverser;
     /**
      * @readonly
-     * @var \Rector\VendorLocker\NodeVendorLocker\ClassMethodReturnTypeOverrideGuard
      */
-    private $classMethodReturnTypeOverrideGuard;
+    private ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\ReturnTypeInferer
      */
-    private $returnTypeInferer;
+    private ReturnTypeInferer $returnTypeInferer;
     public function __construct(NodeNameResolver $nodeNameResolver, SimpleCallableNodeTraverser $simpleCallableNodeTraverser, ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard, ReturnTypeInferer $returnTypeInferer)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -90,21 +86,21 @@ final class AddReturnTypeFromParam
     /**
      * @param Stmt[] $stmts
      */
-    private function findCurrentScopeReturn(array $stmts) : ?Return_
+    private function findCurrentScopeReturn(array $stmts): ?Return_
     {
         $return = null;
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($stmts, static function (Node $node) use(&$return) : ?int {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($stmts, static function (Node $node) use (&$return): ?int {
             // skip scope nesting
             if ($node instanceof Class_ || $node instanceof FunctionLike) {
                 $return = null;
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             if (!$node instanceof Return_) {
                 return null;
             }
             if (!$node->expr instanceof Variable) {
                 $return = null;
-                return NodeTraverser::STOP_TRAVERSAL;
+                return NodeVisitor::STOP_TRAVERSAL;
             }
             $return = $node;
             return null;
@@ -114,18 +110,18 @@ final class AddReturnTypeFromParam
     /**
      * @param Stmt[] $stmts
      */
-    private function shouldSkipParam(Param $param, array $stmts) : bool
+    private function shouldSkipParam(Param $param, array $stmts): bool
     {
         $paramName = $this->nodeNameResolver->getName($param);
         $isParamModified = \false;
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($stmts, function (Node $node) use($paramName, &$isParamModified) : ?int {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($stmts, function (Node $node) use ($paramName, &$isParamModified): ?int {
             // skip scope nesting
             if ($node instanceof Class_ || $node instanceof FunctionLike) {
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             if ($node instanceof AssignRef && $this->nodeNameResolver->isName($node->expr, $paramName)) {
                 $isParamModified = \true;
-                return NodeTraverser::STOP_TRAVERSAL;
+                return NodeVisitor::STOP_TRAVERSAL;
             }
             if (!$node instanceof Assign) {
                 return null;
@@ -137,14 +133,14 @@ final class AddReturnTypeFromParam
                 return null;
             }
             $isParamModified = \true;
-            return NodeTraverser::STOP_TRAVERSAL;
+            return NodeVisitor::STOP_TRAVERSAL;
         });
         return $isParamModified;
     }
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    private function shouldSkipNode($functionLike, Scope $scope) : bool
+    private function shouldSkipNode($functionLike, Scope $scope): bool
     {
         // type is already known, skip
         if ($functionLike->returnType instanceof Node) {

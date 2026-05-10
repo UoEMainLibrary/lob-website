@@ -9,18 +9,17 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\SebastianBergmann\Diff;
+namespace RectorPrefix202604\SebastianBergmann\Diff;
 
 use function array_reverse;
 use function count;
-use function max;
 use SplFixedArray;
 final class TimeEfficientLongestCommonSubsequenceCalculator implements LongestCommonSubsequenceCalculator
 {
     /**
      * @inheritDoc
      */
-    public function calculate(array $from, array $to) : array
+    public function calculate(array $from, array $to): array
     {
         $common = [];
         $fromLength = count($from);
@@ -44,12 +43,10 @@ final class TimeEfficientLongestCommonSubsequenceCalculator implements LongestCo
                     } else {
                         $matrix[$o] = $matrix[$o - 1];
                     }
+                } else if ($firstOrLast > $matrix[$o - $width]) {
+                    $matrix[$o] = $firstOrLast;
                 } else {
-                    if ($firstOrLast > $matrix[$o - $width]) {
-                        $matrix[$o] = $firstOrLast;
-                    } else {
-                        $matrix[$o] = $matrix[$o - $width];
-                    }
+                    $matrix[$o] = $matrix[$o - $width];
                 }
             }
         }

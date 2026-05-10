@@ -6,6 +6,7 @@ namespace Rector\PHPUnit\CodeQuality\Rector\MethodCall;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Scalar;
@@ -20,19 +21,22 @@ final class FlipAssertRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
+    /**
+     * @var string[]
+     */
+    private const METHOD_NAMES = ['assertSame', 'assertNotSame', 'assertNotEquals', 'assertEquals', 'assertStringContainsString'];
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Turns accidentally flipped assert order to right one, with expected expr to left', [new CodeSample(<<<'CODE_SAMPLE'
 <?php
 
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use PHPUnit\Framework\TestCase;
 class SomeTest extends TestCase
@@ -48,7 +52,7 @@ CODE_SAMPLE
 , <<<'CODE_SAMPLE'
 <?php
 
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use PHPUnit\Framework\TestCase;
 class SomeTest extends TestCase
@@ -66,16 +70,16 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class, StaticCall::class];
     }
     /**
      * @param MethodCall|StaticCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        if (!$this->testsNodeAnalyzer->isPHPUnitMethodCallNames($node, ['assertSame', 'assertEquals'])) {
+        if (!$this->testsNodeAnalyzer->isPHPUnitMethodCallNames($node, self::METHOD_NAMES)) {
             return null;
         }
         if ($node->isFirstClassCallable()) {
@@ -96,9 +100,12 @@ CODE_SAMPLE
         $node->args = $oldArgs;
         return $node;
     }
-    private function isScalarValue(Expr $expr) : bool
+    private function isScalarValue(Expr $expr): bool
     {
         if ($expr instanceof Scalar) {
+            return \true;
+        }
+        if ($expr instanceof ConstFetch) {
             return \true;
         }
         return $expr instanceof ClassConstFetch;

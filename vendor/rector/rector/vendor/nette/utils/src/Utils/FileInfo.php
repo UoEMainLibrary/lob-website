@@ -5,9 +5,10 @@
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
 declare (strict_types=1);
-namespace RectorPrefix202411\Nette\Utils;
+namespace RectorPrefix202604\Nette\Utils;
 
-use RectorPrefix202411\Nette;
+use RectorPrefix202604\Nette;
+use const DIRECTORY_SEPARATOR;
 /**
  * Represents the file or directory returned by the Finder.
  * @internal do not create instances directly
@@ -15,34 +16,34 @@ use RectorPrefix202411\Nette;
 final class FileInfo extends \SplFileInfo
 {
     /**
-     * @var string
+     * @readonly
      */
-    private $relativePath;
+    private string $relativePath = '';
     public function __construct(string $file, string $relativePath = '')
     {
-        parent::__construct($file);
-        $this->setInfoClass(static::class);
         $this->relativePath = $relativePath;
+        parent::__construct($file);
+        $this->setInfoClass(self::class);
     }
     /**
      * Returns the relative directory path.
      */
-    public function getRelativePath() : string
+    public function getRelativePath(): string
     {
         return $this->relativePath;
     }
     /**
      * Returns the relative path including file name.
      */
-    public function getRelativePathname() : string
+    public function getRelativePathname(): string
     {
-        return ($this->relativePath === '' ? '' : $this->relativePath . \DIRECTORY_SEPARATOR) . $this->getBasename();
+        return ($this->relativePath === '' ? '' : $this->relativePath . DIRECTORY_SEPARATOR) . $this->getBasename();
     }
     /**
      * Returns the contents of the file.
      * @throws Nette\IOException
      */
-    public function read() : string
+    public function read(): string
     {
         return FileSystem::read($this->getPathname());
     }
@@ -50,7 +51,7 @@ final class FileInfo extends \SplFileInfo
      * Writes the contents to the file.
      * @throws Nette\IOException
      */
-    public function write(string $content) : void
+    public function write(string $content): void
     {
         FileSystem::write($this->getPathname(), $content);
     }

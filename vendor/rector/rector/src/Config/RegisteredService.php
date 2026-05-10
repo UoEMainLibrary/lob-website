@@ -7,34 +7,31 @@ final class RegisteredService
 {
     /**
      * @readonly
-     * @var string
      */
-    private $className;
+    private string $className;
     /**
      * @readonly
-     * @var string|null
      */
-    private $alias;
+    private ?string $alias;
     /**
      * @readonly
-     * @var string|null
      */
-    private $tag;
+    private ?string $tag;
     public function __construct(string $className, ?string $alias, ?string $tag)
     {
         $this->className = $className;
         $this->alias = $alias;
         $this->tag = $tag;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return $this->className;
     }
-    public function getAlias() : ?string
+    public function getAlias(): ?string
     {
         return $this->alias;
     }
-    public function getTag() : ?string
+    public function getTag(): ?string
     {
         return $this->tag;
     }

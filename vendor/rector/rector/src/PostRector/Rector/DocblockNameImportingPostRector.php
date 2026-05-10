@@ -3,6 +3,7 @@
 declare (strict_types=1);
 namespace Rector\PostRector\Rector;
 
+use Override;
 use PhpParser\Node;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt;
@@ -15,24 +16,20 @@ final class DocblockNameImportingPostRector extends \Rector\PostRector\Rector\Ab
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PhpDoc\NodeAnalyzer\DocBlockNameImporter
      */
-    private $docBlockNameImporter;
+    private DocBlockNameImporter $docBlockNameImporter;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\PostRector\Guard\AddUseStatementGuard
      */
-    private $addUseStatementGuard;
+    private AddUseStatementGuard $addUseStatementGuard;
     public function __construct(DocBlockNameImporter $docBlockNameImporter, PhpDocInfoFactory $phpDocInfoFactory, DocBlockUpdater $docBlockUpdater, AddUseStatementGuard $addUseStatementGuard)
     {
         $this->docBlockNameImporter = $docBlockNameImporter;
@@ -40,10 +37,7 @@ final class DocblockNameImportingPostRector extends \Rector\PostRector\Rector\Ab
         $this->docBlockUpdater = $docBlockUpdater;
         $this->addUseStatementGuard = $addUseStatementGuard;
     }
-    /**
-     * @return \PhpParser\Node|int|null
-     */
-    public function enterNode(Node $node)
+    public function enterNode(Node $node): ?\PhpParser\Node
     {
         if (!$node instanceof Stmt && !$node instanceof Param) {
             return null;
@@ -56,13 +50,15 @@ final class DocblockNameImportingPostRector extends \Rector\PostRector\Rector\Ab
         if (!$hasDocChanged) {
             return null;
         }
+        $this->addRectorClassWithLine($node);
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
         return $node;
     }
     /**
      * @param Stmt[] $stmts
      */
-    public function shouldTraverse(array $stmts) : bool
+    #[Override]
+    public function shouldTraverse(array $stmts): bool
     {
         return $this->addUseStatementGuard->shouldTraverse($stmts, $this->getFile()->getFilePath());
     }

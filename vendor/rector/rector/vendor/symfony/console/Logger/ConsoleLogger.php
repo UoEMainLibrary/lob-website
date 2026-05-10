@@ -8,13 +8,13 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Logger;
+namespace RectorPrefix202604\Symfony\Component\Console\Logger;
 
-use RectorPrefix202411\Psr\Log\AbstractLogger;
-use RectorPrefix202411\Psr\Log\InvalidArgumentException;
-use RectorPrefix202411\Psr\Log\LogLevel;
-use RectorPrefix202411\Symfony\Component\Console\Output\ConsoleOutputInterface;
-use RectorPrefix202411\Symfony\Component\Console\Output\OutputInterface;
+use RectorPrefix202604\Psr\Log\AbstractLogger;
+use RectorPrefix202604\Psr\Log\InvalidArgumentException;
+use RectorPrefix202604\Psr\Log\LogLevel;
+use RectorPrefix202604\Symfony\Component\Console\Output\ConsoleOutputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Output\OutputInterface;
 /**
  * PSR-3 compliant console logger.
  *
@@ -26,29 +26,17 @@ class ConsoleLogger extends AbstractLogger
 {
     public const INFO = 'info';
     public const ERROR = 'error';
-    /**
-     * @var \Symfony\Component\Console\Output\OutputInterface
-     */
-    private $output;
-    /**
-     * @var mixed[]
-     */
-    private $verbosityLevelMap = [LogLevel::EMERGENCY => OutputInterface::VERBOSITY_NORMAL, LogLevel::ALERT => OutputInterface::VERBOSITY_NORMAL, LogLevel::CRITICAL => OutputInterface::VERBOSITY_NORMAL, LogLevel::ERROR => OutputInterface::VERBOSITY_NORMAL, LogLevel::WARNING => OutputInterface::VERBOSITY_NORMAL, LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE, LogLevel::INFO => OutputInterface::VERBOSITY_VERY_VERBOSE, LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG];
-    /**
-     * @var mixed[]
-     */
-    private $formatLevelMap = [LogLevel::EMERGENCY => self::ERROR, LogLevel::ALERT => self::ERROR, LogLevel::CRITICAL => self::ERROR, LogLevel::ERROR => self::ERROR, LogLevel::WARNING => self::INFO, LogLevel::NOTICE => self::INFO, LogLevel::INFO => self::INFO, LogLevel::DEBUG => self::INFO];
-    /**
-     * @var bool
-     */
-    private $errored = \false;
+    private OutputInterface $output;
+    private array $verbosityLevelMap = [LogLevel::EMERGENCY => OutputInterface::VERBOSITY_NORMAL, LogLevel::ALERT => OutputInterface::VERBOSITY_NORMAL, LogLevel::CRITICAL => OutputInterface::VERBOSITY_NORMAL, LogLevel::ERROR => OutputInterface::VERBOSITY_NORMAL, LogLevel::WARNING => OutputInterface::VERBOSITY_NORMAL, LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE, LogLevel::INFO => OutputInterface::VERBOSITY_VERY_VERBOSE, LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG];
+    private array $formatLevelMap = [LogLevel::EMERGENCY => self::ERROR, LogLevel::ALERT => self::ERROR, LogLevel::CRITICAL => self::ERROR, LogLevel::ERROR => self::ERROR, LogLevel::WARNING => self::INFO, LogLevel::NOTICE => self::INFO, LogLevel::INFO => self::INFO, LogLevel::DEBUG => self::INFO];
+    private bool $errored = \false;
     public function __construct(OutputInterface $output, array $verbosityLevelMap = [], array $formatLevelMap = [])
     {
         $this->output = $output;
         $this->verbosityLevelMap = $verbosityLevelMap + $this->verbosityLevelMap;
         $this->formatLevelMap = $formatLevelMap + $this->formatLevelMap;
     }
-    public function log($level, $message, array $context = []) : void
+    public function log($level, $message, array $context = []): void
     {
         if (!isset($this->verbosityLevelMap[$level])) {
             throw new InvalidArgumentException(\sprintf('The log level "%s" does not exist.', $level));
@@ -70,7 +58,7 @@ class ConsoleLogger extends AbstractLogger
     /**
      * Returns true when any messages have been logged at error levels.
      */
-    public function hasErrored() : bool
+    public function hasErrored(): bool
     {
         return $this->errored;
     }
@@ -79,23 +67,23 @@ class ConsoleLogger extends AbstractLogger
      *
      * @author PHP Framework Interoperability Group
      */
-    private function interpolate(string $message, array $context) : string
+    private function interpolate(string $message, array $context): string
     {
-        if (\strpos($message, '{') === \false) {
+        if (strpos($message, '{') === \false) {
             return $message;
         }
         $replacements = [];
         foreach ($context as $key => $val) {
-            if (null === $val || \is_scalar($val) || $val instanceof \Stringable) {
+            if (null === $val || \is_scalar($val) || is_object($val) && method_exists($val, '__toString')) {
                 $replacements["{{$key}}"] = $val;
             } elseif ($val instanceof \DateTimeInterface) {
                 $replacements["{{$key}}"] = $val->format(\DateTimeInterface::RFC3339);
             } elseif (\is_object($val)) {
-                $replacements["{{$key}}"] = '[object ' . \get_class($val) . ']';
+                $replacements["{{$key}}"] = '[object ' . get_class($val) . ']';
             } else {
                 $replacements["{{$key}}"] = '[' . \gettype($val) . ']';
             }
         }
-        return \strtr($message, $replacements);
+        return strtr($message, $replacements);
     }
 }

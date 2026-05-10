@@ -4,9 +4,9 @@ declare (strict_types=1);
 namespace Rector\Symfony\Symfony27\Rector\MethodCall;
 
 use PhpParser\Node;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\String_;
 use Rector\PhpParser\Node\Value\ValueResolver;
@@ -25,24 +25,20 @@ final class ChangeCollectionTypeOptionNameFromTypeToEntryTypeRector extends Abst
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormAddMethodCallAnalyzer
      */
-    private $formAddMethodCallAnalyzer;
+    private FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormOptionsArrayMatcher
      */
-    private $formOptionsArrayMatcher;
+    private FormOptionsArrayMatcher $formOptionsArrayMatcher;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormCollectionAnalyzer
      */
-    private $formCollectionAnalyzer;
+    private FormCollectionAnalyzer $formCollectionAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @var array<string, string>
      */
@@ -54,7 +50,7 @@ final class ChangeCollectionTypeOptionNameFromTypeToEntryTypeRector extends Abst
         $this->formCollectionAnalyzer = $formCollectionAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Rename `type` option to `entry_type` in CollectionType', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Form\AbstractType;
@@ -95,14 +91,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->formAddMethodCallAnalyzer->isMatching($node)) {
             return null;
@@ -114,11 +110,15 @@ CODE_SAMPLE
         if (!$optionsArray instanceof Array_) {
             return null;
         }
-        $this->refactorOptionsArray($optionsArray);
+        $hasChanged = $this->refactorOptionsArray($optionsArray);
+        if (!$hasChanged) {
+            return null;
+        }
         return $node;
     }
-    private function refactorOptionsArray(Array_ $optionsArray) : void
+    private function refactorOptionsArray(Array_ $optionsArray): bool
     {
+        $hasChanged = \false;
         foreach ($optionsArray->items as $arrayItem) {
             if (!$arrayItem instanceof ArrayItem) {
                 continue;
@@ -131,7 +131,9 @@ CODE_SAMPLE
                     continue;
                 }
                 $arrayItem->key = new String_($newName);
+                $hasChanged = \true;
             }
         }
+        return $hasChanged;
     }
 }

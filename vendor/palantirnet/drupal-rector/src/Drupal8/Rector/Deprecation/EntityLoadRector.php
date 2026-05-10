@@ -27,7 +27,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 final class EntityLoadRector extends AbstractRector implements ConfigurableRectorInterface
 {
     /**
-     * @var \DrupalRector\Drupal8\Rector\ValueObject\EntityLoadConfiguration[]
+     * @var EntityLoadConfiguration[]
      */
     protected array $entityTypes;
 
@@ -51,13 +51,11 @@ final class EntityLoadRector extends AbstractRector implements ConfigurableRecto
                 <<<'CODE_BEFORE'
 $entity = ENTITY_TYPE_load(123);
 $node = entity_load('node', 123);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $entity = \Drupal::entityManager()->getStorage('ENTITY_TYPE')->load(123);
 $node = \Drupal::entityManager()->getStorage('node')->load(123);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new EntityLoadConfiguration('entity'),
                     new EntityLoadConfiguration('file'),
@@ -71,7 +69,7 @@ CODE_AFTER
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof EntityLoadConfiguration)) {
+            if (!$value instanceof EntityLoadConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', EntityLoadConfiguration::class));
             }
         }
@@ -170,7 +168,7 @@ CODE_AFTER
                     $resetCache_method_name = new Node\Identifier('resetCache');
 
                     if (!class_exists('\PhpParser\Node\ArrayItem')) {
-                        $arrayItems = [new Node\Expr\ArrayItem($entity_id->value)];
+                        $arrayItems = [new Node\ArrayItem($entity_id->value)];
                     } else {
                         $arrayItems = [new Node\ArrayItem($entity_id->value)];
                     }

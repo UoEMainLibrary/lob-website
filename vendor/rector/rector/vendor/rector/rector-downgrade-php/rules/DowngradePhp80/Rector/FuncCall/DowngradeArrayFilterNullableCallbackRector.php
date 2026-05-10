@@ -19,7 +19,7 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Param;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\ClosureType;
@@ -40,20 +40,18 @@ final class DowngradeArrayFilterNullableCallbackRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ArgsAnalyzer
      */
-    private $argsAnalyzer;
+    private ArgsAnalyzer $argsAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ArgsAnalyzer $argsAnalyzer, ValueResolver $valueResolver)
     {
         $this->argsAnalyzer = $argsAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Unset nullable callback on array_filter', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -80,15 +78,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
-     * @return \PhpParser\Node\Expr\FuncCall|\PhpParser\Node\Expr\Ternary|null
      */
-    public function refactor(Node $node)
+    public function refactor(Node $node): ?\PhpParser\Node\Expr\FuncCall
     {
         if (!$this->isName($node, 'array_filter')) {
             return null;
@@ -114,21 +111,21 @@ CODE_SAMPLE
         $node->args[2] = new Arg($this->createNewArgSecondTernary($args));
         return $node;
     }
-    private function shouldSkip(Expr $expr) : bool
+    private function shouldSkip(Expr $expr): bool
     {
         if ($this->isAlreadyConditionedToNull($expr)) {
             return \true;
         }
-        if (\in_array(\get_class($expr), [String_::class, Closure::class, ArrowFunction::class, Array_::class], \true)) {
+        if (in_array(get_class($expr), [String_::class, Closure::class, ArrowFunction::class, Array_::class], \true)) {
             return \true;
         }
         $type = $this->nodeTypeResolver->getType($expr);
-        return \in_array(\get_class($type), [StringType::class, ConstantStringType::class, ArrayType::class, ClosureType::class], \true);
+        return in_array(get_class($type), [StringType::class, ConstantStringType::class, ArrayType::class, ClosureType::class], \true);
     }
     /**
      * @param Arg[] $args
      */
-    private function createNewArgFirstTernary(array $args) : Ternary
+    private function createNewArgFirstTernary(array $args): Ternary
     {
         $identical = new Identical($args[1]->value, $this->nodeFactory->createNull());
         $dummyVariable = new Variable('value');
@@ -139,13 +136,13 @@ CODE_SAMPLE
     /**
      * @param Arg[] $args
      */
-    private function createNewArgSecondTernary(array $args) : Ternary
+    private function createNewArgSecondTernary(array $args): Ternary
     {
         $identical = new Identical($args[1]->value, $this->nodeFactory->createNull());
         $constFetch = new ConstFetch(new Name('ARRAY_FILTER_USE_BOTH'));
-        return new Ternary($identical, $constFetch, isset($args[2]) ? $args[2]->value : new LNumber(0));
+        return new Ternary($identical, $constFetch, isset($args[2]) ? $args[2]->value : new Int_(0));
     }
-    private function isAlreadyConditionedToNull(Expr $expr) : bool
+    private function isAlreadyConditionedToNull(Expr $expr): bool
     {
         if (!$expr instanceof Ternary) {
             return \false;
@@ -156,7 +153,7 @@ CODE_SAMPLE
         $identical = $expr->cond;
         return $this->valueResolver->isNull($identical->right);
     }
-    private function createArrowFunction(BooleanNot $booleanNot, Variable $dummyVariable) : ArrowFunction
+    private function createArrowFunction(BooleanNot $booleanNot, Variable $dummyVariable): ArrowFunction
     {
         $arrowFunction = new ArrowFunction(['expr' => $booleanNot]);
         $arrowFunction->params = [new Param($dummyVariable), new Param(new Variable('key'))];

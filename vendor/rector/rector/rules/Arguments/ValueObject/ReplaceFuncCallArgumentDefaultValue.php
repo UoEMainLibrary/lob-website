@@ -8,14 +8,12 @@ final class ReplaceFuncCallArgumentDefaultValue implements ReplaceArgumentDefaul
 {
     /**
      * @readonly
-     * @var string
      */
-    private $function;
+    private string $function;
     /**
      * @readonly
-     * @var int
      */
-    private $position;
+    private int $position;
     /**
      * @readonly
      * @var mixed
@@ -37,11 +35,11 @@ final class ReplaceFuncCallArgumentDefaultValue implements ReplaceArgumentDefaul
         $this->valueBefore = $valueBefore;
         $this->valueAfter = $valueAfter;
     }
-    public function getFunction() : string
+    public function getFunction(): string
     {
         return $this->function;
     }
-    public function getPosition() : int
+    public function getPosition(): int
     {
         return $this->position;
     }

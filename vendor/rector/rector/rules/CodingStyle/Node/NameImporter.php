@@ -19,24 +19,20 @@ final class NameImporter
 {
     /**
      * @readonly
-     * @var \Rector\CodingStyle\ClassNameImport\ClassNameImportSkipper
      */
-    private $classNameImportSkipper;
+    private ClassNameImportSkipper $classNameImportSkipper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper
      */
-    private $fullyQualifiedNodeMapper;
+    private FullyQualifiedNodeMapper $fullyQualifiedNodeMapper;
     /**
      * @readonly
-     * @var \Rector\PostRector\Collector\UseNodesToAddCollector
      */
-    private $useNodesToAddCollector;
+    private UseNodesToAddCollector $useNodesToAddCollector;
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\AliasNameResolver
      */
-    private $aliasNameResolver;
+    private AliasNameResolver $aliasNameResolver;
     public function __construct(ClassNameImportSkipper $classNameImportSkipper, FullyQualifiedNodeMapper $fullyQualifiedNodeMapper, UseNodesToAddCollector $useNodesToAddCollector, AliasNameResolver $aliasNameResolver)
     {
         $this->classNameImportSkipper = $classNameImportSkipper;
@@ -47,7 +43,7 @@ final class NameImporter
     /**
      * @param array<Use_|GroupUse> $currentUses
      */
-    public function importName(FullyQualified $fullyQualified, File $file, array $currentUses) : ?Name
+    public function importName(FullyQualified $fullyQualified, File $file, array $currentUses): ?Name
     {
         if ($this->classNameImportSkipper->shouldSkipName($fullyQualified, $currentUses)) {
             return null;
@@ -61,13 +57,13 @@ final class NameImporter
     /**
      * @param array<Use_|GroupUse> $currentUses
      */
-    private function resolveNameInUse(FullyQualified $fullyQualified, array $currentUses) : ?Name
+    private function resolveNameInUse(FullyQualified $fullyQualified, array $currentUses): ?Name
     {
         $aliasName = $this->aliasNameResolver->resolveByName($fullyQualified, $currentUses);
-        if (\is_string($aliasName)) {
+        if (is_string($aliasName)) {
             return new Name($aliasName);
         }
-        if (\substr_count($fullyQualified->toCodeString(), '\\') === 1) {
+        if (substr_count($fullyQualified->toCodeString(), '\\') === 1) {
             return null;
         }
         $lastName = $fullyQualified->getLast();
@@ -86,7 +82,7 @@ final class NameImporter
     /**
      * @param array<Use_|GroupUse> $currentUses
      */
-    private function importNameAndCollectNewUseStatement(File $file, FullyQualified $fullyQualified, FullyQualifiedObjectType $fullyQualifiedObjectType, array $currentUses) : ?Name
+    private function importNameAndCollectNewUseStatement(File $file, FullyQualified $fullyQualified, FullyQualifiedObjectType $fullyQualifiedObjectType, array $currentUses): ?Name
     {
         // make use of existing use import
         $nameInUse = $this->resolveNameInUse($fullyQualified, $currentUses);
@@ -105,11 +101,27 @@ final class NameImporter
             return null;
         }
         $this->addUseImport($file, $fullyQualified, $fullyQualifiedObjectType);
-        return $fullyQualifiedObjectType->getShortNameNode();
+        $name = $fullyQualifiedObjectType->getShortNameNode();
+        $oldTokens = $file->getOldTokens();
+        $startTokenPos = $fullyQualified->getStartTokenPos();
+        if (!isset($oldTokens[$startTokenPos])) {
+            return $name;
+        }
+        $tokenShortName = $oldTokens[$startTokenPos];
+        if (strncmp($tokenShortName->text, '\\', strlen('\\')) === 0) {
+            return $name;
+        }
+        if (strpos($tokenShortName->text, '\\') !== \false) {
+            return $name;
+        }
+        if ($name->toString() !== $tokenShortName->text) {
+            return $name;
+        }
+        return null;
     }
-    private function addUseImport(File $file, FullyQualified $fullyQualified, FullyQualifiedObjectType $fullyQualifiedObjectType) : void
+    private function addUseImport(File $file, FullyQualified $fullyQualified, FullyQualifiedObjectType $fullyQualifiedObjectType): void
     {
-        if ($this->useNodesToAddCollector->hasImport($file, $fullyQualified, $fullyQualifiedObjectType)) {
+        if ($this->useNodesToAddCollector->hasImport($file, $fullyQualifiedObjectType)) {
             return;
         }
         if ($fullyQualified->getAttribute(AttributeKey::IS_FUNCCALL_NAME) === \true) {

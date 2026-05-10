@@ -21,16 +21,15 @@ final class GetCalledClassToSelfClassRector extends AbstractRector implements Mi
 {
     /**
      * @readonly
-     * @var \Rector\Reflection\ClassModifierChecker
      */
-    private $classModifierChecker;
+    private ClassModifierChecker $classModifierChecker;
     public function __construct(ClassModifierChecker $classModifierChecker)
     {
         $this->classModifierChecker = $classModifierChecker;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Change get_called_class() to self::class on final class', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Change `get_called_class()` to `self::class` on final class', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
 {
    public function callOnMe()
@@ -53,14 +52,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node, 'get_called_class')) {
             return null;
@@ -80,7 +79,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::CLASSNAME_CONSTANT;
     }

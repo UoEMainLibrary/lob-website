@@ -15,23 +15,21 @@ final class PropertyFetchRenamer
 {
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser
      */
-    private $simpleCallableNodeTraverser;
+    private SimpleCallableNodeTraverser $simpleCallableNodeTraverser;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
     public function __construct(SimpleCallableNodeTraverser $simpleCallableNodeTraverser, PropertyFetchAnalyzer $propertyFetchAnalyzer)
     {
         $this->simpleCallableNodeTraverser = $simpleCallableNodeTraverser;
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
     }
-    public function renamePropertyFetchesInClass(ClassLike $classLike, string $currentName, string $expectedName) : void
+    public function renamePropertyFetchesInClass(ClassLike $classLike, string $currentName, string $expectedName): void
     {
         // 1. replace property fetch rename in whole class
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike, function (Node $node) use($currentName, $expectedName) : ?Node {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike, function (Node $node) use ($currentName, $expectedName): ?Node {
             if (!$this->propertyFetchAnalyzer->isLocalPropertyFetchName($node, $currentName)) {
                 return null;
             }

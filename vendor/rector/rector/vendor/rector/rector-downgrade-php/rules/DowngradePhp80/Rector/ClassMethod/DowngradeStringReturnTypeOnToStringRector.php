@@ -20,14 +20,12 @@ final class DowngradeStringReturnTypeOnToStringRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\FamilyTree\NodeAnalyzer\ClassChildAnalyzer
      */
-    private $classChildAnalyzer;
+    private ClassChildAnalyzer $classChildAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(ClassChildAnalyzer $classChildAnalyzer, ReflectionResolver $reflectionResolver)
     {
         $this->classChildAnalyzer = $classChildAnalyzer;
@@ -36,11 +34,11 @@ final class DowngradeStringReturnTypeOnToStringRector extends AbstractRector
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add "string" return on current __toString() method when parent method has string return on __toString() method', [new CodeSample(<<<'CODE_SAMPLE'
 abstract class ParentClass
@@ -81,7 +79,7 @@ CODE_SAMPLE
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkip($node)) {
             return null;
@@ -89,12 +87,12 @@ CODE_SAMPLE
         $node->returnType = new Name('string');
         return $node;
     }
-    private function shouldSkip(ClassMethod $classMethod) : bool
+    private function shouldSkip(ClassMethod $classMethod): bool
     {
         if ($classMethod->returnType instanceof Node) {
             return \true;
         }
-        if (!$this->nodeNameResolver->isName($classMethod, '__toString')) {
+        if (!$this->isName($classMethod, '__toString')) {
             return \true;
         }
         $classReflection = $this->reflectionResolver->resolveClassReflection($classMethod);

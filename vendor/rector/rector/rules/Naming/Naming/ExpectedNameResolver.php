@@ -26,24 +26,20 @@ final class ExpectedNameResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\PropertyNaming
      */
-    private $propertyNaming;
+    private \Rector\Naming\Naming\PropertyNaming $propertyNaming;
     /**
      * @readonly
-     * @var \Rector\Naming\ExpectedNameResolver\MatchParamTypeExpectedNameResolver
      */
-    private $matchParamTypeExpectedNameResolver;
+    private MatchParamTypeExpectedNameResolver $matchParamTypeExpectedNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver, NodeTypeResolver $nodeTypeResolver, \Rector\Naming\Naming\PropertyNaming $propertyNaming, MatchParamTypeExpectedNameResolver $matchParamTypeExpectedNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -51,7 +47,7 @@ final class ExpectedNameResolver
         $this->propertyNaming = $propertyNaming;
         $this->matchParamTypeExpectedNameResolver = $matchParamTypeExpectedNameResolver;
     }
-    public function resolveForParamIfNotYet(Param $param) : ?string
+    public function resolveForParamIfNotYet(Param $param): ?string
     {
         if ($param->type instanceof UnionType) {
             return null;
@@ -60,14 +56,13 @@ final class ExpectedNameResolver
         if ($expectedName === null) {
             return null;
         }
-        /** @var string $currentName */
-        $currentName = $this->nodeNameResolver->getName($param->var);
-        if ($currentName === $expectedName || \substr_compare($currentName, \ucfirst($expectedName), -\strlen(\ucfirst($expectedName))) === 0) {
+        $currentName = $this->nodeNameResolver->getName($param);
+        if ($currentName === $expectedName || substr_compare($currentName, ucfirst($expectedName), -strlen(ucfirst($expectedName))) === 0) {
             return null;
         }
         return $expectedName;
     }
-    public function resolveForAssignNonNew(Assign $assign) : ?string
+    public function resolveForAssignNonNew(Assign $assign): ?string
     {
         if ($assign->expr instanceof New_) {
             return null;
@@ -75,11 +70,10 @@ final class ExpectedNameResolver
         if (!$assign->var instanceof Variable) {
             return null;
         }
-        /** @var Variable $variable */
         $variable = $assign->var;
         return $this->nodeNameResolver->getName($variable);
     }
-    public function resolveForAssignNew(Assign $assign) : ?string
+    public function resolveForAssignNew(Assign $assign): ?string
     {
         if (!$assign->expr instanceof New_) {
             return null;
@@ -87,7 +81,6 @@ final class ExpectedNameResolver
         if (!$assign->var instanceof Variable) {
             return null;
         }
-        /** @var New_ $new */
         $new = $assign->expr;
         if (!$new->class instanceof Name) {
             return null;
@@ -106,7 +99,7 @@ final class ExpectedNameResolver
     /**
      * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\FuncCall $expr
      */
-    public function resolveForCall($expr) : ?string
+    public function resolveForCall($expr): ?string
     {
         if ($this->isDynamicNameCall($expr)) {
             return null;
@@ -116,10 +109,7 @@ final class ExpectedNameResolver
             return null;
         }
         $returnedType = $this->nodeTypeResolver->getType($expr);
-        if (!$returnedType->isObject()->yes()) {
-            return null;
-        }
-        if ($this->isDateTimeType($returnedType)) {
+        if (!$returnedType instanceof ObjectType) {
             return null;
         }
         $expectedName = $this->propertyNaming->getExpectedNameFromType($returnedType);
@@ -136,7 +126,7 @@ final class ExpectedNameResolver
         }
         return null;
     }
-    public function resolveForForeach(VariableAndCallForeach $variableAndCallForeach) : ?string
+    public function resolveForForeach(VariableAndCallForeach $variableAndCallForeach): ?string
     {
         $call = $variableAndCallForeach->getCall();
         if ($this->isDynamicNameCall($call)) {
@@ -170,14 +160,14 @@ final class ExpectedNameResolver
         }
         return $expectedNameFromMethodName->getSingularized();
     }
-    private function isReturnedTypeAnArrayAndExpectedNameFromTypeNotNull(Type $returnedType, ?ExpectedName $expectedName) : bool
+    private function isReturnedTypeAnArrayAndExpectedNameFromTypeNotNull(Type $returnedType, ?ExpectedName $expectedName): bool
     {
         return $returnedType instanceof ArrayType && $expectedName instanceof ExpectedName;
     }
     /**
      * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\FuncCall $expr
      */
-    private function isDynamicNameCall($expr) : bool
+    private function isDynamicNameCall($expr): bool
     {
         if ($expr->name instanceof StaticCall) {
             return \true;
@@ -187,24 +177,11 @@ final class ExpectedNameResolver
         }
         return $expr->name instanceof FuncCall;
     }
-    private function resolveReturnTypeFromArrayType(ArrayType $arrayType) : ?Type
+    private function resolveReturnTypeFromArrayType(ArrayType $arrayType): ?Type
     {
-        if (!$arrayType->getItemType() instanceof ObjectType) {
+        if (!$arrayType->getIterableValueType() instanceof ObjectType) {
             return null;
         }
-        return $arrayType->getItemType();
-    }
-    /**
-     * Skip date time, as custom naming
-     */
-    private function isDateTimeType(Type $type) : bool
-    {
-        if (!$type instanceof ObjectType) {
-            return \false;
-        }
-        if ($type->isInstanceOf('DateTimeInterface')->yes()) {
-            return \true;
-        }
-        return $type->isInstanceOf('DateTime')->yes();
+        return $arrayType->getIterableValueType();
     }
 }

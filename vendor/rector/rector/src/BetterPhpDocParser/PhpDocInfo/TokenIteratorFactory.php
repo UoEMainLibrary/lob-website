@@ -10,19 +10,18 @@ final class TokenIteratorFactory
 {
     /**
      * @readonly
-     * @var \PHPStan\PhpDocParser\Lexer\Lexer
      */
-    private $lexer;
+    private Lexer $lexer;
     public function __construct(Lexer $lexer)
     {
         $this->lexer = $lexer;
     }
-    public function create(string $content) : BetterTokenIterator
+    public function create(string $content): BetterTokenIterator
     {
         $tokens = $this->lexer->tokenize($content);
         return new BetterTokenIterator($tokens);
     }
-    public function createFromTokenIterator(TokenIterator $tokenIterator) : BetterTokenIterator
+    public function createFromTokenIterator(TokenIterator $tokenIterator): BetterTokenIterator
     {
         if ($tokenIterator instanceof BetterTokenIterator) {
             return $tokenIterator;

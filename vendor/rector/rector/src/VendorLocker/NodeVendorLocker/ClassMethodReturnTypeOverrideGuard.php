@@ -6,7 +6,7 @@ namespace Rector\VendorLocker\NodeVendorLocker;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\FunctionVariantWithPhpDocs;
+use PHPStan\Reflection\ExtendedFunctionVariant;
 use PHPStan\Reflection\MethodReflection;
 use PHPStan\Type\MixedType;
 use Rector\FileSystem\FilePathHelper;
@@ -18,24 +18,20 @@ final class ClassMethodReturnTypeOverrideGuard
 {
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\VendorLocker\ParentClassMethodTypeOverrideGuard
      */
-    private $parentClassMethodTypeOverrideGuard;
+    private ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\FileSystem\FilePathHelper
      */
-    private $filePathHelper;
+    private FilePathHelper $filePathHelper;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\MagicClassMethodAnalyzer
      */
-    private $magicClassMethodAnalyzer;
+    private MagicClassMethodAnalyzer $magicClassMethodAnalyzer;
     public function __construct(ReflectionResolver $reflectionResolver, ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard, FilePathHelper $filePathHelper, MagicClassMethodAnalyzer $magicClassMethodAnalyzer)
     {
         $this->reflectionResolver = $reflectionResolver;
@@ -43,7 +39,7 @@ final class ClassMethodReturnTypeOverrideGuard
         $this->filePathHelper = $filePathHelper;
         $this->magicClassMethodAnalyzer = $magicClassMethodAnalyzer;
     }
-    public function shouldSkipClassMethod(ClassMethod $classMethod, Scope $scope) : bool
+    public function shouldSkipClassMethod(ClassMethod $classMethod, Scope $scope): bool
     {
         if ($this->magicClassMethodAnalyzer->isUnsafeOverridden($classMethod)) {
             return \true;
@@ -64,7 +60,7 @@ final class ClassMethodReturnTypeOverrideGuard
         }
         return !$this->isReturnTypeChangeAllowed($classMethod, $scope);
     }
-    private function isReturnTypeChangeAllowed(ClassMethod $classMethod, Scope $scope) : bool
+    private function isReturnTypeChangeAllowed(ClassMethod $classMethod, Scope $scope): bool
     {
         // make sure return type is not protected by parent contract
         $parentClassMethodReflection = $this->parentClassMethodTypeOverrideGuard->getParentClassMethod($classMethod);
@@ -73,7 +69,7 @@ final class ClassMethodReturnTypeOverrideGuard
             return !$this->parentClassMethodTypeOverrideGuard->hasParentClassMethod($classMethod);
         }
         $parametersAcceptor = ParametersAcceptorSelectorVariantsWrapper::select($parentClassMethodReflection, $classMethod, $scope);
-        if ($parametersAcceptor instanceof FunctionVariantWithPhpDocs && !$parametersAcceptor->getNativeReturnType() instanceof MixedType) {
+        if ($parametersAcceptor instanceof ExtendedFunctionVariant && !$parametersAcceptor->getNativeReturnType() instanceof MixedType) {
             return \false;
         }
         $classReflection = $parentClassMethodReflection->getDeclaringClass();
@@ -98,10 +94,10 @@ final class ClassMethodReturnTypeOverrideGuard
         $currentFileName = $currentClassReflection->getFileName();
         // child (current)
         $normalizedCurrentFileName = $this->filePathHelper->normalizePathAndSchema($currentFileName);
-        $isCurrentInVendor = \strpos($normalizedCurrentFileName, '/vendor/') !== \false;
+        $isCurrentInVendor = strpos($normalizedCurrentFileName, '/vendor/') !== \false;
         // parent
         $normalizedFileName = $this->filePathHelper->normalizePathAndSchema($fileName);
-        $isParentInVendor = \strpos($normalizedFileName, '/vendor/') !== \false;
+        $isParentInVendor = strpos($normalizedFileName, '/vendor/') !== \false;
         return $isCurrentInVendor && $isParentInVendor || !$isCurrentInVendor && !$isParentInVendor;
     }
 }

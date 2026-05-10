@@ -8,14 +8,12 @@ final class StaticCallToNew
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     public function __construct(string $class, string $method)
     {
         $this->class = $class;
@@ -23,11 +21,11 @@ final class StaticCallToNew
         RectorAssert::className($class);
         RectorAssert::methodName($method);
     }
-    public function getClass() : string
+    public function getClass(): string
     {
         return $this->class;
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }

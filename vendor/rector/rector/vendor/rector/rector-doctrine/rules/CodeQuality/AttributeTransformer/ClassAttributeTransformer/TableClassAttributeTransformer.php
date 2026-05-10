@@ -14,9 +14,8 @@ final class TableClassAttributeTransformer implements ClassAttributeTransformerI
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     /**
      * @var string
      */
@@ -25,22 +24,23 @@ final class TableClassAttributeTransformer implements ClassAttributeTransformerI
     {
         $this->nodeFactory = $nodeFactory;
     }
-    public function transform(EntityMapping $entityMapping, Class_ $class) : void
+    public function transform(EntityMapping $entityMapping, Class_ $class): bool
     {
         $classMapping = $entityMapping->getClassMapping();
         $table = $classMapping[self::TABLE_KEY] ?? null;
         if (isset($classMapping['type']) && $classMapping['type'] !== 'entity') {
-            return;
+            return \false;
         }
         $args = [];
-        if (\is_string($table)) {
+        if (is_string($table)) {
             $args[] = AttributeFactory::createNamedArg(new String_($table), 'name');
         }
         $class->attrGroups[] = AttributeFactory::createGroup($this->getClassName(), $args);
         $this->addIndexes($classMapping['indexes'] ?? [], $class, MappingClass::INDEX);
         $this->addIndexes($classMapping['uniqueConstraints'] ?? [], $class, MappingClass::UNIQUE_CONSTRAINT);
+        return \true;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return MappingClass::TABLE;
     }
@@ -48,10 +48,10 @@ final class TableClassAttributeTransformer implements ClassAttributeTransformerI
      * @param array<string, array<string, mixed>> $mapping
      * @param MappingClass::* $attribute
      */
-    private function addIndexes(array $mapping, Class_ $class, string $attribute) : void
+    private function addIndexes(array $mapping, Class_ $class, string $attribute): void
     {
         foreach ($mapping as $name => $values) {
-            $values = \array_merge(['name' => $name], $values);
+            $values = array_merge(['name' => $name], $values);
             $args = $this->nodeFactory->createArgs($values);
             $class->attrGroups[] = AttributeFactory::createGroup($attribute, $args);
         }

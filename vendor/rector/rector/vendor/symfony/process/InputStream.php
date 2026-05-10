@@ -8,9 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Process;
+namespace RectorPrefix202604\Symfony\Component\Process;
 
-use RectorPrefix202411\Symfony\Component\Process\Exception\RuntimeException;
+use RectorPrefix202604\Symfony\Component\Process\Exception\RuntimeException;
 /**
  * Provides a way to continuously write to the input of a Process until the InputStream is closed.
  *
@@ -20,24 +20,13 @@ use RectorPrefix202411\Symfony\Component\Process\Exception\RuntimeException;
  */
 class InputStream implements \IteratorAggregate
 {
-    /**
-     * @var \Closure|null
-     */
-    private $onEmpty;
-    /**
-     * @var mixed[]
-     */
-    private $input = [];
-    /**
-     * @var bool
-     */
-    private $open = \true;
+    private ?\Closure $onEmpty = null;
+    private array $input = [];
+    private bool $open = \true;
     /**
      * Sets a callback that is called when the write buffer becomes empty.
-     *
-     * @return void
      */
-    public function onEmpty(?callable $onEmpty = null)
+    public function onEmpty(?callable $onEmpty = null): void
     {
         $this->onEmpty = null !== $onEmpty ? \Closure::fromCallable($onEmpty) : null;
     }
@@ -46,10 +35,8 @@ class InputStream implements \IteratorAggregate
      *
      * @param mixed $input The input to append as scalar,
      *                                                                stream resource or \Traversable
-     *
-     * @return void
      */
-    public function write($input)
+    public function write($input): void
     {
         if (null === $input) {
             return;
@@ -61,37 +48,33 @@ class InputStream implements \IteratorAggregate
     }
     /**
      * Closes the write buffer.
-     *
-     * @return void
      */
-    public function close()
+    public function close(): void
     {
         $this->open = \false;
     }
     /**
      * Tells whether the write buffer is closed or not.
-     *
-     * @return bool
      */
-    public function isClosed()
+    public function isClosed(): bool
     {
         return !$this->open;
     }
-    public function getIterator() : \Traversable
+    public function getIterator(): \Traversable
     {
         $this->open = \true;
         while ($this->open || $this->input) {
             if (!$this->input) {
-                (yield '');
+                yield '';
                 continue;
             }
-            $current = \array_shift($this->input);
+            $current = array_shift($this->input);
             if ($current instanceof \Iterator) {
                 yield from $current;
             } else {
-                (yield $current);
+                yield $current;
             }
-            if (!$this->input && $this->open && null !== ($onEmpty = $this->onEmpty)) {
+            if (!$this->input && $this->open && null !== $onEmpty = $this->onEmpty) {
                 $this->write($onEmpty($this));
             }
         }

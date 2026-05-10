@@ -12,15 +12,17 @@ use PhpParser\Node\Expr\StaticPropertyFetch;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\NullType;
 use PHPStan\Type\Type;
+use Rector\Enum\ClassName;
 use Rector\NodeAnalyzer\ExprAnalyzer;
 use Rector\NodeAnalyzer\PropertyFetchAnalyzer;
 use Rector\NodeTypeResolver\NodeTypeResolver;
 use Rector\NodeTypeResolver\PHPStan\Type\TypeFactory;
+use Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer;
 use Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\TypeDeclaration\AlreadyAssignDetector\ConstructorAssignDetector;
@@ -34,55 +36,49 @@ final class AssignToPropertyTypeInferer
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\AlreadyAssignDetector\ConstructorAssignDetector
      */
-    private $constructorAssignDetector;
+    private ConstructorAssignDetector $constructorAssignDetector;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\Matcher\PropertyAssignMatcher
      */
-    private $propertyAssignMatcher;
+    private PropertyAssignMatcher $propertyAssignMatcher;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\AlreadyAssignDetector\PropertyDefaultAssignDetector
      */
-    private $propertyDefaultAssignDetector;
+    private PropertyDefaultAssignDetector $propertyDefaultAssignDetector;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\AlreadyAssignDetector\NullTypeAssignDetector
      */
-    private $nullTypeAssignDetector;
+    private NullTypeAssignDetector $nullTypeAssignDetector;
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser
      */
-    private $simpleCallableNodeTraverser;
+    private SimpleCallableNodeTraverser $simpleCallableNodeTraverser;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
-    public function __construct(ConstructorAssignDetector $constructorAssignDetector, PropertyAssignMatcher $propertyAssignMatcher, PropertyDefaultAssignDetector $propertyDefaultAssignDetector, NullTypeAssignDetector $nullTypeAssignDetector, SimpleCallableNodeTraverser $simpleCallableNodeTraverser, TypeFactory $typeFactory, NodeTypeResolver $nodeTypeResolver, ExprAnalyzer $exprAnalyzer, ValueResolver $valueResolver, PropertyFetchAnalyzer $propertyFetchAnalyzer)
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
+    /**
+     * @readonly
+     */
+    private PhpAttributeAnalyzer $phpAttributeAnalyzer;
+    public function __construct(ConstructorAssignDetector $constructorAssignDetector, PropertyAssignMatcher $propertyAssignMatcher, PropertyDefaultAssignDetector $propertyDefaultAssignDetector, NullTypeAssignDetector $nullTypeAssignDetector, SimpleCallableNodeTraverser $simpleCallableNodeTraverser, TypeFactory $typeFactory, NodeTypeResolver $nodeTypeResolver, ExprAnalyzer $exprAnalyzer, ValueResolver $valueResolver, PropertyFetchAnalyzer $propertyFetchAnalyzer, PhpAttributeAnalyzer $phpAttributeAnalyzer)
     {
         $this->constructorAssignDetector = $constructorAssignDetector;
         $this->propertyAssignMatcher = $propertyAssignMatcher;
@@ -94,13 +90,14 @@ final class AssignToPropertyTypeInferer
         $this->exprAnalyzer = $exprAnalyzer;
         $this->valueResolver = $valueResolver;
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
+        $this->phpAttributeAnalyzer = $phpAttributeAnalyzer;
     }
-    public function inferPropertyInClassLike(Property $property, string $propertyName, ClassLike $classLike) : ?Type
+    public function inferPropertyInClassLike(Property $property, string $propertyName, ClassLike $classLike): ?Type
     {
         if ($this->hasAssignDynamicPropertyValue($classLike, $propertyName)) {
             return null;
         }
-        $assignedExprTypes = $this->getAssignedExprTypes($classLike, $propertyName);
+        $assignedExprTypes = $this->getAssignedExprTypes($classLike, $property, $propertyName);
         if ($this->shouldAddNullType($classLike, $propertyName, $assignedExprTypes)) {
             $assignedExprTypes[] = new NullType();
         }
@@ -109,7 +106,7 @@ final class AssignToPropertyTypeInferer
     /**
      * @param Type[] $assignedExprTypes
      */
-    private function resolveTypeWithVerifyDefaultValue(Property $property, array $assignedExprTypes) : ?Type
+    private function resolveTypeWithVerifyDefaultValue(Property $property, array $assignedExprTypes): ?Type
     {
         $defaultPropertyValue = $property->props[0]->default;
         if ($assignedExprTypes === []) {
@@ -125,7 +122,7 @@ final class AssignToPropertyTypeInferer
         }
         return $inferredType;
     }
-    private function shouldSkipWithDifferentDefaultValueType(?Expr $expr, Type $inferredType) : bool
+    private function shouldSkipWithDifferentDefaultValueType(?Expr $expr, Type $inferredType): bool
     {
         if (!$expr instanceof Expr) {
             return \false;
@@ -136,7 +133,7 @@ final class AssignToPropertyTypeInferer
         $defaultType = $this->nodeTypeResolver->getNativeType($expr);
         return $inferredType->isSuperTypeOf($defaultType)->no();
     }
-    private function resolveExprStaticTypeIncludingDimFetch(Assign $assign) : Type
+    private function resolveExprStaticTypeIncludingDimFetch(Assign $assign): Type
     {
         $exprStaticType = $this->nodeTypeResolver->getNativeType($assign->expr);
         if ($assign->var instanceof ArrayDimFetch) {
@@ -147,7 +144,7 @@ final class AssignToPropertyTypeInferer
     /**
      * @param Type[] $assignedExprTypes
      */
-    private function shouldAddNullType(ClassLike $classLike, string $propertyName, array $assignedExprTypes) : bool
+    private function shouldAddNullType(ClassLike $classLike, string $propertyName, array $assignedExprTypes): bool
     {
         $hasPropertyDefaultValue = $this->propertyDefaultAssignDetector->detect($classLike, $propertyName);
         $isAssignedInConstructor = $this->constructorAssignDetector->isPropertyAssigned($classLike, $propertyName);
@@ -169,10 +166,10 @@ final class AssignToPropertyTypeInferer
         }
         return !$hasPropertyDefaultValue;
     }
-    private function hasAssignDynamicPropertyValue(ClassLike $classLike, string $propertyName) : bool
+    private function hasAssignDynamicPropertyValue(ClassLike $classLike, string $propertyName): bool
     {
         $hasAssignDynamicPropertyValue = \false;
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike->stmts, function (Node $node) use($propertyName, &$hasAssignDynamicPropertyValue) : ?int {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike->stmts, function (Node $node) use ($propertyName, &$hasAssignDynamicPropertyValue): ?int {
             if (!$node instanceof Assign) {
                 return null;
             }
@@ -185,7 +182,7 @@ final class AssignToPropertyTypeInferer
                 $assignVar = $node->var;
                 if (!$assignVar->name instanceof Identifier) {
                     $hasAssignDynamicPropertyValue = \true;
-                    return NodeTraverser::STOP_TRAVERSAL;
+                    return NodeVisitor::STOP_TRAVERSAL;
                 }
                 return null;
             }
@@ -196,10 +193,11 @@ final class AssignToPropertyTypeInferer
     /**
      * @return array<Type>
      */
-    private function getAssignedExprTypes(ClassLike $classLike, string $propertyName) : array
+    private function getAssignedExprTypes(ClassLike $classLike, Property $property, string $propertyName): array
     {
         $assignedExprTypes = [];
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike->stmts, function (Node $node) use($propertyName, &$assignedExprTypes) : ?int {
+        $hasJmsType = $this->phpAttributeAnalyzer->hasPhpAttribute($property, ClassName::JMS_TYPE);
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($classLike->stmts, function (Node $node) use ($propertyName, &$assignedExprTypes, $hasJmsType): ?int {
             if (!$node instanceof Assign) {
                 return null;
             }
@@ -208,8 +206,8 @@ final class AssignToPropertyTypeInferer
                 return null;
             }
             if ($this->exprAnalyzer->isNonTypedFromParam($node->expr)) {
-                $assignedExprTypes = [];
-                return NodeTraverser::STOP_TRAVERSAL;
+                $assignedExprTypes = $hasJmsType ? [] : [new MixedType()];
+                return NodeVisitor::STOP_TRAVERSAL;
             }
             $assignedExprTypes[] = $this->resolveExprStaticTypeIncludingDimFetch($node);
             return null;

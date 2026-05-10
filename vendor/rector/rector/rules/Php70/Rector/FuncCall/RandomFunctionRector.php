@@ -7,7 +7,7 @@ use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
@@ -21,9 +21,8 @@ final class RandomFunctionRector extends AbstractRector implements MinPhpVersion
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @var array<string, string>
      */
@@ -32,21 +31,21 @@ final class RandomFunctionRector extends AbstractRector implements MinPhpVersion
     {
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Changes rand, srand, and getrandmax to newer alternatives', [new CodeSample('rand();', 'random_int();')]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?\PhpParser\Node\Expr\FuncCall
+    public function refactor(Node $node): ?\PhpParser\Node\Expr\FuncCall
     {
         if ($node->isFirstClassCallable()) {
             return null;
@@ -58,12 +57,12 @@ final class RandomFunctionRector extends AbstractRector implements MinPhpVersion
                 if ($newFunctionName === 'random_int') {
                     $args = $node->getArgs();
                     if ($args === []) {
-                        $node->args[0] = new Arg(new LNumber(0));
+                        $node->args[0] = new Arg(new Int_(0));
                         $node->args[1] = new Arg($this->nodeFactory->createFuncCall('mt_getrandmax'));
-                    } elseif (\count($args) === 2) {
+                    } elseif (count($args) === 2) {
                         $minValue = $this->valueResolver->getValue($args[0]->value);
                         $maxValue = $this->valueResolver->getValue($args[1]->value);
-                        if (\is_int($minValue) && \is_int($maxValue) && $minValue > $maxValue) {
+                        if (is_int($minValue) && is_int($maxValue) && $minValue > $maxValue) {
                             $temp = $node->args[0];
                             $node->args[0] = $node->args[1];
                             $node->args[1] = $temp;
@@ -75,7 +74,7 @@ final class RandomFunctionRector extends AbstractRector implements MinPhpVersion
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::CSPRNG_FUNCTIONS;
     }

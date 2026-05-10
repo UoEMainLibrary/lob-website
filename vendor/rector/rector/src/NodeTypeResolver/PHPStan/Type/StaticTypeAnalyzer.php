@@ -7,23 +7,13 @@ use PHPStan\Type\ArrayType;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\ConstantScalarType;
 use PHPStan\Type\MixedType;
-use PHPStan\Type\NullType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
+use PHPStan\Type\TypeCombinator;
 use PHPStan\Type\UnionType;
-use Rector\PHPStanStaticTypeMapper\TypeAnalyzer\UnionTypeAnalyzer;
 final class StaticTypeAnalyzer
 {
-    /**
-     * @readonly
-     * @var \Rector\PHPStanStaticTypeMapper\TypeAnalyzer\UnionTypeAnalyzer
-     */
-    private $unionTypeAnalyzer;
-    public function __construct(UnionTypeAnalyzer $unionTypeAnalyzer)
-    {
-        $this->unionTypeAnalyzer = $unionTypeAnalyzer;
-    }
-    public function isAlwaysTruableType(Type $type) : bool
+    public function isAlwaysTruableType(Type $type): bool
     {
         if ($type instanceof MixedType) {
             return \false;
@@ -34,14 +24,14 @@ final class StaticTypeAnalyzer
         if ($type instanceof ArrayType) {
             return $this->isAlwaysTruableArrayType($type);
         }
-        if ($type instanceof UnionType && $this->unionTypeAnalyzer->isNullable($type)) {
+        if ($type instanceof UnionType && TypeCombinator::containsNull($type)) {
             return \false;
         }
         // always trueish
         if ($type instanceof ObjectType) {
             return \true;
         }
-        if ($type instanceof ConstantScalarType && !$type instanceof NullType) {
+        if ($type instanceof ConstantScalarType && !$type->isNull()->yes()) {
             return (bool) $type->getValue();
         }
         if ($type->isScalar()->yes()) {
@@ -49,7 +39,7 @@ final class StaticTypeAnalyzer
         }
         return $this->isAlwaysTruableUnionType($type);
     }
-    private function isAlwaysTruableUnionType(Type $type) : bool
+    private function isAlwaysTruableUnionType(Type $type): bool
     {
         if (!$type instanceof UnionType) {
             return \false;
@@ -61,9 +51,9 @@ final class StaticTypeAnalyzer
         }
         return \true;
     }
-    private function isAlwaysTruableArrayType(ArrayType $arrayType) : bool
+    private function isAlwaysTruableArrayType(ArrayType $arrayType): bool
     {
-        $itemType = $arrayType->getItemType();
+        $itemType = $arrayType->getIterableValueType();
         if (!$itemType instanceof ConstantScalarType) {
             return \false;
         }

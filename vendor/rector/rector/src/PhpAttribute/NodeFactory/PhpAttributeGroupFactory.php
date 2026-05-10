@@ -4,11 +4,11 @@ declare (strict_types=1);
 namespace Rector\PhpAttribute\NodeFactory;
 
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
@@ -27,55 +27,54 @@ final class PhpAttributeGroupFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\AnnotationToAttributeMapper
      */
-    private $annotationToAttributeMapper;
+    private AnnotationToAttributeMapper $annotationToAttributeMapper;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\AttributeNameFactory
      */
-    private $attributeNameFactory;
+    private \Rector\PhpAttribute\NodeFactory\AttributeNameFactory $attributeNameFactory;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\NamedArgsFactory
      */
-    private $namedArgsFactory;
+    private \Rector\PhpAttribute\NodeFactory\NamedArgsFactory $namedArgsFactory;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\AttributeArrayNameInliner
      */
-    private $attributeArrayNameInliner;
+    private \Rector\PhpAttribute\NodeFactory\AnnotationToAttributeIntegerValueCaster $annotationToAttributeIntegerValueCaster;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\AnnotationToAttributeIntegerValueCaster
      */
-    private $annotationToAttributeIntegerValueCaster;
-    public function __construct(AnnotationToAttributeMapper $annotationToAttributeMapper, \Rector\PhpAttribute\NodeFactory\AttributeNameFactory $attributeNameFactory, \Rector\PhpAttribute\NodeFactory\NamedArgsFactory $namedArgsFactory, AttributeArrayNameInliner $attributeArrayNameInliner, \Rector\PhpAttribute\NodeFactory\AnnotationToAttributeIntegerValueCaster $annotationToAttributeIntegerValueCaster)
+    private AttributeArrayNameInliner $attributeArrayNameInliner;
+    public function __construct(AnnotationToAttributeMapper $annotationToAttributeMapper, \Rector\PhpAttribute\NodeFactory\AttributeNameFactory $attributeNameFactory, \Rector\PhpAttribute\NodeFactory\NamedArgsFactory $namedArgsFactory, \Rector\PhpAttribute\NodeFactory\AnnotationToAttributeIntegerValueCaster $annotationToAttributeIntegerValueCaster, AttributeArrayNameInliner $attributeArrayNameInliner)
     {
         $this->annotationToAttributeMapper = $annotationToAttributeMapper;
         $this->attributeNameFactory = $attributeNameFactory;
         $this->namedArgsFactory = $namedArgsFactory;
-        $this->attributeArrayNameInliner = $attributeArrayNameInliner;
         $this->annotationToAttributeIntegerValueCaster = $annotationToAttributeIntegerValueCaster;
+        $this->attributeArrayNameInliner = $attributeArrayNameInliner;
     }
-    public function createFromSimpleTag(AnnotationToAttribute $annotationToAttribute) : AttributeGroup
+    public function createFromSimpleTag(AnnotationToAttribute $annotationToAttribute, ?string $value = null): AttributeGroup
     {
-        return $this->createFromClass($annotationToAttribute->getAttributeClass());
+        return $this->createFromClass($annotationToAttribute->getAttributeClass(), $value);
     }
     /**
      * @param AttributeName::*|string $attributeClass
      */
-    public function createFromClass(string $attributeClass) : AttributeGroup
+    public function createFromClass(string $attributeClass, ?string $value = null): AttributeGroup
     {
         $fullyQualified = new FullyQualified($attributeClass);
         $attribute = new Attribute($fullyQualified);
+        if ($value !== null && $value !== '') {
+            $arg = new Arg(new String_($value));
+            $attribute->args = [$arg];
+        }
         return new AttributeGroup([$attribute]);
     }
     /**
      * @api tests
      * @param mixed[] $items
      */
-    public function createFromClassWithItems(string $attributeClass, array $items) : AttributeGroup
+    public function createFromClassWithItems(string $attributeClass, array $items): AttributeGroup
     {
         $fullyQualified = new FullyQualified($attributeClass);
         $args = $this->createArgsFromItems($items);
@@ -85,32 +84,28 @@ final class PhpAttributeGroupFactory
     /**
      * @param Use_[] $uses
      */
-    public function create(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode, AnnotationToAttribute $annotationToAttribute, array $uses) : AttributeGroup
+    public function create(DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode, AnnotationToAttribute $annotationToAttribute, array $uses): AttributeGroup
     {
         $values = $doctrineAnnotationTagValueNode->getValuesWithSilentKey();
         $args = $this->createArgsFromItems($values, '', $annotationToAttribute->getClassReferenceFields());
         $this->annotationToAttributeIntegerValueCaster->castAttributeTypes($annotationToAttribute, $args);
-        $args = $this->attributeArrayNameInliner->inlineArrayToArgs($args);
+        $args = $this->attributeArrayNameInliner->inlineArrayToArgs($args, $annotationToAttribute->getAttributeClass());
         $attributeName = $this->attributeNameFactory->create($annotationToAttribute, $doctrineAnnotationTagValueNode, $uses);
         // keep FQN in the attribute, so it can be easily detected later
         $attributeName->setAttribute(AttributeKey::PHP_ATTRIBUTE_NAME, $annotationToAttribute->getAttributeClass());
         $attribute = new Attribute($attributeName, $args);
-        $attributeGroup = new AttributeGroup([$attribute]);
-        $comment = $doctrineAnnotationTagValueNode->getAttribute(AttributeKey::ATTRIBUTE_COMMENT);
-        if ($comment) {
-            $attributeGroup->setAttribute(AttributeKey::ATTRIBUTE_COMMENT, $comment);
-        }
-        return $attributeGroup;
+        return new AttributeGroup([$attribute]);
     }
     /**
      * @api tests
      *
      * @param ArrayItemNode[]|mixed[] $items
+     * @param string $attributeClass @deprecated
      * @param string[] $classReferencedFields
      *
-     * @return Arg[]
+     * @return list<Arg>
      */
-    public function createArgsFromItems(array $items, string $attributeClass = '', array $classReferencedFields = []) : array
+    public function createArgsFromItems(array $items, string $attributeClass = '', array $classReferencedFields = []): array
     {
         $mappedItems = $this->annotationToAttributeMapper->map($items);
         $this->mapClassReferences($mappedItems, $classReferencedFields);
@@ -122,7 +117,7 @@ final class PhpAttributeGroupFactory
      * @param string[] $classReferencedFields
      * @param \PhpParser\Node\Expr|string $expr
      */
-    private function mapClassReferences($expr, array $classReferencedFields) : void
+    private function mapClassReferences($expr, array $classReferencedFields): void
     {
         if (!$expr instanceof Array_) {
             return;
@@ -134,13 +129,16 @@ final class PhpAttributeGroupFactory
             if (!$arrayItem->key instanceof String_) {
                 continue;
             }
-            if (!\in_array($arrayItem->key->value, $classReferencedFields)) {
+            if (!in_array($arrayItem->key->value, $classReferencedFields)) {
                 continue;
             }
             if ($arrayItem->value instanceof ClassConstFetch) {
                 continue;
             }
             if (!$arrayItem->value instanceof String_) {
+                continue;
+            }
+            if ($arrayItem->value->value === '') {
                 continue;
             }
             $arrayItem->value = new ClassConstFetch(new FullyQualified($arrayItem->value->value), 'class');

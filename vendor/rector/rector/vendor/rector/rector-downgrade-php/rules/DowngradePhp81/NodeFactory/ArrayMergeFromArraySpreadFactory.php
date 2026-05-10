@@ -3,16 +3,14 @@
 declare (strict_types=1);
 namespace Rector\DowngradePhp81\NodeFactory;
 
-use PhpParser\Node;
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PHPStan\Analyser\MutatingScope;
-use PHPStan\Type\ArrayType;
 use PHPStan\Type\IterableType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
@@ -23,16 +21,15 @@ final class ArrayMergeFromArraySpreadFactory
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function createFromArray(Array_ $array, MutatingScope $mutatingScope) : ?Node
+    public function createFromArray(Array_ $array, MutatingScope $mutatingScope): FuncCall
     {
-        $newArrayItems = $this->disolveArrayItems($array);
+        $newArrayItems = $this->dissolveArrayItems($array);
         return $this->createArrayMergeFuncCall($newArrayItems, $mutatingScope);
     }
     /**
@@ -43,7 +40,7 @@ final class ArrayMergeFromArraySpreadFactory
      *    to be added once the next spread is found, or at the end
      * @return ArrayItem[]
      */
-    private function disolveArrayItems(Array_ $array) : array
+    private function dissolveArrayItems(Array_ $array): array
     {
         $newItems = [];
         $accumulatedItems = [];
@@ -71,27 +68,27 @@ final class ArrayMergeFromArraySpreadFactory
     /**
      * @param ArrayItem[] $arrayItems
      */
-    private function createArrayMergeFuncCall(array $arrayItems, MutatingScope $mutatingScope) : FuncCall
+    private function createArrayMergeFuncCall(array $arrayItems, MutatingScope $mutatingScope): FuncCall
     {
-        $args = \array_map(function (ArrayItem $arrayItem) use($mutatingScope) : Arg {
+        $args = array_map(function (ArrayItem $arrayItem) use ($mutatingScope): Arg {
             if ($arrayItem->unpack) {
                 // Do not unpack anymore
                 $arrayItem->unpack = \false;
                 return $this->createArgFromSpreadArrayItem($mutatingScope, $arrayItem);
             }
-            return new Arg($arrayItem);
+            return new Arg($arrayItem->value);
         }, $arrayItems);
         return new FuncCall(new Name('array_merge'), $args);
     }
     /**
-     * @param array<ArrayItem|null> $items
+     * @param array<ArrayItem> $items
      */
-    private function createArrayItemFromArray(array $items) : ArrayItem
+    private function createArrayItemFromArray(array $items): ArrayItem
     {
         $array = new Array_($items);
         return new ArrayItem($array);
     }
-    private function createArgFromSpreadArrayItem(MutatingScope $mutatingScope, ArrayItem $arrayItem) : Arg
+    private function createArgFromSpreadArrayItem(MutatingScope $mutatingScope, ArrayItem $arrayItem): Arg
     {
         // By now every item is a variable
         /** @var Variable $variable */
@@ -109,26 +106,26 @@ final class ArrayMergeFromArraySpreadFactory
                 throw new ShouldNotHappenException();
             }
         }
-        $iteratorToArrayFuncCall = new FuncCall(new Name('iterator_to_array'), [new Arg($arrayItem)]);
+        $iteratorToArrayFuncCall = new FuncCall(new Name('iterator_to_array'), [new Arg($arrayItem->value)]);
         // If we know it is an array, then print it directly
         // Otherwise PHPStan throws an error:
         // "Else branch is unreachable because ternary operator condition is always true."
-        if ($type instanceof ArrayType) {
-            return new Arg($arrayItem);
+        if ($type->isArray()->yes()) {
+            return new Arg($arrayItem->value);
         }
         // If it is iterable, then directly return `iterator_to_array`
         if ($this->isIterableType($type)) {
             return new Arg($iteratorToArrayFuncCall);
         }
         // Print a ternary, handling either an array or an iterator
-        $inArrayFuncCall = new FuncCall(new Name('is_array'), [new Arg($arrayItem)]);
-        return new Arg(new Ternary($inArrayFuncCall, $arrayItem, $iteratorToArrayFuncCall));
+        $inArrayFuncCall = new FuncCall(new Name('is_array'), [new Arg($arrayItem->value)]);
+        return new Arg(new Ternary($inArrayFuncCall, $arrayItem->value, $iteratorToArrayFuncCall));
     }
     /**
      * Iterables: objects declaring the interface Traversable,
      * For "iterable" type, it can be array
      */
-    private function isIterableType(Type $type) : bool
+    private function isIterableType(Type $type): bool
     {
         if ($type instanceof IterableType) {
             return \false;

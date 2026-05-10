@@ -27,26 +27,23 @@ final class GetHelperControllerToServiceRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\TypeAnalyzer\ControllerAnalyzer
      */
-    private $controllerAnalyzer;
+    private ControllerAnalyzer $controllerAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\ClassDependencyManipulator
      */
-    private $classDependencyManipulator;
+    private ClassDependencyManipulator $classDependencyManipulator;
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\PropertyNaming
      */
-    private $propertyNaming;
+    private PropertyNaming $propertyNaming;
     public function __construct(ControllerAnalyzer $controllerAnalyzer, ClassDependencyManipulator $classDependencyManipulator, PropertyNaming $propertyNaming)
     {
         $this->controllerAnalyzer = $controllerAnalyzer;
         $this->classDependencyManipulator = $classDependencyManipulator;
         $this->propertyNaming = $propertyNaming;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replace $this->getDoctrine() and $this->dispatchMessage() calls in AbstractController with direct service use', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -81,20 +78,20 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->controllerAnalyzer->isController($node)) {
             return null;
         }
         $propertyMetadatas = [];
-        $this->traverseNodesWithCallable($node, function (Node $node) use(&$propertyMetadatas) {
+        $this->traverseNodesWithCallable($node, function (Node $node) use (&$propertyMetadatas) {
             if (!$node instanceof MethodCall) {
                 return null;
             }
@@ -124,18 +121,18 @@ CODE_SAMPLE
         }
         return $node;
     }
-    private function createMessageBusPropertyMetadata() : PropertyMetadata
+    private function createMessageBusPropertyMetadata(): PropertyMetadata
     {
-        $propertyName = $this->propertyNaming->fqnToVariableName('Symfony\\Component\\Messenger\\MessageBusInterface');
+        $propertyName = $this->propertyNaming->fqnToVariableName('Symfony\Component\Messenger\MessageBusInterface');
         // add dependency
-        $propertyObjectType = new ObjectType('Symfony\\Component\\Messenger\\MessageBusInterface');
+        $propertyObjectType = new ObjectType('Symfony\Component\Messenger\MessageBusInterface');
         return new PropertyMetadata($propertyName, $propertyObjectType);
     }
-    private function createManagerRegistryPropertyMetadata() : PropertyMetadata
+    private function createManagerRegistryPropertyMetadata(): PropertyMetadata
     {
-        $propertyName = $this->propertyNaming->fqnToVariableName('Doctrine\\Persistence\\ManagerRegistry');
+        $propertyName = $this->propertyNaming->fqnToVariableName('Doctrine\Persistence\ManagerRegistry');
         // add dependency
-        $propertyObjectType = new ObjectType('Doctrine\\Persistence\\ManagerRegistry');
+        $propertyObjectType = new ObjectType('Doctrine\Persistence\ManagerRegistry');
         return new PropertyMetadata($propertyName, $propertyObjectType);
     }
 }

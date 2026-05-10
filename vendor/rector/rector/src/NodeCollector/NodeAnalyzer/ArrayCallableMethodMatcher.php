@@ -3,9 +3,9 @@
 declare (strict_types=1);
 namespace Rector\NodeCollector\NodeAnalyzer;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Scalar\MagicConst\Class_;
 use PhpParser\Node\Scalar\String_;
@@ -30,24 +30,20 @@ final class ArrayCallableMethodMatcher
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver, ValueResolver $valueResolver, ReflectionProvider $reflectionProvider, ReflectionResolver $reflectionResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
@@ -64,7 +60,7 @@ final class ArrayCallableMethodMatcher
      */
     public function match(Array_ $array, Scope $scope, ?string $classMethodName = null)
     {
-        if (\count($array->items) !== 2) {
+        if (count($array->items) !== 2) {
             return null;
         }
         if ($this->shouldSkipNullItems($array)) {
@@ -106,7 +102,7 @@ final class ArrayCallableMethodMatcher
         }
         return new ArrayCallable($firstItemValue, $className, $methodName);
     }
-    private function shouldSkipNullItems(Array_ $array) : bool
+    private function shouldSkipNullItems(Array_ $array): bool
     {
         if (!$array->items[0] instanceof ArrayItem) {
             return \true;
@@ -116,24 +112,24 @@ final class ArrayCallableMethodMatcher
     /**
      * @param mixed $values
      */
-    private function shouldSkipAssociativeArray($values) : bool
+    private function shouldSkipAssociativeArray($values): bool
     {
-        if (!\is_array($values)) {
+        if (!is_array($values)) {
             return \false;
         }
-        $keys = \array_keys($values);
+        $keys = array_keys($values);
         return $keys !== [0, 1] && $keys !== [1];
     }
     /**
      * @param string[] $functionNames
      */
-    private function isCallbackAtFunctionNames(Array_ $array, array $functionNames) : bool
+    private function isCallbackAtFunctionNames(Array_ $array, array $functionNames): bool
     {
         $fromFuncCallName = $array->getAttribute(AttributeKey::FROM_FUNC_CALL_NAME);
         if ($fromFuncCallName === null) {
             return \false;
         }
-        return \in_array($fromFuncCallName, $functionNames, \true);
+        return in_array($fromFuncCallName, $functionNames, \true);
     }
     /**
      * @param \PhpParser\Node\Expr\ClassConstFetch|\PhpParser\Node\Scalar\MagicConst\Class_ $classContext
@@ -143,7 +139,7 @@ final class ArrayCallableMethodMatcher
     {
         $classConstantReference = $this->valueResolver->getValue($classContext);
         // non-class value
-        if (!\is_string($classConstantReference)) {
+        if (!is_string($classConstantReference)) {
             return new MixedType();
         }
         if ($this->isRequiredClassReflectionResolution($classConstantReference)) {
@@ -161,19 +157,19 @@ final class ArrayCallableMethodMatcher
         if (!$hasConstruct) {
             return new ObjectType($classConstantReference, null, $classReflection);
         }
-        if (\is_string($classMethodName) && $classReflection->hasNativeMethod($classMethodName)) {
+        if (is_string($classMethodName) && $classReflection->hasNativeMethod($classMethodName)) {
             return new ObjectType($classConstantReference, null, $classReflection);
         }
         $extendedMethodReflection = $classReflection->getMethod(MethodName::CONSTRUCT, $scope);
-        $parametersAcceptorWithPhpDocs = ParametersAcceptorSelector::combineAcceptors($extendedMethodReflection->getVariants());
-        foreach ($parametersAcceptorWithPhpDocs->getParameters() as $parameterReflectionWithPhpDoc) {
-            if (!$parameterReflectionWithPhpDoc->getDefaultValue() instanceof Type) {
+        $extendedParametersAcceptor = ParametersAcceptorSelector::combineAcceptors($extendedMethodReflection->getVariants());
+        foreach ($extendedParametersAcceptor->getParameters() as $extendedParameterReflection) {
+            if (!$extendedParameterReflection->getDefaultValue() instanceof Type) {
                 return new MixedType();
             }
         }
         return new ObjectType($classConstantReference, null, $classReflection);
     }
-    private function resolveCallerType(Expr $expr, Scope $scope, ?string $classMethodName) : Type
+    private function resolveCallerType(Expr $expr, Scope $scope, ?string $classMethodName): Type
     {
         if ($expr instanceof ClassConstFetch || $expr instanceof Class_) {
             // class context means self|static ::class or __CLASS__
@@ -186,7 +182,7 @@ final class ArrayCallableMethodMatcher
         }
         return $callerType;
     }
-    private function isRequiredClassReflectionResolution(string $classConstantReference) : bool
+    private function isRequiredClassReflectionResolution(string $classConstantReference): bool
     {
         if ($classConstantReference === ObjectReference::STATIC) {
             return \true;

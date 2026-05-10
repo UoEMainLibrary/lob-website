@@ -8,9 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Formatter;
+namespace RectorPrefix202604\Symfony\Component\Console\Formatter;
 
-use RectorPrefix202411\Symfony\Component\Console\Color;
+use RectorPrefix202604\Symfony\Component\Console\Color;
 /**
  * Formatter style class for defining styles.
  *
@@ -18,30 +18,12 @@ use RectorPrefix202411\Symfony\Component\Console\Color;
  */
 class OutputFormatterStyle implements OutputFormatterStyleInterface
 {
-    /**
-     * @var \Symfony\Component\Console\Color
-     */
-    private $color;
-    /**
-     * @var string
-     */
-    private $foreground;
-    /**
-     * @var string
-     */
-    private $background;
-    /**
-     * @var mixed[]
-     */
-    private $options;
-    /**
-     * @var string|null
-     */
-    private $href;
-    /**
-     * @var bool
-     */
-    private $handlesHrefGracefully;
+    private Color $color;
+    private string $foreground;
+    private string $background;
+    private array $options;
+    private ?string $href = null;
+    private bool $handlesHrefGracefully;
     /**
      * Initializes output formatter style.
      *
@@ -72,7 +54,7 @@ class OutputFormatterStyle implements OutputFormatterStyleInterface
         }
         $this->color = new Color($this->foreground, $this->background = $color ?: '', $this->options);
     }
-    public function setHref(string $url) : void
+    public function setHref(string $url): void
     {
         $this->href = $url;
     }
@@ -89,7 +71,7 @@ class OutputFormatterStyle implements OutputFormatterStyleInterface
      */
     public function unsetOption(string $option)
     {
-        $pos = \array_search($option, $this->options);
+        $pos = array_search($option, $this->options);
         if (\false !== $pos) {
             unset($this->options[$pos]);
         }
@@ -102,9 +84,9 @@ class OutputFormatterStyle implements OutputFormatterStyleInterface
     {
         $this->color = new Color($this->foreground, $this->background, $this->options = $options);
     }
-    public function apply(string $text) : string
+    public function apply(string $text): string
     {
-        $this->handlesHrefGracefully = $this->handlesHrefGracefully ?? 'JetBrains-JediTerm' !== \getenv('TERMINAL_EMULATOR') && (!\getenv('KONSOLE_VERSION') || (int) \getenv('KONSOLE_VERSION') > 201100) && !isset($_SERVER['IDEA_INITIAL_DIRECTORY']);
+        $this->handlesHrefGracefully ??= 'JetBrains-JediTerm' !== getenv('TERMINAL_EMULATOR') && (!getenv('KONSOLE_VERSION') || (int) getenv('KONSOLE_VERSION') > 201100) && !isset($_SERVER['IDEA_INITIAL_DIRECTORY']);
         if (null !== $this->href && $this->handlesHrefGracefully) {
             $text = "\x1b]8;;{$this->href}\x1b\\{$text}\x1b]8;;\x1b\\";
         }

@@ -7,10 +7,11 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\If_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use Rector\DeadCode\ConditionEvaluator;
 use Rector\DeadCode\ConditionResolver;
 use Rector\DeadCode\Contract\ConditionInterface;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -21,20 +22,18 @@ final class UnwrapFutureCompatibleIfPhpVersionRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\ConditionEvaluator
      */
-    private $conditionEvaluator;
+    private ConditionEvaluator $conditionEvaluator;
     /**
      * @readonly
-     * @var \Rector\DeadCode\ConditionResolver
      */
-    private $conditionResolver;
+    private ConditionResolver $conditionResolver;
     public function __construct(ConditionEvaluator $conditionEvaluator, ConditionResolver $conditionResolver)
     {
         $this->conditionEvaluator = $conditionEvaluator;
         $this->conditionResolver = $conditionResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove php version checks if they are passed', [new CodeSample(<<<'CODE_SAMPLE'
 // current PHP: 7.2
@@ -53,13 +52,13 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [If_::class];
     }
     /**
      * @param If_ $node
-     * @return Stmt[]|null|int
+     * @return Stmt[]|null|NodeVisitor::REMOVE_NODE
      */
     public function refactor(Node $node)
     {
@@ -86,23 +85,33 @@ CODE_SAMPLE
     /**
      * @return Stmt[]|null
      */
-    private function refactorIsMatch(If_ $if) : ?array
+    private function refactorIsMatch(If_ $if): ?array
     {
         if ($if->elseifs !== []) {
             return null;
         }
-        return $if->stmts;
+        return $this->keepIfLevelComments($if, $if->stmts);
     }
     /**
-     * @return Stmt[]|int
+     * @return Stmt[]|NodeVisitor::REMOVE_NODE
      */
     private function refactorIsNotMatch(If_ $if)
     {
         // no else → just remove the node
         if (!$if->else instanceof Else_) {
-            return NodeTraverser::REMOVE_NODE;
+            return NodeVisitor::REMOVE_NODE;
         }
-        // else is always used
-        return $if->else->stmts;
+        return $this->keepIfLevelComments($if, $if->else->stmts);
+    }
+    /**
+     * @param Stmt[] $stmts
+     * @return Stmt[]
+     */
+    private function keepIfLevelComments(If_ $if, array $stmts): array
+    {
+        if ($stmts !== []) {
+            $stmts[0]->setAttribute(AttributeKey::COMMENTS, array_merge($if->getComments(), $stmts[0]->getComments()));
+        }
+        return $stmts;
     }
 }

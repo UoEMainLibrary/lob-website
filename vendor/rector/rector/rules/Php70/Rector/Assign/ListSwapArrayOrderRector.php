@@ -4,9 +4,9 @@ declare (strict_types=1);
 namespace Rector\Php70\Rector\Assign;
 
 use PhpParser\Node;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ArrayDimFetch;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\List_;
@@ -23,28 +23,27 @@ final class ListSwapArrayOrderRector extends AbstractRector implements MinPhpVer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Printer\BetterStandardPrinter
      */
-    private $betterStandardPrinter;
+    private BetterStandardPrinter $betterStandardPrinter;
     public function __construct(BetterStandardPrinter $betterStandardPrinter)
     {
         $this->betterStandardPrinter = $betterStandardPrinter;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('list() assigns variables in reverse order - relevant in array assign', [new CodeSample('list($a[], $a[]) = [1, 2];', 'list($a[], $a[]) = array_reverse([1, 2]);')]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Assign::class];
     }
     /**
      * @param Assign $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkipAssign($node)) {
             return null;
@@ -63,19 +62,19 @@ final class ListSwapArrayOrderRector extends AbstractRector implements MinPhpVer
             }
         }
         // relevant only in 1 variable type
-        $uniqueVariables = \array_unique($printedVariables);
-        if (\count($uniqueVariables) !== 1) {
+        $uniqueVariables = array_unique($printedVariables);
+        if (count($uniqueVariables) !== 1) {
             return null;
         }
         // wrap with array_reverse, to reflect reverse assign order in left
         $node->expr = $this->nodeFactory->createFuncCall('array_reverse', [$node->expr]);
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::LIST_SWAP_ORDER;
     }
-    private function shouldSkipAssign(Assign $assign) : bool
+    private function shouldSkipAssign(Assign $assign): bool
     {
         if (!$assign->var instanceof List_) {
             return \true;

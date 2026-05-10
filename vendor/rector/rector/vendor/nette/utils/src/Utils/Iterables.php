@@ -5,9 +5,10 @@
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
 declare (strict_types=1);
-namespace RectorPrefix202411\Nette\Utils;
+namespace RectorPrefix202604\Nette\Utils;
 
-use RectorPrefix202411\Nette;
+use RectorPrefix202604\Nette;
+use function is_array;
 /**
  * Utilities for iterables.
  */
@@ -16,9 +17,10 @@ final class Iterables
     use Nette\StaticClass;
     /**
      * Tests for the presence of value.
+     * @param  iterable<mixed>  $iterable
      * @param mixed $value
      */
-    public static function contains(iterable $iterable, $value) : bool
+    public static function contains(iterable $iterable, $value): bool
     {
         foreach ($iterable as $v) {
             if ($v === $value) {
@@ -29,9 +31,10 @@ final class Iterables
     }
     /**
      * Tests for the presence of key.
+     * @param  iterable<mixed>  $iterable
      * @param mixed $key
      */
-    public static function containsKey(iterable $iterable, $key) : bool
+    public static function containsKey(iterable $iterable, $key): bool
     {
         foreach ($iterable as $k => $v) {
             if ($k === $key) {
@@ -44,9 +47,11 @@ final class Iterables
      * Returns the first item (matching the specified predicate if given). If there is no such item, it returns result of invoking $else or null.
      * @template K
      * @template V
+     * @template E
      * @param  iterable<K, V>  $iterable
      * @param  ?callable(V, K, iterable<K, V>): bool  $predicate
-     * @return ?V
+     * @param  ?callable(): E  $else
+     * @return ($else is null ? ?V : V|E)
      */
     public static function first(iterable $iterable, ?callable $predicate = null, ?callable $else = null)
     {
@@ -61,9 +66,11 @@ final class Iterables
      * Returns the key of first item (matching the specified predicate if given). If there is no such item, it returns result of invoking $else or null.
      * @template K
      * @template V
+     * @template E
      * @param  iterable<K, V>  $iterable
      * @param  ?callable(V, K, iterable<K, V>): bool  $predicate
-     * @return ?K
+     * @param  ?callable(): E  $else
+     * @return ($else is null ? ?K : K|E)
      */
     public static function firstKey(iterable $iterable, ?callable $predicate = null, ?callable $else = null)
     {
@@ -81,7 +88,7 @@ final class Iterables
      * @param  iterable<K, V>  $iterable
      * @param  callable(V, K, iterable<K, V>): bool  $predicate
      */
-    public static function some(iterable $iterable, callable $predicate) : bool
+    public static function some(iterable $iterable, callable $predicate): bool
     {
         foreach ($iterable as $k => $v) {
             if ($predicate($v, $k, $iterable)) {
@@ -97,7 +104,7 @@ final class Iterables
      * @param  iterable<K, V>  $iterable
      * @param  callable(V, K, iterable<K, V>): bool  $predicate
      */
-    public static function every(iterable $iterable, callable $predicate) : bool
+    public static function every(iterable $iterable, callable $predicate): bool
     {
         foreach ($iterable as $k => $v) {
             if (!$predicate($v, $k, $iterable)) {
@@ -114,11 +121,11 @@ final class Iterables
      * @param  callable(V, K, iterable<K, V>): bool  $predicate
      * @return \Generator<K, V>
      */
-    public static function filter(iterable $iterable, callable $predicate) : \Generator
+    public static function filter(iterable $iterable, callable $predicate): \Generator
     {
         foreach ($iterable as $k => $v) {
             if ($predicate($v, $k, $iterable)) {
-                (yield $k => $v);
+                yield $k => $v;
             }
         }
     }
@@ -131,30 +138,54 @@ final class Iterables
      * @param  callable(V, K, iterable<K, V>): R  $transformer
      * @return \Generator<K, R>
      */
-    public static function map(iterable $iterable, callable $transformer) : \Generator
+    public static function map(iterable $iterable, callable $transformer): \Generator
     {
         foreach ($iterable as $k => $v) {
-            (yield $k => $transformer($v, $k, $iterable));
+            yield $k => $transformer($v, $k, $iterable);
         }
     }
     /**
      * Iterator that transforms keys and values by calling $transformer. If it returns null, the element is skipped.
      * @template K
      * @template V
-     * @template ResV
      * @template ResK
+     * @template ResV
      * @param  iterable<K, V>  $iterable
-     * @param  callable(V, K, iterable<K, V>): ?array{ResV, ResK}  $transformer
-     * @return \Generator<ResV, ResK>
+     * @param  callable(V, K, iterable<K, V>): ?array{ResK, ResV}  $transformer
+     * @return \Generator<ResK, ResV>
      */
-    public static function mapWithKeys(iterable $iterable, callable $transformer) : \Generator
+    public static function mapWithKeys(iterable $iterable, callable $transformer): \Generator
     {
         foreach ($iterable as $k => $v) {
             $pair = $transformer($v, $k, $iterable);
             if ($pair) {
-                (yield $pair[0] => $pair[1]);
+                yield $pair[0] => $pair[1];
             }
         }
+    }
+    /**
+     * Creates a repeatable iterator from a factory function.
+     * The factory is called every time the iterator is iterated.
+     * @template K
+     * @template V
+     * @param  callable(): iterable<K, V>  $factory
+     * @return \IteratorAggregate<K, V>
+     */
+    public static function repeatable(callable $factory): \IteratorAggregate
+    {
+        return new class(\Closure::fromCallable($factory)) implements \IteratorAggregate
+        {
+            private \Closure $factory;
+            public function __construct(\Closure $factory)
+            {
+                /** @var \Closure(): iterable<mixed, mixed> */
+                $this->factory = $factory;
+            }
+            public function getIterator(): \Iterator
+            {
+                return Iterables::toIterator(($this->factory)());
+            }
+        };
     }
     /**
      * Wraps around iterator and caches its keys and values during iteration.
@@ -164,24 +195,22 @@ final class Iterables
      * @param  iterable<K, V>  $iterable
      * @return \IteratorAggregate<K, V>
      */
-    public static function memoize(iterable $iterable) : iterable
+    public static function memoize(iterable $iterable): \IteratorAggregate
     {
         return new class(self::toIterator($iterable)) implements \IteratorAggregate
         {
             /**
-             * @var \Iterator
+             * @readonly
              */
-            private $iterator;
-            /**
-             * @var mixed[]
-             */
-            private $cache = [];
+            private \Iterator $iterator;
+            private array $cache = [];
             public function __construct(\Iterator $iterator, array $cache = [])
             {
                 $this->iterator = $iterator;
+                /** @var array<array{mixed, mixed}> */
                 $this->cache = $cache;
             }
-            public function getIterator() : \Generator
+            public function getIterator(): \Generator
             {
                 if (!$this->cache) {
                     $this->iterator->rewind();
@@ -198,7 +227,7 @@ final class Iterables
                     } else {
                         break;
                     }
-                    (yield $k => $v);
+                    yield $k => $v;
                     $i++;
                 }
             }
@@ -211,15 +240,17 @@ final class Iterables
      * @param  iterable<K, V>  $iterable
      * @return \Iterator<K, V>
      */
-    public static function toIterator(iterable $iterable) : \Iterator
+    public static function toIterator(iterable $iterable): \Iterator
     {
         switch (\true) {
             case $iterable instanceof \Iterator:
                 return $iterable;
             case $iterable instanceof \IteratorAggregate:
                 return self::toIterator($iterable->getIterator());
-            case \is_array($iterable):
+            case is_array($iterable):
                 return new \ArrayIterator($iterable);
+            default:
+                throw new Nette\ShouldNotHappenException();
         }
     }
 }

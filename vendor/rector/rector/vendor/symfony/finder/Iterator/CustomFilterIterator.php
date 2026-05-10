@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Finder\Iterator;
+namespace RectorPrefix202604\Symfony\Component\Finder\Iterator;
 
 /**
  * CustomFilterIterator filters files by applying anonymous functions.
@@ -22,10 +22,7 @@ namespace RectorPrefix202411\Symfony\Component\Finder\Iterator;
  */
 class CustomFilterIterator extends \FilterIterator
 {
-    /**
-     * @var mixed[]
-     */
-    private $filters = [];
+    private array $filters = [];
     /**
      * @param \Iterator<string, \SplFileInfo> $iterator The Iterator to filter
      * @param callable[]                      $filters  An array of PHP callbacks
@@ -45,7 +42,7 @@ class CustomFilterIterator extends \FilterIterator
     /**
      * Filters the iterator values.
      */
-    public function accept() : bool
+    public function accept(): bool
     {
         $fileinfo = $this->current();
         foreach ($this->filters as $filter) {

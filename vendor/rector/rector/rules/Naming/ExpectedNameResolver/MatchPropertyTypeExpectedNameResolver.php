@@ -21,34 +21,28 @@ final class MatchPropertyTypeExpectedNameResolver
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\PropertyNaming
      */
-    private $propertyNaming;
+    private PropertyNaming $propertyNaming;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyManipulator
      */
-    private $propertyManipulator;
+    private PropertyManipulator $propertyManipulator;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(PropertyNaming $propertyNaming, PhpDocInfoFactory $phpDocInfoFactory, NodeNameResolver $nodeNameResolver, PropertyManipulator $propertyManipulator, ReflectionResolver $reflectionResolver, StaticTypeMapper $staticTypeMapper)
     {
         $this->propertyNaming = $propertyNaming;
@@ -58,7 +52,7 @@ final class MatchPropertyTypeExpectedNameResolver
         $this->reflectionResolver = $reflectionResolver;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function resolve(Property $property, ClassLike $classLike) : ?string
+    public function resolve(Property $property, ClassLike $classLike): ?string
     {
         if (!$classLike instanceof Class_) {
             return null;
@@ -76,12 +70,12 @@ final class MatchPropertyTypeExpectedNameResolver
             return null;
         }
         // skip if already has suffix
-        if (\substr_compare($propertyName, $expectedName->getName(), -\strlen($expectedName->getName())) === 0 || \substr_compare($propertyName, \ucfirst($expectedName->getName()), -\strlen(\ucfirst($expectedName->getName()))) === 0) {
+        if (substr_compare($propertyName, $expectedName->getName(), -strlen($expectedName->getName())) === 0 || substr_compare($propertyName, ucfirst($expectedName->getName()), -strlen(ucfirst($expectedName->getName()))) === 0) {
             return null;
         }
         return $expectedName->getName();
     }
-    private function resolveExpectedName(Property $property) : ?ExpectedName
+    private function resolveExpectedName(Property $property): ?ExpectedName
     {
         // property type first
         if ($property->type instanceof Node) {

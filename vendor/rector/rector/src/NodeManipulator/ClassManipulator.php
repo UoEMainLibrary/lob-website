@@ -11,26 +11,24 @@ final class ClassManipulator
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(NodeNameResolver $nodeNameResolver, ReflectionProvider $reflectionProvider)
     {
         $this->nodeNameResolver = $nodeNameResolver;
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function hasParentMethodOrInterface(ObjectType $objectType, string $oldMethod) : bool
+    public function hasParentMethodOrInterface(ObjectType $objectType, string $oldMethod): bool
     {
         if (!$this->reflectionProvider->hasClass($objectType->getClassName())) {
             return \false;
         }
         $classReflection = $this->reflectionProvider->getClass($objectType->getClassName());
-        $ancestorClassReflections = \array_merge($classReflection->getParents(), $classReflection->getInterfaces());
+        $ancestorClassReflections = array_merge($classReflection->getParents(), $classReflection->getInterfaces());
         foreach ($ancestorClassReflections as $ancestorClassReflection) {
             if (!$ancestorClassReflection->hasMethod($oldMethod)) {
                 continue;
@@ -42,7 +40,7 @@ final class ClassManipulator
     /**
      * @api phpunit
      */
-    public function hasTrait(Class_ $class, string $desiredTrait) : bool
+    public function hasTrait(Class_ $class, string $desiredTrait): bool
     {
         foreach ($class->getTraitUses() as $traitUse) {
             foreach ($traitUse->traits as $traitName) {

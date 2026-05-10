@@ -8,16 +8,11 @@ use function sprintf;
 class ConditionalTypeForParameterNode implements \PHPStan\PhpDocParser\Ast\Type\TypeNode
 {
     use NodeAttributes;
-    /** @var string */
-    public $parameterName;
-    /** @var TypeNode */
-    public $targetType;
-    /** @var TypeNode */
-    public $if;
-    /** @var TypeNode */
-    public $else;
-    /** @var bool */
-    public $negated;
+    public string $parameterName;
+    public \PHPStan\PhpDocParser\Ast\Type\TypeNode $targetType;
+    public \PHPStan\PhpDocParser\Ast\Type\TypeNode $if;
+    public \PHPStan\PhpDocParser\Ast\Type\TypeNode $else;
+    public bool $negated;
     public function __construct(string $parameterName, \PHPStan\PhpDocParser\Ast\Type\TypeNode $targetType, \PHPStan\PhpDocParser\Ast\Type\TypeNode $if, \PHPStan\PhpDocParser\Ast\Type\TypeNode $else, bool $negated)
     {
         $this->parameterName = $parameterName;
@@ -26,8 +21,21 @@ class ConditionalTypeForParameterNode implements \PHPStan\PhpDocParser\Ast\Type\
         $this->else = $else;
         $this->negated = $negated;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
         return sprintf('(%s %s %s ? %s : %s)', $this->parameterName, $this->negated ? 'is not' : 'is', $this->targetType, $this->if, $this->else);
+    }
+    /**
+     * @param array<string, mixed> $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        $instance = new self($properties['parameterName'], $properties['targetType'], $properties['if'], $properties['else'], $properties['negated']);
+        if (isset($properties['attributes'])) {
+            foreach ($properties['attributes'] as $key => $value) {
+                $instance->setAttribute($key, $value);
+            }
+        }
+        return $instance;
     }
 }

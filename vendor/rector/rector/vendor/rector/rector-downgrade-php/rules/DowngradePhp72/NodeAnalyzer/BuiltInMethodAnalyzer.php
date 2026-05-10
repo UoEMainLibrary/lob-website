@@ -10,14 +10,13 @@ final class BuiltInMethodAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function isImplementsBuiltInInterface(ClassReflection $classReflection, ClassMethod $classMethod) : bool
+    public function isImplementsBuiltInInterface(ClassReflection $classReflection, ClassMethod $classMethod): bool
     {
         if (!$classReflection->isClass()) {
             return \false;

@@ -14,9 +14,8 @@ final class NeverFuncCallAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
@@ -24,7 +23,7 @@ final class NeverFuncCallAnalyzer
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Expr\Closure|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function hasNeverFuncCall($functionLike) : bool
+    public function hasNeverFuncCall($functionLike): bool
     {
         foreach ((array) $functionLike->stmts as $stmt) {
             if ($this->isWithNeverTypeExpr($stmt)) {
@@ -33,7 +32,7 @@ final class NeverFuncCallAnalyzer
         }
         return \false;
     }
-    public function isWithNeverTypeExpr(Stmt $stmt) : bool
+    public function isWithNeverTypeExpr(Stmt $stmt, bool $withNativeNeverType = \true): bool
     {
         if ($stmt instanceof Expression) {
             $stmt = $stmt->expr;
@@ -41,7 +40,7 @@ final class NeverFuncCallAnalyzer
         if ($stmt instanceof Stmt) {
             return \false;
         }
-        $stmtType = $this->nodeTypeResolver->getNativeType($stmt);
+        $stmtType = $withNativeNeverType ? $this->nodeTypeResolver->getNativeType($stmt) : $this->nodeTypeResolver->getType($stmt);
         return $stmtType instanceof NeverType;
     }
 }

@@ -4,8 +4,8 @@ declare (strict_types=1);
 namespace Rector\Symfony\NodeAnalyzer\FormType;
 
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\String_;
 use PHPStan\Reflection\ReflectionProvider;
@@ -15,14 +15,12 @@ final class CreateFormTypeOptionsArgMover
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     public function __construct(ReflectionProvider $reflectionProvider, NodeFactory $nodeFactory)
     {
         $this->reflectionProvider = $reflectionProvider;
@@ -31,7 +29,7 @@ final class CreateFormTypeOptionsArgMover
     /**
      * @param Arg[] $argNodes
      */
-    public function moveArgumentsToOptions(MethodCall $methodCall, int $position, int $optionsPosition, string $className, array $argNodes) : ?MethodCall
+    public function moveArgumentsToOptions(MethodCall $methodCall, int $position, int $optionsPosition, string $className, array $argNodes): ?MethodCall
     {
         $namesToArgs = $this->resolveNamesToArgs($className, $argNodes);
         // set default data in between
@@ -60,7 +58,7 @@ final class CreateFormTypeOptionsArgMover
      * @param Arg[] $args
      * @return array<string, Arg>
      */
-    private function resolveNamesToArgs(string $className, array $args) : array
+    private function resolveNamesToArgs(string $className, array $args): array
     {
         if (!$this->reflectionProvider->hasClass($className)) {
             return [];
@@ -77,7 +75,7 @@ final class CreateFormTypeOptionsArgMover
      * @param Arg[] $args
      * @return array<string, Arg>
      */
-    private function createArgsByName(ReflectionMethod $constructorReflectionMethod, array $args) : array
+    private function createArgsByName(ReflectionMethod $constructorReflectionMethod, array $args): array
     {
         $namesToArgs = [];
         foreach ($constructorReflectionMethod->getParameters() as $position => $reflectionParameter) {

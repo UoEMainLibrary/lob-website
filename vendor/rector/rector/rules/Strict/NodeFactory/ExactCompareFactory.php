@@ -4,9 +4,9 @@ declare (strict_types=1);
 namespace Rector\Strict\NodeFactory;
 
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
 use PhpParser\Node\Expr\BinaryOp\Identical;
@@ -18,27 +18,25 @@ use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
-use PHPStan\Type\NullType;
 use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
-use PHPStan\Type\TypeWithClassName;
 use PHPStan\Type\UnionType;
 use Rector\PhpParser\Node\NodeFactory;
+use Rector\StaticTypeMapper\Resolver\ClassNameFromObjectTypeResolver;
 final class ExactCompareFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     public function __construct(NodeFactory $nodeFactory)
     {
         $this->nodeFactory = $nodeFactory;
     }
     /**
-     * @return \PhpParser\Node\Expr\BinaryOp\Identical|\PhpParser\Node\Expr\BinaryOp\BooleanOr|\PhpParser\Node\Expr\BinaryOp\NotIdentical|\PhpParser\Node\Expr\BooleanNot|\PhpParser\Node\Expr\Instanceof_|\PhpParser\Node\Expr\BinaryOp\BooleanAnd|null|\PhpParser\Node\Expr\FuncCall
+     * @return \PhpParser\Node\Expr\BinaryOp\Identical|\PhpParser\Node\Expr\BinaryOp\BooleanOr|\PhpParser\Node\Expr\BinaryOp\NotIdentical|\PhpParser\Node\Expr\BooleanNot|null|\PhpParser\Node\Expr\FuncCall
      */
     public function createIdenticalFalsyCompare(Type $exprType, Expr $expr, bool $treatAsNonEmpty, bool $isOnlyString = \true)
     {
@@ -49,12 +47,12 @@ final class ExactCompareFactory
             }
             $result = new BooleanOr(new Identical($expr, new String_('')), new Identical($expr, new String_('0')));
         } elseif ($exprType->isInteger()->yes()) {
-            return new Identical($expr, new LNumber(0));
+            return new Identical($expr, new Int_(0));
         } elseif ($exprType->isBoolean()->yes()) {
             return new Identical($expr, $this->nodeFactory->createFalse());
         } elseif ($exprType->isArray()->yes()) {
             return new Identical($expr, new Array_([]));
-        } elseif ($exprType instanceof NullType) {
+        } elseif ($exprType->isNull()->yes()) {
             return new Identical($expr, $this->nodeFactory->createNull());
         } elseif (!$exprType instanceof UnionType) {
             return null;
@@ -64,10 +62,13 @@ final class ExactCompareFactory
         if ($result instanceof BooleanOr && $expr instanceof CallLike && $result->left instanceof Identical && $result->right instanceof Identical) {
             return new FuncCall(new Name('in_array'), [new Arg($expr), new Arg(new Array_([new ArrayItem($result->left->right), new ArrayItem($result->right->right)])), new Arg(new ConstFetch(new Name('true')))]);
         }
+        if ($result instanceof BooleanOr && $expr instanceof CallLike && $result->left instanceof BooleanOr && $result->left->left instanceof Identical && $result->left->right instanceof Identical && $result->right instanceof Identical) {
+            return new FuncCall(new Name('in_array'), [new Arg($expr), new Arg(new Array_([new ArrayItem($result->left->left->right), new ArrayItem($result->left->right->right), new ArrayItem($result->right->right)])), new Arg(new ConstFetch(new Name('true')))]);
+        }
         return $result;
     }
     /**
-     * @return \PhpParser\Node\Expr\BinaryOp\Identical|\PhpParser\Node\Expr\Instanceof_|\PhpParser\Node\Expr\BinaryOp\BooleanOr|\PhpParser\Node\Expr\BinaryOp\NotIdentical|\PhpParser\Node\Expr\BinaryOp\BooleanAnd|\PhpParser\Node\Expr\BooleanNot|null
+     * @return \PhpParser\Node\Expr\BinaryOp\Identical|\PhpParser\Node\Expr\Instanceof_|\PhpParser\Node\Expr\BinaryOp\NotIdentical|\PhpParser\Node\Expr\BinaryOp\BooleanAnd|\PhpParser\Node\Expr\BooleanNot|null
      */
     public function createNotIdenticalFalsyCompare(Type $exprType, Expr $expr, bool $treatAsNotEmpty, bool $isOnlyString = \true)
     {
@@ -78,7 +79,7 @@ final class ExactCompareFactory
             }
             $result = new BooleanAnd(new NotIdentical($expr, new String_('')), new NotIdentical($expr, new String_('0')));
         } elseif ($exprType->isInteger()->yes()) {
-            return new NotIdentical($expr, new LNumber(0));
+            return new NotIdentical($expr, new Int_(0));
         } elseif ($exprType->isArray()->yes()) {
             return new NotIdentical($expr, new Array_([]));
         } elseif (!$exprType instanceof UnionType) {
@@ -88,6 +89,9 @@ final class ExactCompareFactory
         }
         if ($result instanceof BooleanAnd && $expr instanceof CallLike && $result->left instanceof NotIdentical && $result->right instanceof NotIdentical) {
             return new BooleanNot(new FuncCall(new Name('in_array'), [new Arg($expr), new Arg(new Array_([new ArrayItem($result->left->right), new ArrayItem($result->right->right)])), new Arg(new ConstFetch(new Name('true')))]));
+        }
+        if ($result instanceof BooleanAnd && $expr instanceof CallLike && $result->left instanceof BooleanAnd && $result->left->left instanceof NotIdentical && $result->left->right instanceof NotIdentical && $result->right instanceof NotIdentical) {
+            return new BooleanNot(new FuncCall(new Name('in_array'), [new Arg($expr), new Arg(new Array_([new ArrayItem($result->left->left->right), new ArrayItem($result->left->right->right), new ArrayItem($result->right->right)])), new Arg(new ConstFetch(new Name('true')))]));
         }
         return $result;
     }
@@ -100,8 +104,9 @@ final class ExactCompareFactory
         if ($unionType->isBoolean()->yes()) {
             return new Identical($expr, $this->nodeFactory->createTrue());
         }
-        if ($unionType instanceof TypeWithClassName) {
-            return new Instanceof_($expr, new FullyQualified($unionType->getClassName()));
+        $className = ClassNameFromObjectTypeResolver::resolve($unionType);
+        if ($className !== null) {
+            return new Instanceof_($expr, new FullyQualified($className));
         }
         $nullConstFetch = $this->nodeFactory->createNull();
         $toNullNotIdentical = new NotIdentical($expr, $nullConstFetch);
@@ -121,7 +126,7 @@ final class ExactCompareFactory
         }
         return new BooleanAnd($toNullNotIdentical, $compareExpr);
     }
-    private function resolveFromCleanedNullUnionType(UnionType $unionType, Expr $expr, bool $treatAsNotEmpty) : ?BooleanAnd
+    private function resolveFromCleanedNullUnionType(UnionType $unionType, Expr $expr, bool $treatAsNotEmpty): ?BooleanAnd
     {
         $compareExprs = $this->collectCompareExprs($unionType, $expr, $treatAsNotEmpty, \false);
         return $this->createBooleanAnd($compareExprs);
@@ -129,24 +134,24 @@ final class ExactCompareFactory
     /**
      * @return array<Identical|BooleanOr|NotIdentical|BooleanNot|Instanceof_|BooleanAnd|FuncCall|null>
      */
-    private function collectCompareExprs(UnionType $unionType, Expr $expr, bool $treatAsNonEmpty, bool $identical = \true) : array
+    private function collectCompareExprs(UnionType $unionType, Expr $expr, bool $treatAsNonEmpty, bool $identical = \true): array
     {
         $compareExprs = [];
         foreach ($unionType->getTypes() as $unionedType) {
             $compareExprs[] = $identical ? $this->createIdenticalFalsyCompare($unionedType, $expr, $treatAsNonEmpty) : $this->createNotIdenticalFalsyCompare($unionedType, $expr, $treatAsNonEmpty);
         }
-        return \array_unique($compareExprs, \SORT_REGULAR);
+        return array_unique($compareExprs, \SORT_REGULAR);
     }
-    private function cleanUpPossibleNullableUnionType(UnionType $unionType) : Type
+    private function cleanUpPossibleNullableUnionType(UnionType $unionType): Type
     {
-        return \count($unionType->getTypes()) === 2 ? TypeCombinator::removeNull($unionType) : $unionType;
+        return count($unionType->getTypes()) === 2 ? TypeCombinator::removeNull($unionType) : $unionType;
     }
     /**
      * @param array<Identical|BooleanOr|NotIdentical|BooleanAnd|Instanceof_|BooleanNot|FuncCall|null> $compareExprs
      */
-    private function createBooleanOr(array $compareExprs) : ?BooleanOr
+    private function createBooleanOr(array $compareExprs): ?BooleanOr
     {
-        $truthyExpr = \array_shift($compareExprs);
+        $truthyExpr = array_shift($compareExprs);
         foreach ($compareExprs as $compareExpr) {
             if (!$compareExpr instanceof Expr) {
                 return null;
@@ -156,15 +161,17 @@ final class ExactCompareFactory
             }
             $truthyExpr = new BooleanOr($truthyExpr, $compareExpr);
         }
-        /** @var BooleanOr $truthyExpr */
+        if (!$truthyExpr instanceof BooleanOr) {
+            return null;
+        }
         return $truthyExpr;
     }
     /**
      * @param array<Identical|BooleanOr|NotIdentical|BooleanAnd|BooleanNot|Instanceof_|FuncCall|null> $compareExprs
      */
-    private function createBooleanAnd(array $compareExprs) : ?BooleanAnd
+    private function createBooleanAnd(array $compareExprs): ?BooleanAnd
     {
-        $truthyExpr = \array_shift($compareExprs);
+        $truthyExpr = array_shift($compareExprs);
         foreach ($compareExprs as $compareExpr) {
             if (!$compareExpr instanceof Expr) {
                 return null;
@@ -174,7 +181,9 @@ final class ExactCompareFactory
             }
             $truthyExpr = new BooleanAnd($truthyExpr, $compareExpr);
         }
-        /** @var BooleanAnd $truthyExpr */
+        if (!$truthyExpr instanceof BooleanAnd) {
+            return null;
+        }
         return $truthyExpr;
     }
     /**
@@ -190,8 +199,9 @@ final class ExactCompareFactory
         if ($unionType->isBoolean()->yes()) {
             return new NotIdentical($expr, $this->nodeFactory->createTrue());
         }
-        if ($unionType instanceof TypeWithClassName) {
-            return new BooleanNot(new Instanceof_($expr, new FullyQualified($unionType->getClassName())));
+        $className = ClassNameFromObjectTypeResolver::resolve($unionType);
+        if ($className !== null) {
+            return new BooleanNot(new Instanceof_($expr, new FullyQualified($className)));
         }
         $toNullIdentical = new Identical($expr, $this->nodeFactory->createNull());
         if ($treatAsNonEmpty) {

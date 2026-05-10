@@ -9,14 +9,13 @@ final class StringTypeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
-    public function isStringOrUnionStringOnlyType(Expr $expr) : bool
+    public function isStringOrUnionStringOnlyType(Expr $expr): bool
     {
         $nodeType = $this->nodeTypeResolver->getType($expr);
         return $nodeType->isString()->yes();

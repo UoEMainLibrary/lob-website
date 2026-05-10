@@ -4,8 +4,8 @@ declare (strict_types=1);
 namespace Rector\CodingStyle\Rector\Property;
 
 use PhpParser\Node;
+use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\Node\Stmt\PropertyProperty;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -14,7 +14,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class SplitGroupedPropertiesRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Separate grouped properties to own lines', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -44,7 +44,7 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Property::class];
     }
@@ -52,19 +52,19 @@ CODE_SAMPLE
      * @param Property $node
      * @return Property[]|null
      */
-    public function refactor(Node $node) : ?array
+    public function refactor(Node $node): ?array
     {
         $allProperties = $node->props;
-        if (\count($allProperties) === 1) {
+        if (count($allProperties) === 1) {
             return null;
         }
-        /** @var PropertyProperty $firstPropertyProperty */
-        $firstPropertyProperty = \array_shift($allProperties);
+        /** @var PropertyItem $firstPropertyProperty */
+        $firstPropertyProperty = array_shift($allProperties);
         $node->props = [$firstPropertyProperty];
         $nextProperties = [];
         foreach ($allProperties as $allProperty) {
             $nextProperties[] = new Property($node->flags, [$allProperty], $node->getAttributes());
         }
-        return \array_merge([$node], $nextProperties);
+        return array_merge([$node], $nextProperties);
     }
 }

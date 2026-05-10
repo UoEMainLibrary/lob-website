@@ -10,8 +10,8 @@ use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar;
-use PhpParser\Node\Scalar\DNumber;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Float_;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\MagicConst\Line;
 use PhpParser\Node\Scalar\String_;
 use PHPStan\Type\Constant\ConstantStringType;
@@ -28,18 +28,17 @@ final class BinaryOpBetweenNumberAndStringRector extends AbstractRector implemen
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     public function __construct(ExprAnalyzer $exprAnalyzer)
     {
         $this->exprAnalyzer = $exprAnalyzer;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::BINARY_OP_NUMBER_STRING;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change binary operation between some number + string to PHP 7.1 compatible version', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -66,14 +65,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [BinaryOp::class];
     }
     /**
      * @param BinaryOp $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node instanceof Concat) {
             return null;
@@ -88,16 +87,16 @@ CODE_SAMPLE
             return null;
         }
         if ($this->isStringOrStaticNonNumericString($node->left) && $this->nodeTypeResolver->isNumberType($node->right)) {
-            $node->left = $this->nodeTypeResolver->getNativeType($node->right)->isInteger()->yes() ? new LNumber(0) : new DNumber(0);
+            $node->left = $this->nodeTypeResolver->getNativeType($node->right)->isInteger()->yes() ? new Int_(0) : new Float_(0);
             return $node;
         }
         if ($this->isStringOrStaticNonNumericString($node->right) && $this->nodeTypeResolver->isNumberType($node->left)) {
-            $node->right = $this->nodeTypeResolver->getNativeType($node->left)->isInteger()->yes() ? new LNumber(0) : new DNumber(0);
+            $node->right = $this->nodeTypeResolver->getNativeType($node->left)->isInteger()->yes() ? new Int_(0) : new Float_(0);
             return $node;
         }
         return null;
     }
-    private function isStringOrStaticNonNumericString(Expr $expr) : bool
+    private function isStringOrStaticNonNumericString(Expr $expr): bool
     {
         // replace only scalar values, not variables/constants/etc.
         if (!$expr instanceof Scalar && !$expr instanceof Variable) {
@@ -107,11 +106,11 @@ CODE_SAMPLE
             return \false;
         }
         if ($expr instanceof String_) {
-            return !\is_numeric($expr->value);
+            return !is_numeric($expr->value);
         }
         $exprStaticType = $this->getType($expr);
         if ($exprStaticType instanceof ConstantStringType) {
-            return !\is_numeric($exprStaticType->getValue());
+            return !is_numeric($exprStaticType->getValue());
         }
         return \false;
     }

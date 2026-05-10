@@ -7,14 +7,13 @@ final class BootstrapConfigs
 {
     /**
      * @readonly
-     * @var string|null
      */
-    private $mainConfigFile;
+    private ?string $mainConfigFile;
     /**
      * @var string[]
      * @readonly
      */
-    private $setConfigFiles;
+    private array $setConfigFiles;
     /**
      * @param string[] $setConfigFiles
      */
@@ -23,19 +22,19 @@ final class BootstrapConfigs
         $this->mainConfigFile = $mainConfigFile;
         $this->setConfigFiles = $setConfigFiles;
     }
-    public function getMainConfigFile() : ?string
+    public function getMainConfigFile(): ?string
     {
         return $this->mainConfigFile;
     }
     /**
      * @return string[]
      */
-    public function getConfigFiles() : array
+    public function getConfigFiles(): array
     {
         $configFiles = [];
         if ($this->mainConfigFile !== null) {
             $configFiles[] = $this->mainConfigFile;
         }
-        return \array_merge($configFiles, $this->setConfigFiles);
+        return array_merge($configFiles, $this->setConfigFiles);
     }
 }

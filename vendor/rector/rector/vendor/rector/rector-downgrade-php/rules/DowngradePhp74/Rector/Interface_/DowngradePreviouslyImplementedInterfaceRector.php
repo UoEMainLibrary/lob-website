@@ -17,14 +17,13 @@ final class DowngradePreviouslyImplementedInterfaceRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\FamilyTree\Reflection\FamilyRelationsAnalyzer
      */
-    private $familyRelationsAnalyzer;
+    private FamilyRelationsAnalyzer $familyRelationsAnalyzer;
     public function __construct(FamilyRelationsAnalyzer $familyRelationsAnalyzer)
     {
         $this->familyRelationsAnalyzer = $familyRelationsAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Downgrade previously implemented interface', [new CodeSample(<<<'CODE_SAMPLE'
 interface ContainerExceptionInterface extends Throwable
@@ -49,20 +48,20 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Interface_::class];
     }
     /**
      * @param Interface_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $extends = $node->extends;
         if ($extends === []) {
             return null;
         }
-        if (\count($extends) === 1) {
+        if (count($extends) === 1) {
             return null;
         }
         $collectInterfaces = [];
@@ -71,12 +70,12 @@ CODE_SAMPLE
             if (!$extend instanceof FullyQualified) {
                 continue;
             }
-            if (\in_array($extend->toString(), $collectInterfaces, \true)) {
+            if (in_array($extend->toString(), $collectInterfaces, \true)) {
                 unset($extends[$key]);
                 $isCleaned = \true;
                 continue;
             }
-            $collectInterfaces = \array_merge($collectInterfaces, $this->familyRelationsAnalyzer->getClassLikeAncestorNames($extend));
+            $collectInterfaces = array_merge($collectInterfaces, $this->familyRelationsAnalyzer->getClassLikeAncestorNames($extend));
         }
         if (!$isCleaned) {
             return null;

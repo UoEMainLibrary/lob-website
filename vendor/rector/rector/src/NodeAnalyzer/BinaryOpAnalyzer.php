@@ -11,14 +11,13 @@ final class BinaryOpAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function matchFuncCallAndOtherExpr(BinaryOp $binaryOp, string $funcCallName) : ?FuncCallAndExpr
+    public function matchFuncCallAndOtherExpr(BinaryOp $binaryOp, string $funcCallName): ?FuncCallAndExpr
     {
         if ($binaryOp->left instanceof FuncCall) {
             if (!$this->nodeNameResolver->isName($binaryOp->left, $funcCallName)) {

@@ -12,6 +12,9 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Property;
+use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfo;
+use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
+use Rector\Enum\ClassName;
 use Rector\NodeAnalyzer\PropertyFetchAnalyzer;
 use Rector\NodeNameResolver\NodeNameResolver;
 use Rector\Php80\ValueObject\PropertyPromotionCandidate;
@@ -21,51 +24,76 @@ final class PromotedPropertyCandidateResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Comparing\NodeComparator
      */
-    private $nodeComparator;
+    private NodeComparator $nodeComparator;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
-    public function __construct(NodeNameResolver $nodeNameResolver, BetterNodeFinder $betterNodeFinder, NodeComparator $nodeComparator, PropertyFetchAnalyzer $propertyFetchAnalyzer)
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
+    /**
+     * @readonly
+     */
+    private PhpDocInfoFactory $phpDocInfoFactory;
+    /**
+     * @readonly
+     */
+    private \Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer $phpAttributeAnalyzer;
+    public function __construct(NodeNameResolver $nodeNameResolver, BetterNodeFinder $betterNodeFinder, NodeComparator $nodeComparator, PropertyFetchAnalyzer $propertyFetchAnalyzer, PhpDocInfoFactory $phpDocInfoFactory, \Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer $phpAttributeAnalyzer)
     {
         $this->nodeNameResolver = $nodeNameResolver;
         $this->betterNodeFinder = $betterNodeFinder;
         $this->nodeComparator = $nodeComparator;
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
+        $this->phpDocInfoFactory = $phpDocInfoFactory;
+        $this->phpAttributeAnalyzer = $phpAttributeAnalyzer;
     }
     /**
      * @return PropertyPromotionCandidate[]
      */
-    public function resolveFromClass(Class_ $class, ClassMethod $constructClassMethod) : array
+    public function resolveFromClass(Class_ $class, ClassMethod $constructClassMethod, bool $allowModelBasedClasses): array
     {
+        if (!$allowModelBasedClasses && $this->hasModelTypeCheck($class, ClassName::DOCTRINE_ENTITY)) {
+            return [];
+        }
         $propertyPromotionCandidates = [];
-        foreach ($class->getProperties() as $property) {
-            $propertyCount = \count($property->props);
-            if ($propertyCount !== 1) {
+        foreach ($class->stmts as $classStmtPosition => $classStmt) {
+            if (!$classStmt instanceof Property) {
                 continue;
             }
-            $propertyPromotionCandidate = $this->matchPropertyPromotionCandidate($property, $constructClassMethod);
+            if (count($classStmt->props) !== 1) {
+                continue;
+            }
+            $propertyPromotionCandidate = $this->matchPropertyPromotionCandidate($classStmt, $constructClassMethod, $classStmtPosition);
             if (!$propertyPromotionCandidate instanceof PropertyPromotionCandidate) {
+                continue;
+            }
+            if (!$allowModelBasedClasses && $this->hasModelTypeCheck($classStmt, ClassName::JMS_TYPE)) {
                 continue;
             }
             $propertyPromotionCandidates[] = $propertyPromotionCandidate;
         }
         return $propertyPromotionCandidates;
     }
-    private function matchPropertyPromotionCandidate(Property $property, ClassMethod $constructClassMethod) : ?PropertyPromotionCandidate
+    /**
+     * @param \PhpParser\Node\Stmt\Class_|\PhpParser\Node\Stmt\Property $node
+     */
+    private function hasModelTypeCheck($node, string $modelType): bool
+    {
+        $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
+        if ($phpDocInfo instanceof PhpDocInfo && $phpDocInfo->hasByAnnotationClass($modelType)) {
+            return \true;
+        }
+        return $this->phpAttributeAnalyzer->hasPhpAttribute($node, $modelType);
+    }
+    private function matchPropertyPromotionCandidate(Property $property, ClassMethod $constructClassMethod, int $propertyStmtPosition): ?PropertyPromotionCandidate
     {
         if ($property->flags === 0) {
             return null;
@@ -74,7 +102,7 @@ final class PromotedPropertyCandidateResolver
         $propertyName = $this->nodeNameResolver->getName($onlyProperty);
         $firstParamAsVariable = $this->resolveFirstParamUses($constructClassMethod);
         // match property name to assign in constructor
-        foreach ((array) $constructClassMethod->stmts as $stmt) {
+        foreach ((array) $constructClassMethod->stmts as $assignStmtPosition => $stmt) {
             if (!$stmt instanceof Expression) {
                 continue;
             }
@@ -101,19 +129,19 @@ final class PromotedPropertyCandidateResolver
             if ($this->shouldSkipParam($matchedParam, $assignedExpr, $firstParamAsVariable)) {
                 continue;
             }
-            return new PropertyPromotionCandidate($property, $matchedParam, $stmt);
+            return new PropertyPromotionCandidate($property, $matchedParam, $propertyStmtPosition, $assignStmtPosition);
         }
         return null;
     }
     /**
      * @return array<string, int>
      */
-    private function resolveFirstParamUses(ClassMethod $classMethod) : array
+    private function resolveFirstParamUses(ClassMethod $classMethod): array
     {
         $paramByFirstUsage = [];
         foreach ($classMethod->params as $param) {
             $paramName = $this->nodeNameResolver->getName($param);
-            $firstParamVariable = $this->betterNodeFinder->findFirst((array) $classMethod->stmts, function (Node $node) use($paramName) : bool {
+            $firstParamVariable = $this->betterNodeFinder->findFirst((array) $classMethod->stmts, function (Node $node) use ($paramName): bool {
                 if (!$node instanceof Variable) {
                     return \false;
                 }
@@ -126,7 +154,7 @@ final class PromotedPropertyCandidateResolver
         }
         return $paramByFirstUsage;
     }
-    private function matchClassMethodParamByAssignedVariable(ClassMethod $classMethod, Variable $variable) : ?Param
+    private function matchClassMethodParamByAssignedVariable(ClassMethod $classMethod, Variable $variable): ?Param
     {
         foreach ($classMethod->params as $param) {
             if (!$this->nodeComparator->areNodesEqual($variable, $param->var)) {
@@ -139,7 +167,7 @@ final class PromotedPropertyCandidateResolver
     /**
      * @param array<string, int> $firstParamAsVariable
      */
-    private function isParamUsedBeforeAssign(Variable $variable, array $firstParamAsVariable) : bool
+    private function isParamUsedBeforeAssign(Variable $variable, array $firstParamAsVariable): bool
     {
         $variableName = $this->nodeNameResolver->getName($variable);
         $firstVariablePosition = $firstParamAsVariable[$variableName] ?? null;
@@ -151,10 +179,10 @@ final class PromotedPropertyCandidateResolver
     /**
      * @param int[] $firstParamAsVariable
      */
-    private function shouldSkipParam(Param $matchedParam, Variable $assignedVariable, array $firstParamAsVariable) : bool
+    private function shouldSkipParam(Param $matchedParam, Variable $assignedVariable, array $firstParamAsVariable): bool
     {
         // already promoted
-        if ($matchedParam->flags !== 0) {
+        if ($matchedParam->isPromoted()) {
             return \true;
         }
         return $this->isParamUsedBeforeAssign($assignedVariable, $firstParamAsVariable);

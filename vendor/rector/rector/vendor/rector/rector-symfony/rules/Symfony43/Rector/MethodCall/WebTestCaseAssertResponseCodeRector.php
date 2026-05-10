@@ -26,24 +26,20 @@ final class WebTestCaseAssertResponseCodeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\SymfonyTestCaseAnalyzer
      */
-    private $symfonyTestCaseAnalyzer;
+    private SymfonyTestCaseAnalyzer $symfonyTestCaseAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ExprAnalyzer
      */
-    private $exprAnalyzer;
+    private ExprAnalyzer $exprAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(SymfonyTestCaseAnalyzer $symfonyTestCaseAnalyzer, TestsNodeAnalyzer $testsNodeAnalyzer, ExprAnalyzer $exprAnalyzer, ValueResolver $valueResolver)
     {
         $this->symfonyTestCaseAnalyzer = $symfonyTestCaseAnalyzer;
@@ -51,7 +47,7 @@ final class WebTestCaseAssertResponseCodeRector extends AbstractRector
         $this->exprAnalyzer = $exprAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Simplify use of assertions in WebTestCase', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -84,14 +80,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class, StaticCall::class];
     }
     /**
      * @param MethodCall|StaticCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->symfonyTestCaseAnalyzer->isInWebTestCase($node)) {
             return null;
@@ -105,7 +101,7 @@ CODE_SAMPLE
     /**
      * We look for: "$client->getResponse()->headers->get('Location')"
      */
-    public function isGetLocationMethodCall(Expr $expr) : bool
+    public function isGetLocationMethodCall(Expr $expr): bool
     {
         if (!$expr instanceof MethodCall) {
             return \false;
@@ -135,7 +131,7 @@ CODE_SAMPLE
             return null;
         }
         $nestedMethodCall = $secondArg->value;
-        if (!$this->nodeNameResolver->isName($nestedMethodCall->name, 'getStatusCode')) {
+        if (!$this->isName($nestedMethodCall->name, 'getStatusCode')) {
             return null;
         }
         // caller must be a response object

@@ -6,24 +6,24 @@ namespace Rector\Transform\Rector\Class_;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
-use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
 use Rector\Contract\Rector\ConfigurableRectorInterface;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\PHPStan\ScopeFetcher;
+use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @api used in rector-doctrine
  * @see \Rector\Tests\Transform\Rector\Class_\AddInterfaceByTraitRector\AddInterfaceByTraitRectorTest
  */
-final class AddInterfaceByTraitRector extends AbstractScopeAwareRector implements ConfigurableRectorInterface
+final class AddInterfaceByTraitRector extends AbstractRector implements ConfigurableRectorInterface
 {
     /**
      * @var array<string, string>
      */
-    private $interfaceByTrait = [];
-    public function getRuleDefinition() : RuleDefinition
+    private array $interfaceByTrait = [];
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add interface by used trait', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -42,15 +42,16 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        $scope = ScopeFetcher::fetch($node);
         $classReflection = $scope->getClassReflection();
         if (!$classReflection instanceof ClassReflection) {
             return null;
@@ -74,9 +75,9 @@ CODE_SAMPLE
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
-        Assert::allString(\array_keys($configuration));
+        Assert::allString(array_keys($configuration));
         Assert::allString($configuration);
         $this->interfaceByTrait = $configuration;
     }

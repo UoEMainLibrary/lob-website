@@ -21,7 +21,6 @@ use PhpParser\Node\UnionType;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
 use PHPStan\Type\MixedType;
-use PHPStan\Type\NullType;
 use Rector\NodeNameResolver\NodeNameResolver;
 use Rector\NodeTypeResolver\TypeComparator\TypeComparator;
 use Rector\PhpParser\AstResolver;
@@ -30,24 +29,20 @@ final class CallerParamMatcher
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\AstResolver
      */
-    private $astResolver;
+    private AstResolver $astResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\TypeComparator\TypeComparator
      */
-    private $typeComparator;
+    private TypeComparator $typeComparator;
     public function __construct(NodeNameResolver $nodeNameResolver, AstResolver $astResolver, StaticTypeMapper $staticTypeMapper, TypeComparator $typeComparator)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -82,18 +77,18 @@ final class CallerParamMatcher
         if ($this->typeComparator->isSubtype($defaultType, $callParamType)) {
             return $callParam->type;
         }
-        if (!$defaultType instanceof NullType) {
+        if (!$defaultType->isNull()->yes()) {
             return null;
         }
         if ($callParam->type instanceof Name || $callParam->type instanceof Identifier) {
             return new NullableType($callParam->type);
         }
         if ($callParam->type instanceof IntersectionType || $callParam->type instanceof UnionType) {
-            return new UnionType(\array_merge($callParam->type->types, [new Identifier('null')]));
+            return new UnionType(array_merge($callParam->type->types, [new Identifier('null')]));
         }
         return null;
     }
-    public function matchParentParam(StaticCall $parentStaticCall, Param $param, Scope $scope) : ?Param
+    public function matchParentParam(StaticCall $parentStaticCall, Param $param, Scope $scope): ?Param
     {
         $methodName = $this->nodeNameResolver->getName($parentStaticCall->name);
         if ($methodName === null) {
@@ -109,13 +104,13 @@ final class CallerParamMatcher
     /**
      * @param \PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\FuncCall $call
      */
-    public function matchCallParam($call, Param $param, Scope $scope) : ?Param
+    public function matchCallParam($call, Param $param): ?Param
     {
         $callArgPosition = $this->matchCallArgPosition($call, $param);
         if ($callArgPosition === null) {
             return null;
         }
-        $classMethodOrFunction = $this->astResolver->resolveClassMethodOrFunctionFromCall($call, $scope);
+        $classMethodOrFunction = $this->astResolver->resolveClassMethodOrFunctionFromCall($call);
         if ($classMethodOrFunction === null) {
             return null;
         }
@@ -124,7 +119,7 @@ final class CallerParamMatcher
     /**
      * @param \PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\FuncCall $call
      */
-    private function matchCallArgPosition($call, Param $param) : ?int
+    private function matchCallArgPosition($call, Param $param): ?int
     {
         $paramName = $this->nodeNameResolver->getName($param);
         foreach ($call->args as $argPosition => $arg) {
@@ -141,7 +136,7 @@ final class CallerParamMatcher
         }
         return null;
     }
-    private function resolveParentMethodParam(Scope $scope, string $methodName, int $paramPosition) : ?Param
+    private function resolveParentMethodParam(Scope $scope, string $methodName, int $paramPosition): ?Param
     {
         $classReflection = $scope->getClassReflection();
         if (!$classReflection instanceof ClassReflection) {
@@ -159,7 +154,7 @@ final class CallerParamMatcher
         }
         return null;
     }
-    private function isCallParamMixed(Node $node) : bool
+    private function isCallParamMixed(Node $node): bool
     {
         $callParamType = $this->staticTypeMapper->mapPhpParserNodePHPStanType($node);
         return $callParamType instanceof MixedType;

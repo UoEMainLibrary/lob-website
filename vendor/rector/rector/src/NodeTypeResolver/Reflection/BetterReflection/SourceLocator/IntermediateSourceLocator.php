@@ -14,14 +14,13 @@ final class IntermediateSourceLocator implements SourceLocator
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\Reflection\BetterReflection\SourceLocatorProvider\DynamicSourceLocatorProvider
      */
-    private $dynamicSourceLocatorProvider;
+    private DynamicSourceLocatorProvider $dynamicSourceLocatorProvider;
     public function __construct(DynamicSourceLocatorProvider $dynamicSourceLocatorProvider)
     {
         $this->dynamicSourceLocatorProvider = $dynamicSourceLocatorProvider;
     }
-    public function locateIdentifier(Reflector $reflector, Identifier $identifier) : ?Reflection
+    public function locateIdentifier(Reflector $reflector, Identifier $identifier): ?Reflection
     {
         $sourceLocator = $this->dynamicSourceLocatorProvider->provide();
         try {
@@ -38,7 +37,7 @@ final class IntermediateSourceLocator implements SourceLocator
      * Find all identifiers of a type
      * @return array<int, Reflection>
      */
-    public function locateIdentifiersByType(Reflector $reflector, IdentifierType $identifierType) : array
+    public function locateIdentifiersByType(Reflector $reflector, IdentifierType $identifierType): array
     {
         $sourceLocator = $this->dynamicSourceLocatorProvider->provide();
         try {

@@ -20,9 +20,8 @@ final class TraitTypeResolver implements NodeTypeResolverInterface
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(ReflectionProvider $reflectionProvider)
     {
         $this->reflectionProvider = $reflectionProvider;
@@ -30,14 +29,14 @@ final class TraitTypeResolver implements NodeTypeResolverInterface
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeClasses() : array
+    public function getNodeClasses(): array
     {
         return [Trait_::class];
     }
     /**
      * @param Trait_ $node
      */
-    public function resolve(Node $node) : Type
+    public function resolve(Node $node): Type
     {
         $traitName = (string) $node->namespacedName;
         if (!$this->reflectionProvider->hasClass($traitName)) {
@@ -49,7 +48,7 @@ final class TraitTypeResolver implements NodeTypeResolverInterface
         foreach ($classReflection->getTraits() as $usedTraitReflection) {
             $types[] = new ObjectType($usedTraitReflection->getName());
         }
-        if (\count($types) === 1) {
+        if (count($types) === 1) {
             return $types[0];
         }
         return new UnionType($types);

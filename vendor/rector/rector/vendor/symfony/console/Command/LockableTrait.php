@@ -8,13 +8,13 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Command;
+namespace RectorPrefix202604\Symfony\Component\Console\Command;
 
-use RectorPrefix202411\Symfony\Component\Console\Exception\LogicException;
-use RectorPrefix202411\Symfony\Component\Lock\LockFactory;
-use RectorPrefix202411\Symfony\Component\Lock\LockInterface;
-use RectorPrefix202411\Symfony\Component\Lock\Store\FlockStore;
-use RectorPrefix202411\Symfony\Component\Lock\Store\SemaphoreStore;
+use RectorPrefix202604\Symfony\Component\Console\Exception\LogicException;
+use RectorPrefix202604\Symfony\Component\Lock\LockFactory;
+use RectorPrefix202604\Symfony\Component\Lock\LockInterface;
+use RectorPrefix202604\Symfony\Component\Lock\Store\FlockStore;
+use RectorPrefix202604\Symfony\Component\Lock\Store\SemaphoreStore;
 /**
  * Basic lock feature for commands.
  *
@@ -22,16 +22,13 @@ use RectorPrefix202411\Symfony\Component\Lock\Store\SemaphoreStore;
  */
 trait LockableTrait
 {
-    /**
-     * @var \Symfony\Component\Lock\LockInterface|null
-     */
-    private $lock;
+    private ?LockInterface $lock = null;
     /**
      * Locks a command.
      */
-    private function lock(?string $name = null, bool $blocking = \false) : bool
+    private function lock(?string $name = null, bool $blocking = \false): bool
     {
-        if (!\class_exists(SemaphoreStore::class)) {
+        if (!class_exists(SemaphoreStore::class)) {
             throw new LogicException('To enable the locking feature you must install the symfony/lock component. Try running "composer require symfony/lock".');
         }
         if (null !== $this->lock) {
@@ -52,7 +49,7 @@ trait LockableTrait
     /**
      * Releases the command lock if there is one.
      */
-    private function release() : void
+    private function release(): void
     {
         if ($this->lock) {
             $this->lock->release();

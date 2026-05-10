@@ -40,8 +40,7 @@ final class AssertNoFieldByNameRector extends AbstractRector
     $this->assertNoFieldByName('name', 'not the value');
     $this->assertNoFieldByName('notexisting');
     $this->assertNoFieldByName('notexisting', NULL);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
     $this->assertSession()->fieldValueNotEquals('name', '');
     $this->assertSession()->fieldValueNotEquals('name', 'not the value');
@@ -63,7 +62,7 @@ CODE_AFTER
     {
         assert($node instanceof Node\Stmt\Expression);
 
-        if (!($node->expr instanceof Node\Expr\MethodCall)) {
+        if (!$node->expr instanceof Node\Expr\MethodCall) {
             return null;
         }
 

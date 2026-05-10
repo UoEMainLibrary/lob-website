@@ -11,7 +11,7 @@ use Rector\Contract\Rector\ConfigurableRectorInterface;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\Transform\Rector\FuncCall\FuncCallToNewRector\FuncCallToNewRectorTest
  */
@@ -20,8 +20,8 @@ final class FuncCallToNewRector extends AbstractRector implements ConfigurableRe
     /**
      * @var string[]
      */
-    private $functionToNew = [];
-    public function getRuleDefinition() : RuleDefinition
+    private array $functionToNew = [];
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change configured function calls to new Instance', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -41,19 +41,19 @@ class SomeClass
     }
 }
 CODE_SAMPLE
-, ['collection' => ['Collection']])]);
+, ['collection' => 'Collection'])]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         foreach ($this->functionToNew as $function => $new) {
             if (!$this->isName($node, $function)) {
@@ -66,7 +66,7 @@ CODE_SAMPLE
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allString($configuration);
         $this->functionToNew = $configuration;

@@ -10,22 +10,20 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PHPStan\Type\MixedType;
-use PHPStan\Type\TypeWithClassName;
 use Rector\Enum\ObjectReference;
 use Rector\NodeNameResolver\NodeNameResolver;
 use Rector\NodeTypeResolver\NodeTypeResolver;
+use Rector\StaticTypeMapper\Resolver\ClassNameFromObjectTypeResolver;
 final class CallCollectionAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver, NodeNameResolver $nodeNameResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
@@ -34,12 +32,13 @@ final class CallCollectionAnalyzer
     /**
      * @param StaticCall[]|MethodCall[]|NullsafeMethodCall[] $calls
      */
-    public function isExists(array $calls, string $classMethodName, string $className) : bool
+    public function isExists(array $calls, string $classMethodName, string $className): bool
     {
         foreach ($calls as $call) {
             $callerRoot = $call instanceof StaticCall ? $call->class : $call->var;
             $callerType = $this->nodeTypeResolver->getType($callerRoot);
-            if (!$callerType instanceof TypeWithClassName) {
+            $callerTypeClassName = ClassNameFromObjectTypeResolver::resolve($callerType);
+            if ($callerTypeClassName === null) {
                 // handle fluent by $this->bar()->baz()->qux()
                 // that methods don't have return type
                 if ($callerType instanceof MixedType && !$callerType->isExplicitMixed()) {
@@ -57,7 +56,7 @@ final class CallCollectionAnalyzer
                         }
                         $cloneCallerRoot = $cloneCallerRoot->var;
                     }
-                    if ($isFluent && \in_array($classMethodName, $methodCallNames, \true)) {
+                    if ($isFluent && in_array($classMethodName, $methodCallNames, \true)) {
                         return \true;
                     }
                 }
@@ -66,7 +65,7 @@ final class CallCollectionAnalyzer
             if ($this->isSelfStatic($call) && $this->shouldSkip($call, $classMethodName)) {
                 return \true;
             }
-            if ($callerType->getClassName() !== $className) {
+            if ($callerTypeClassName !== $className) {
                 continue;
             }
             if ($this->shouldSkip($call, $classMethodName)) {
@@ -78,14 +77,14 @@ final class CallCollectionAnalyzer
     /**
      * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\NullsafeMethodCall $call
      */
-    private function isSelfStatic($call) : bool
+    private function isSelfStatic($call): bool
     {
-        return $call instanceof StaticCall && $call->class instanceof Name && \in_array($call->class->toString(), [ObjectReference::SELF, ObjectReference::STATIC], \true);
+        return $call instanceof StaticCall && $call->class instanceof Name && in_array($call->class->toString(), [ObjectReference::SELF, ObjectReference::STATIC], \true);
     }
     /**
      * @param \PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\NullsafeMethodCall $call
      */
-    private function shouldSkip($call, string $classMethodName) : bool
+    private function shouldSkip($call, string $classMethodName): bool
     {
         if (!$call->name instanceof Identifier) {
             return \true;

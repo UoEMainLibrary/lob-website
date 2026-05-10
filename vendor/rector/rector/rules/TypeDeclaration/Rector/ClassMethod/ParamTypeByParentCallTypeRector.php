@@ -4,15 +4,18 @@ declare (strict_types=1);
 namespace Rector\TypeDeclaration\Rector\ClassMethod;
 
 use PhpParser\Node;
+use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
-use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
 use Rector\Enum\ObjectReference;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\PhpParser\Node\BetterNodeFinder;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\PHPStan\ScopeFetcher;
+use Rector\Rector\AbstractRector;
 use Rector\Reflection\ReflectionResolver;
 use Rector\TypeDeclaration\NodeAnalyzer\CallerParamMatcher;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -20,30 +23,27 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\TypeDeclaration\Rector\ClassMethod\ParamTypeByParentCallTypeRector\ParamTypeByParentCallTypeRectorTest
  */
-final class ParamTypeByParentCallTypeRector extends AbstractScopeAwareRector
+final class ParamTypeByParentCallTypeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\CallerParamMatcher
      */
-    private $callerParamMatcher;
+    private CallerParamMatcher $callerParamMatcher;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     public function __construct(CallerParamMatcher $callerParamMatcher, ReflectionResolver $reflectionResolver, BetterNodeFinder $betterNodeFinder)
     {
         $this->callerParamMatcher = $callerParamMatcher;
         $this->reflectionResolver = $reflectionResolver;
         $this->betterNodeFinder = $betterNodeFinder;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change param type based on parent param type', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeControl
@@ -82,51 +82,64 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [ClassMethod::class];
+        return [Class_::class];
     }
     /**
-     * @param ClassMethod $node
+     * @param Class_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        if ($this->shouldSkip($node)) {
-            return null;
-        }
-        $parentStaticCall = $this->findParentStaticCall($node);
-        if (!$parentStaticCall instanceof StaticCall) {
+        // no parent calls available
+        if ($node->extends === null) {
             return null;
         }
         $hasChanged = \false;
-        foreach ($node->params as $param) {
-            // already has type, skip
-            if ($param->type !== null) {
+        foreach ($node->getMethods() as $classMethod) {
+            if ($this->shouldSkip($classMethod)) {
                 continue;
             }
-            $parentParam = $this->callerParamMatcher->matchParentParam($parentStaticCall, $param, $scope);
-            if (!$parentParam instanceof Param) {
+            $parentStaticCall = $this->findParentStaticCall($classMethod);
+            if (!$parentStaticCall instanceof StaticCall) {
                 continue;
             }
-            if ($parentParam->type === null) {
-                continue;
+            $scope = ScopeFetcher::fetch($classMethod);
+            foreach ($classMethod->params as $param) {
+                // already has type, skip
+                if ($param->type !== null) {
+                    continue;
+                }
+                if ($param->variadic) {
+                    continue;
+                }
+                if ($this->isParamUsedInSpreadArg($classMethod, $param)) {
+                    continue;
+                }
+                $parentParam = $this->callerParamMatcher->matchParentParam($parentStaticCall, $param, $scope);
+                if (!$parentParam instanceof Param) {
+                    continue;
+                }
+                if (!$parentParam->type instanceof Node) {
+                    continue;
+                }
+                // mimic type
+                $paramType = $parentParam->type;
+                // original attributes have to removed to avoid tokens crashing from origin positions
+                $this->traverseNodesWithCallable($paramType, static function (Node $node) {
+                    $node->setAttribute(AttributeKey::ORIGINAL_NODE, null);
+                    return null;
+                });
+                $param->type = $paramType;
+                $hasChanged = \true;
             }
-            // mimic type
-            $paramType = $parentParam->type;
-            // original attributes have to removed to avoid tokens crashing from origin positions
-            $this->traverseNodesWithCallable($paramType, static function (Node $node) {
-                $node->setAttribute(AttributeKey::ORIGINAL_NODE, null);
-                return null;
-            });
-            $param->type = $paramType;
-            $hasChanged = \true;
         }
         if ($hasChanged) {
             return $node;
         }
         return null;
     }
-    private function findParentStaticCall(ClassMethod $classMethod) : ?StaticCall
+    private function findParentStaticCall(ClassMethod $classMethod): ?StaticCall
     {
         $classMethodName = $this->getName($classMethod);
         /** @var StaticCall[] $staticCalls */
@@ -142,9 +155,9 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function shouldSkip(ClassMethod $classMethod) : bool
+    private function shouldSkip(ClassMethod $classMethod): bool
     {
-        if ($classMethod->params === []) {
+        if (!$this->hasAtLeastOneParamWithoutType($classMethod)) {
             return \true;
         }
         $classReflection = $this->reflectionResolver->resolveClassReflection($classMethod);
@@ -152,5 +165,32 @@ CODE_SAMPLE
             return \true;
         }
         return !$classReflection->isClass();
+    }
+    private function isParamUsedInSpreadArg(ClassMethod $classMethod, Param $param): bool
+    {
+        /** @var Arg[] $args */
+        $args = $this->betterNodeFinder->findInstancesOfScoped((array) $classMethod->stmts, Arg::class);
+        $paramName = $this->getName($param);
+        foreach ($args as $arg) {
+            if (!$arg->unpack) {
+                continue;
+            }
+            if ($arg->value instanceof Variable && $this->isName($arg->value, $paramName)) {
+                return \true;
+            }
+        }
+        return \false;
+    }
+    private function hasAtLeastOneParamWithoutType(ClassMethod $classMethod): bool
+    {
+        foreach ($classMethod->getParams() as $param) {
+            if ($param->variadic) {
+                continue;
+            }
+            if ($param->type === null) {
+                return \true;
+            }
+        }
+        return \false;
     }
 }

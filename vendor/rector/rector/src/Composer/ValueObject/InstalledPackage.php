@@ -3,28 +3,29 @@
 declare (strict_types=1);
 namespace Rector\Composer\ValueObject;
 
+/**
+ * @api
+ */
 final class InstalledPackage
 {
     /**
      * @readonly
-     * @var string
      */
-    private $name;
+    private string $name;
     /**
      * @readonly
-     * @var string
      */
-    private $version;
+    private string $version;
     public function __construct(string $name, string $version)
     {
         $this->name = $name;
         $this->version = $version;
     }
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
-    public function getVersion() : string
+    public function getVersion(): string
     {
         return $this->version;
     }

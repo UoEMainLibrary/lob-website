@@ -1,19 +1,19 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411\Symplify\EasyParallel\ValueObject;
+namespace RectorPrefix202604\Symplify\EasyParallel\ValueObject;
 
-use RectorPrefix202411\Clue\React\NDJson\Decoder;
-use RectorPrefix202411\Clue\React\NDJson\Encoder;
+use RectorPrefix202604\Clue\React\NDJson\Decoder;
+use RectorPrefix202604\Clue\React\NDJson\Encoder;
 use Exception;
-use RectorPrefix202411\React\ChildProcess\Process;
-use RectorPrefix202411\React\EventLoop\LoopInterface;
-use RectorPrefix202411\React\EventLoop\TimerInterface;
-use RectorPrefix202411\Symplify\EasyParallel\Enum\Action;
-use RectorPrefix202411\Symplify\EasyParallel\Enum\Content;
-use RectorPrefix202411\Symplify\EasyParallel\Enum\ReactCommand;
-use RectorPrefix202411\Symplify\EasyParallel\Enum\ReactEvent;
-use RectorPrefix202411\Symplify\EasyParallel\Exception\ParallelShouldNotHappenException;
+use RectorPrefix202604\React\ChildProcess\Process;
+use RectorPrefix202604\React\EventLoop\LoopInterface;
+use RectorPrefix202604\React\EventLoop\TimerInterface;
+use RectorPrefix202604\Symplify\EasyParallel\Enum\Action;
+use RectorPrefix202604\Symplify\EasyParallel\Enum\Content;
+use RectorPrefix202604\Symplify\EasyParallel\Enum\ReactCommand;
+use RectorPrefix202604\Symplify\EasyParallel\Enum\ReactEvent;
+use RectorPrefix202604\Symplify\EasyParallel\Exception\ParallelShouldNotHappenException;
 use Throwable;
 /**
  * Inspired at @see https://raw.githubusercontent.com/phpstan/phpstan-src/master/src/Parallel/Process.php
@@ -24,27 +24,18 @@ final class ParallelProcess
 {
     /**
      * @readonly
-     * @var string
      */
-    private $command;
+    private string $command;
     /**
      * @readonly
-     * @var \React\EventLoop\LoopInterface
      */
-    private $loop;
+    private LoopInterface $loop;
     /**
      * @readonly
-     * @var int
      */
-    private $timetoutInSeconds;
-    /**
-     * @var \React\ChildProcess\Process
-     */
-    private $process;
-    /**
-     * @var \Clue\React\NDJson\Encoder
-     */
-    private $encoder;
+    private int $timetoutInSeconds;
+    private Process $process;
+    private Encoder $encoder;
     /**
      * @var resource|null
      */
@@ -57,10 +48,7 @@ final class ParallelProcess
      * @var callable(Throwable): void
      */
     private $onError;
-    /**
-     * @var \React\EventLoop\TimerInterface|null
-     */
-    private $timer;
+    private ?TimerInterface $timer = null;
     public function __construct(string $command, LoopInterface $loop, int $timetoutInSeconds)
     {
         $this->command = $command;
@@ -72,9 +60,9 @@ final class ParallelProcess
      * @param callable(Throwable $onError) : void $onError
      * @param callable(?int $onExit, string $output) : void $onExit
      */
-    public function start(callable $onData, callable $onError, callable $onExit) : void
+    public function start(callable $onData, callable $onError, callable $onExit): void
     {
-        $tmp = \tmpfile();
+        $tmp = tmpfile();
         if ($tmp === \false) {
             throw new ParallelShouldNotHappenException('Failed creating temp file.');
         }
@@ -83,32 +71,32 @@ final class ParallelProcess
         $this->process->start($this->loop);
         $this->onData = $onData;
         $this->onError = $onError;
-        $this->process->on(ReactEvent::EXIT, function ($exitCode) use($onExit) : void {
+        $this->process->on(ReactEvent::EXIT, function ($exitCode) use ($onExit): void {
             if ($this->stdErr === null) {
                 throw new ParallelShouldNotHappenException();
             }
             $this->cancelTimer();
-            \rewind($this->stdErr);
+            rewind($this->stdErr);
             /** @var string $streamContents */
-            $streamContents = \stream_get_contents($this->stdErr);
+            $streamContents = stream_get_contents($this->stdErr);
             $onExit($exitCode, $streamContents);
-            \fclose($this->stdErr);
+            fclose($this->stdErr);
         });
     }
     /**
      * @param mixed[] $data
      */
-    public function request(array $data) : void
+    public function request(array $data): void
     {
         $this->cancelTimer();
         $this->encoder->write($data);
-        $this->timer = $this->loop->addTimer($this->timetoutInSeconds, function () : void {
+        $this->timer = $this->loop->addTimer($this->timetoutInSeconds, function (): void {
             $onError = $this->onError;
-            $errorMessage = \sprintf('Child process timed out after %d seconds', $this->timetoutInSeconds);
+            $errorMessage = sprintf('Child process timed out after %d seconds', $this->timetoutInSeconds);
             $onError(new Exception($errorMessage));
         });
     }
-    public function quit() : void
+    public function quit(): void
     {
         $this->cancelTimer();
         if (!$this->process->isRunning()) {
@@ -119,9 +107,9 @@ final class ParallelProcess
         }
         $this->encoder->end();
     }
-    public function bindConnection(Decoder $decoder, Encoder $encoder) : void
+    public function bindConnection(Decoder $decoder, Encoder $encoder): void
     {
-        $decoder->on(ReactEvent::DATA, function (array $json) : void {
+        $decoder->on(ReactEvent::DATA, function (array $json): void {
             $this->cancelTimer();
             if ($json[ReactCommand::ACTION] !== Action::RESULT) {
                 return;
@@ -130,16 +118,16 @@ final class ParallelProcess
             $onData($json[Content::RESULT]);
         });
         $this->encoder = $encoder;
-        $decoder->on(ReactEvent::ERROR, function (Throwable $throwable) : void {
+        $decoder->on(ReactEvent::ERROR, function (Throwable $throwable): void {
             $onError = $this->onError;
             $onError($throwable);
         });
-        $encoder->on(ReactEvent::ERROR, function (Throwable $throwable) : void {
+        $encoder->on(ReactEvent::ERROR, function (Throwable $throwable): void {
             $onError = $this->onError;
             $onError($throwable);
         });
     }
-    private function cancelTimer() : void
+    private function cancelTimer(): void
     {
         if (!$this->timer instanceof TimerInterface) {
             return;

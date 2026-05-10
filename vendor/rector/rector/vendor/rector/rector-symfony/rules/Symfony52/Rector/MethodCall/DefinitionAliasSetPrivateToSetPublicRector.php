@@ -20,19 +20,18 @@ final class DefinitionAliasSetPrivateToSetPublicRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @var ObjectType[]
      */
-    private $definitionObjectTypes = [];
+    private array $definitionObjectTypes = [];
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
-        $this->definitionObjectTypes = [new ObjectType('Symfony\\Component\\DependencyInjection\\Alias'), new ObjectType('Symfony\\Component\\DependencyInjection\\Definition')];
+        $this->definitionObjectTypes = [new ObjectType('Symfony\Component\DependencyInjection\Alias'), new ObjectType('Symfony\Component\DependencyInjection\Definition')];
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Migrates from deprecated Definition/Alias->setPrivate() to Definition/Alias->setPublic()', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\DependencyInjection\Alias;
@@ -71,14 +70,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node->name, 'setPrivate')) {
             return null;
@@ -90,7 +89,7 @@ CODE_SAMPLE
         $argValue = $argValue instanceof ConstFetch ? $this->createNegationConsFetch($argValue) : new BooleanNot($argValue);
         return $this->nodeFactory->createMethodCall($node->var, 'setPublic', [$argValue]);
     }
-    private function createNegationConsFetch(ConstFetch $constFetch) : ConstFetch
+    private function createNegationConsFetch(ConstFetch $constFetch): ConstFetch
     {
         if ($this->valueResolver->isFalse($constFetch)) {
             return $this->nodeFactory->createTrue();

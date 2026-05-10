@@ -4,7 +4,7 @@ declare (strict_types=1);
 namespace Rector\DowngradePhp73\Rector\String_;
 
 use PhpParser\Node;
-use PhpParser\Node\Scalar\Encapsed;
+use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use Rector\DowngradePhp73\Tokenizer\FollowedByNewlineOnlyMaybeWithSemicolonAnalyzer;
 use Rector\NodeTypeResolver\Node\AttributeKey;
@@ -18,9 +18,8 @@ final class DowngradeFlexibleHeredocSyntaxRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DowngradePhp73\Tokenizer\FollowedByNewlineOnlyMaybeWithSemicolonAnalyzer
      */
-    private $followedByNewlineOnlyMaybeWithSemicolonAnalyzer;
+    private FollowedByNewlineOnlyMaybeWithSemicolonAnalyzer $followedByNewlineOnlyMaybeWithSemicolonAnalyzer;
     /**
      * @var int[]
      */
@@ -29,7 +28,7 @@ final class DowngradeFlexibleHeredocSyntaxRector extends AbstractRector
     {
         $this->followedByNewlineOnlyMaybeWithSemicolonAnalyzer = $followedByNewlineOnlyMaybeWithSemicolonAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove indentation from heredoc/nowdoc', [new CodeSample(<<<'CODE_SAMPLE'
 $query = <<<SQL
@@ -50,17 +49,17 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [String_::class, Encapsed::class];
+        return [String_::class, InterpolatedString::class];
     }
     /**
-     * @param Encapsed|String_ $node
+     * @param InterpolatedString|String_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $stringKind = $node->getAttribute(AttributeKey::KIND);
-        if (!\in_array($stringKind, self::HERENOW_DOC_KINDS, \true)) {
+        if (!in_array($stringKind, self::HERENOW_DOC_KINDS, \true)) {
             return null;
         }
         // skip correctly indented
@@ -68,8 +67,12 @@ CODE_SAMPLE
         if ($docIndentation === '' && $this->followedByNewlineOnlyMaybeWithSemicolonAnalyzer->isFollowed($this->file, $node)) {
             return null;
         }
-        $node->setAttribute(AttributeKey::DOC_INDENTATION, '');
+        $node->setAttribute(AttributeKey::DOC_INDENTATION, '__REMOVED__');
         $node->setAttribute(AttributeKey::ORIGINAL_NODE, null);
+        $tokens = $this->file->getOldTokens();
+        if (isset($tokens[$node->getEndTokenPos()], $tokens[$node->getEndTokenPos() + 1])) {
+            $tokens[$node->getEndTokenPos() + 1]->text = "\n" . $tokens[$node->getEndTokenPos() + 1]->text;
+        }
         return $node;
     }
 }

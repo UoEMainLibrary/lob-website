@@ -1,10 +1,10 @@
 <?php
 
-namespace RectorPrefix202411\React\Stream;
+namespace RectorPrefix202604\React\Stream;
 
-use RectorPrefix202411\Evenement\EventEmitter;
-use RectorPrefix202411\React\EventLoop\Loop;
-use RectorPrefix202411\React\EventLoop\LoopInterface;
+use RectorPrefix202604\Evenement\EventEmitter;
+use RectorPrefix202604\React\EventLoop\Loop;
+use RectorPrefix202604\React\EventLoop\LoopInterface;
 final class WritableResourceStream extends EventEmitter implements WritableStreamInterface
 {
     private $stream;
@@ -45,7 +45,7 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
         }
         if ($loop !== null && !$loop instanceof LoopInterface) {
             // manual type check to support legacy PHP < 7.1
-            throw new \InvalidArgumentException('Argument #2 ($loop) expected null|React\\EventLoop\\LoopInterface');
+            throw new \InvalidArgumentException('Argument #2 ($loop) expected null|React\EventLoop\LoopInterface');
         }
         $this->stream = $stream;
         $this->loop = $loop ?: Loop::get();
@@ -102,7 +102,7 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
     public function handleWrite()
     {
         $error = null;
-        \set_error_handler(function ($_, $errstr) use(&$error) {
+        \set_error_handler(function ($_, $errstr) use (&$error) {
             $error = $errstr;
         });
         if ($this->writeChunkSize === -1) {

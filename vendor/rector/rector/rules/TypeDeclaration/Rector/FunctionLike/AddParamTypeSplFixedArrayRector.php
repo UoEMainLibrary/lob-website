@@ -23,18 +23,16 @@ final class AddParamTypeSplFixedArrayRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @var array<string, string>
      */
-    private const SPL_FIXED_ARRAY_TO_SINGLE = ['PhpCsFixer\\Tokenizer\\Tokens' => 'PhpCsFixer\\Tokenizer\\Token', 'PhpCsFixer\\Doctrine\\Annotation\\Tokens' => 'PhpCsFixer\\Doctrine\\Annotation\\Token'];
+    private const SPL_FIXED_ARRAY_TO_SINGLE = ['PhpCsFixer\Tokenizer\Tokens' => 'PhpCsFixer\Tokenizer\Token', 'PhpCsFixer\Doctrine\Annotation\Tokens' => 'PhpCsFixer\Doctrine\Annotation\Token'];
     public function __construct(PhpDocTypeChanger $phpDocTypeChanger, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->phpDocTypeChanger = $phpDocTypeChanger;
@@ -43,11 +41,11 @@ final class AddParamTypeSplFixedArrayRector extends AbstractRector
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Function_::class, ClassMethod::class];
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add exact fixed array type in known cases', [new CodeSample(<<<'CODE_SAMPLE'
 use PhpCsFixer\Tokenizer\Tokens;
@@ -78,7 +76,7 @@ CODE_SAMPLE
     /**
      * @param FunctionLike $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->getParams() === []) {
             return null;
@@ -114,7 +112,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function resolveGenericType(TypeWithClassName $typeWithClassName) : ?\PHPStan\Type\Generic\GenericObjectType
+    private function resolveGenericType(TypeWithClassName $typeWithClassName): ?\PHPStan\Type\Generic\GenericObjectType
     {
         foreach (self::SPL_FIXED_ARRAY_TO_SINGLE as $fixedArrayClass => $singleClass) {
             if ($typeWithClassName->getClassName() === $fixedArrayClass) {

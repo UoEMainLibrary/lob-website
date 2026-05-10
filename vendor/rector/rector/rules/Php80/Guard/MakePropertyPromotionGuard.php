@@ -13,14 +13,13 @@ final class MakePropertyPromotionGuard
 {
     /**
      * @readonly
-     * @var \Rector\Php74\Guard\PropertyTypeChangeGuard
      */
-    private $propertyTypeChangeGuard;
+    private PropertyTypeChangeGuard $propertyTypeChangeGuard;
     public function __construct(PropertyTypeChangeGuard $propertyTypeChangeGuard)
     {
         $this->propertyTypeChangeGuard = $propertyTypeChangeGuard;
     }
-    public function isLegal(Class_ $class, ClassReflection $classReflection, Property $property, Param $param, bool $inlinePublic = \true) : bool
+    public function isLegal(Class_ $class, ClassReflection $classReflection, Property $property, Param $param, bool $inlinePublic = \true): bool
     {
         if (!$this->propertyTypeChangeGuard->isLegal($property, $classReflection, $inlinePublic, \true)) {
             return \false;

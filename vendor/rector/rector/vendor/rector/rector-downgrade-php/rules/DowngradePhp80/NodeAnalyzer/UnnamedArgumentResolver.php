@@ -15,14 +15,12 @@ final class UnnamedArgumentResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\DowngradePhp80\NodeAnalyzer\NamedToUnnamedArgs
      */
-    private $namedToUnnamedArgs;
+    private \Rector\DowngradePhp80\NodeAnalyzer\NamedToUnnamedArgs $namedToUnnamedArgs;
     public function __construct(NodeNameResolver $nodeNameResolver, \Rector\DowngradePhp80\NodeAnalyzer\NamedToUnnamedArgs $namedToUnnamedArgs)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -33,10 +31,10 @@ final class UnnamedArgumentResolver
      * @return Arg[]
      * @param \PHPStan\Reflection\FunctionReflection|\PHPStan\Reflection\MethodReflection $functionLikeReflection
      */
-    public function resolveFromReflection($functionLikeReflection, array $currentArgs) : array
+    public function resolveFromReflection($functionLikeReflection, array $currentArgs): array
     {
-        $parametersAcceptorWithPhpDocs = ParametersAcceptorSelector::combineAcceptors($functionLikeReflection->getVariants());
-        $parameters = $parametersAcceptorWithPhpDocs->getParameters();
+        $extendedParametersAcceptor = ParametersAcceptorSelector::combineAcceptors($functionLikeReflection->getVariants());
+        $parameters = $extendedParametersAcceptor->getParameters();
         if ($functionLikeReflection instanceof NativeFunctionReflection) {
             $functionLikeReflection = new ReflectionFunction($functionLikeReflection->getName());
         }
@@ -45,7 +43,7 @@ final class UnnamedArgumentResolver
         $toFillArgs = [];
         foreach ($currentArgs as $key => $arg) {
             if (!$arg->name instanceof Identifier) {
-                $unnamedArgs[$key] = new Arg($arg->value, $arg->byRef, $arg->unpack, $arg->getAttributes(), null);
+                $unnamedArgs[$key] = new Arg($arg->value, $arg->byRef, $arg->unpack, []);
                 continue;
             }
             /** @var string $argName */
@@ -54,7 +52,7 @@ final class UnnamedArgumentResolver
         }
         $unnamedArgs = $this->namedToUnnamedArgs->fillFromNamedArgs($parameters, $currentArgs, $toFillArgs, $unnamedArgs);
         $unnamedArgs = $this->namedToUnnamedArgs->fillFromJumpedNamedArgs($functionLikeReflection, $unnamedArgs, $parameters);
-        \ksort($unnamedArgs);
+        ksort($unnamedArgs);
         return $unnamedArgs;
     }
 }

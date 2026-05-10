@@ -22,14 +22,13 @@ final class TernaryToSpaceshipRector extends AbstractRector implements MinPhpVer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Use <=> spaceship instead of ternary with same effect', [new CodeSample(<<<'CODE_SAMPLE'
 function order_func($a, $b) {
@@ -46,14 +45,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Ternary::class];
     }
     /**
      * @param Ternary $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkip($node)) {
             return null;
@@ -66,11 +65,11 @@ CODE_SAMPLE
         }
         return $this->processGreaterThanTernary($node, $nestedTernary);
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::SPACESHIP;
     }
-    private function shouldSkip(Ternary $ternary) : bool
+    private function shouldSkip(Ternary $ternary): bool
     {
         if (!$ternary->cond instanceof BinaryOp) {
             return \true;
@@ -92,7 +91,7 @@ CODE_SAMPLE
     /**
      * Matches "$a < $b ? -1 : ($a > $b ? 1 : 0)"
      */
-    private function processSmallerThanTernary(Ternary $node, Ternary $nestedTernary) : ?Spaceship
+    private function processSmallerThanTernary(Ternary $node, Ternary $nestedTernary): ?Spaceship
     {
         if (!$node->cond instanceof Smaller) {
             return null;
@@ -108,7 +107,7 @@ CODE_SAMPLE
     /**
      * Matches "$a > $b ? -1 : ($a < $b ? 1 : 0)"
      */
-    private function processGreaterThanTernary(Ternary $node, Ternary $nestedTernary) : ?Spaceship
+    private function processGreaterThanTernary(Ternary $node, Ternary $nestedTernary): ?Spaceship
     {
         if (!$node->cond instanceof Greater) {
             return null;

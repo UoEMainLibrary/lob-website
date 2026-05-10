@@ -8,19 +8,16 @@ final class FuncCallToStaticCall
 {
     /**
      * @readonly
-     * @var string
      */
-    private $oldFuncName;
+    private string $oldFuncName;
     /**
      * @readonly
-     * @var string
      */
-    private $newClassName;
+    private string $newClassName;
     /**
      * @readonly
-     * @var string
      */
-    private $newMethodName;
+    private string $newMethodName;
     public function __construct(string $oldFuncName, string $newClassName, string $newMethodName)
     {
         $this->oldFuncName = $oldFuncName;
@@ -30,15 +27,15 @@ final class FuncCallToStaticCall
         RectorAssert::className($newClassName);
         RectorAssert::methodName($newMethodName);
     }
-    public function getOldFuncName() : string
+    public function getOldFuncName(): string
     {
         return $this->oldFuncName;
     }
-    public function getNewClassName() : string
+    public function getNewClassName(): string
     {
         return $this->newClassName;
     }
-    public function getNewMethodName() : string
+    public function getNewMethodName(): string
     {
         return $this->newMethodName;
     }

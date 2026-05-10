@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
 use Rector\Config\RectorConfig;
 use Rector\Php73\Rector\BooleanOr\IsCountableRector;
@@ -13,7 +13,7 @@ use Rector\Php73\Rector\FuncCall\SetCookieRector;
 use Rector\Php73\Rector\FuncCall\StringifyStrNeedlesRector;
 use Rector\Php73\Rector\String_\SensitiveHereNowDocRector;
 use Rector\Renaming\Rector\FuncCall\RenameFunctionRector;
-return static function (RectorConfig $rectorConfig) : void {
+return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->ruleWithConfiguration(RenameFunctionRector::class, [
         # https://wiki.php.net/rfc/deprecations_php_7_3
         'image2wbmp' => 'imagewbmp',

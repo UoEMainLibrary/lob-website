@@ -7,9 +7,15 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\Float_;
+use PhpParser\Node\Scalar\Int_;
+use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Property;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Type\FloatType;
+use PHPStan\Type\IntegerType;
+use PHPStan\Type\StringType;
 use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
 use PHPStan\Type\UnionType;
@@ -31,29 +37,24 @@ final class PropertyTypeFromStrictSetterGetterRector extends AbstractRector impl
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\PropertyTypeInferer\GetterTypeDeclarationPropertyTypeInferer
      */
-    private $getterTypeDeclarationPropertyTypeInferer;
+    private GetterTypeDeclarationPropertyTypeInferer $getterTypeDeclarationPropertyTypeInferer;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\PropertyTypeInferer\SetterTypeDeclarationPropertyTypeInferer
      */
-    private $setterTypeDeclarationPropertyTypeInferer;
+    private SetterTypeDeclarationPropertyTypeInferer $setterTypeDeclarationPropertyTypeInferer;
     /**
      * @readonly
-     * @var \Rector\Php74\Guard\MakePropertyTypedGuard
      */
-    private $makePropertyTypedGuard;
+    private MakePropertyTypedGuard $makePropertyTypedGuard;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(GetterTypeDeclarationPropertyTypeInferer $getterTypeDeclarationPropertyTypeInferer, SetterTypeDeclarationPropertyTypeInferer $setterTypeDeclarationPropertyTypeInferer, MakePropertyTypedGuard $makePropertyTypedGuard, ReflectionResolver $reflectionResolver, StaticTypeMapper $staticTypeMapper)
     {
         $this->getterTypeDeclarationPropertyTypeInferer = $getterTypeDeclarationPropertyTypeInferer;
@@ -62,7 +63,7 @@ final class PropertyTypeFromStrictSetterGetterRector extends AbstractRector impl
         $this->reflectionResolver = $reflectionResolver;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add property type based on strict setter and getter method', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
@@ -101,14 +102,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $hasChanged = \false;
         $classReflection = null;
@@ -149,11 +150,11 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::TYPED_PROPERTIES;
     }
-    private function matchGetterSetterIdenticalType(Property $property, Class_ $class) : ?Type
+    private function matchGetterSetterIdenticalType(Property $property, Class_ $class): ?Type
     {
         $getterBasedStrictType = $this->getterTypeDeclarationPropertyTypeInferer->inferProperty($property, $class);
         if (!$getterBasedStrictType instanceof Type) {
@@ -172,9 +173,14 @@ CODE_SAMPLE
         } else {
             $getterBasedStrictTypes = [$getterBasedStrictType];
         }
-        return new UnionType(\array_merge([$setterBasedStrictType], $getterBasedStrictTypes));
+        if ($setterBasedStrictType instanceof UnionType) {
+            $setterBasedStrictTypes = $setterBasedStrictType->getTypes();
+        } else {
+            $setterBasedStrictTypes = [$setterBasedStrictType];
+        }
+        return new UnionType(array_merge($setterBasedStrictTypes, $getterBasedStrictTypes));
     }
-    private function isDefaultExprTypeCompatible(Property $property, Type $getterSetterPropertyType) : bool
+    private function isDefaultExprTypeCompatible(Property $property, Type $getterSetterPropertyType): bool
     {
         $defaultExpr = $property->props[0]->default ?? null;
         // make sure default value is not a conflicting type
@@ -183,14 +189,40 @@ CODE_SAMPLE
             return \true;
         }
         $defaultExprType = $this->staticTypeMapper->mapPhpParserNodePHPStanType($defaultExpr);
+        // avoid constant vs variable type conflicts
+        if ($defaultExprType instanceof FloatType && $getterSetterPropertyType instanceof FloatType) {
+            return \true;
+        }
+        if ($defaultExprType instanceof IntegerType && $getterSetterPropertyType instanceof IntegerType) {
+            return \true;
+        }
+        if ($defaultExprType instanceof StringType && $getterSetterPropertyType instanceof StringType) {
+            return \true;
+        }
         return $defaultExprType->equals($getterSetterPropertyType);
     }
-    private function decorateDefaultExpr(Type $getterSetterPropertyType, Property $property, bool $hasPropertyDefaultNull) : void
+    private function decorateDefaultExpr(Type $getterSetterPropertyType, Property $property, bool $hasPropertyDefaultNull): void
     {
         if (!TypeCombinator::containsNull($getterSetterPropertyType)) {
+            if ($getterSetterPropertyType instanceof FloatType) {
+                if (!$property->props[0]->default instanceof Expr) {
+                    // string is used, we need default value
+                    $property->props[0]->default = new Float_(0.0);
+                }
+            } elseif ($getterSetterPropertyType instanceof IntegerType) {
+                if (!$property->props[0]->default instanceof Expr) {
+                    // string is used, we need default value
+                    $property->props[0]->default = new Int_(0);
+                }
+            }
             if ($hasPropertyDefaultNull) {
-                // reset to nothign
-                $property->props[0]->default = null;
+                if ($getterSetterPropertyType instanceof StringType) {
+                    // string is used, we need default value
+                    $property->props[0]->default = new String_('');
+                } else {
+                    // reset to nothing
+                    $property->props[0]->default = null;
+                }
             }
             return;
         }
@@ -201,7 +233,7 @@ CODE_SAMPLE
         }
         $propertyProperty->default = new ConstFetch(new Name('null'));
     }
-    private function hasPropertyDefaultNull(Property $property) : bool
+    private function hasPropertyDefaultNull(Property $property): bool
     {
         $defaultExpr = $property->props[0]->default ?? null;
         if (!$defaultExpr instanceof ConstFetch) {

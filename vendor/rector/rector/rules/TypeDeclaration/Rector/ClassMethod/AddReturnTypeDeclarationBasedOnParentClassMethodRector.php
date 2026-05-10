@@ -28,30 +28,27 @@ final class AddReturnTypeDeclarationBasedOnParentClassMethodRector extends Abstr
 {
     /**
      * @readonly
-     * @var \Rector\VendorLocker\ParentClassMethodTypeOverrideGuard
      */
-    private $parentClassMethodTypeOverrideGuard;
+    private ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard, PhpVersionProvider $phpVersionProvider, StaticTypeMapper $staticTypeMapper)
     {
         $this->parentClassMethodTypeOverrideGuard = $parentClassMethodTypeOverrideGuard;
         $this->phpVersionProvider = $phpVersionProvider;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::SCALAR_TYPES;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add missing return type declaration based on parent class method', [new CodeSample(<<<'CODE_SAMPLE'
 class A
@@ -86,18 +83,18 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $hasChanged = \false;
         foreach ($node->getMethods() as $classMethod) {
-            if ($this->isName($classMethod, MethodName::CONSTRUCT)) {
+            if ($this->isNames($classMethod, [MethodName::CONSTRUCT, MethodName::DESTRUCT])) {
                 continue;
             }
             $parentClassMethodReturnType = $this->getReturnTypeRecursive($classMethod);
@@ -115,7 +112,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function getReturnTypeRecursive(ClassMethod $classMethod) : ?Type
+    private function getReturnTypeRecursive(ClassMethod $classMethod): ?Type
     {
         $returnType = $classMethod->getReturnType();
         if ($returnType instanceof Node) {
@@ -138,10 +135,10 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function processClassMethodReturnType(Class_ $class, ClassMethod $classMethod, Type $parentType) : ?ClassMethod
+    private function processClassMethodReturnType(Class_ $class, ClassMethod $classMethod, Type $parentType): ?ClassMethod
     {
         if ($parentType instanceof MixedType) {
-            $className = (string) $this->nodeNameResolver->getName($class);
+            $className = (string) $this->getName($class);
             $currentObjectType = new ObjectType($className);
             if (!$parentType->equals($currentObjectType) && $classMethod->returnType instanceof Node) {
                 return null;

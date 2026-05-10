@@ -12,24 +12,20 @@ final class StaticCallToMethodCall
 {
     /**
      * @readonly
-     * @var string
      */
-    private $staticClass;
+    private string $staticClass;
     /**
      * @readonly
-     * @var string
      */
-    private $staticMethod;
+    private string $staticMethod;
     /**
      * @readonly
-     * @var string
      */
-    private $classType;
+    private string $classType;
     /**
      * @readonly
-     * @var string
      */
-    private $methodName;
+    private string $methodName;
     public function __construct(string $staticClass, string $staticMethod, string $classType, string $methodName)
     {
         $this->staticClass = $staticClass;
@@ -46,19 +42,19 @@ final class StaticCallToMethodCall
             RectorAssert::methodName($methodName);
         }
     }
-    public function getClassObjectType() : ObjectType
+    public function getClassObjectType(): ObjectType
     {
         return new ObjectType($this->classType);
     }
-    public function getClassType() : string
+    public function getClassType(): string
     {
         return $this->classType;
     }
-    public function getMethodName() : string
+    public function getMethodName(): string
     {
         return $this->methodName;
     }
-    public function isStaticCallMatch(StaticCall $staticCall) : bool
+    public function isStaticCallMatch(StaticCall $staticCall): bool
     {
         if (!$staticCall->class instanceof Name) {
             return \false;

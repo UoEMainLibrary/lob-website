@@ -15,28 +15,27 @@ final class HasPropertyTypeMapper implements TypeMapperInterface
 {
     /**
      * @readonly
-     * @var \Rector\PHPStanStaticTypeMapper\TypeMapper\ObjectWithoutClassTypeMapper
      */
-    private $objectWithoutClassTypeMapper;
+    private \Rector\PHPStanStaticTypeMapper\TypeMapper\ObjectWithoutClassTypeMapper $objectWithoutClassTypeMapper;
     public function __construct(\Rector\PHPStanStaticTypeMapper\TypeMapper\ObjectWithoutClassTypeMapper $objectWithoutClassTypeMapper)
     {
         $this->objectWithoutClassTypeMapper = $objectWithoutClassTypeMapper;
     }
-    public function getNodeClass() : string
+    public function getNodeClass(): string
     {
         return HasPropertyType::class;
     }
     /**
      * @param HasPropertyType $type
      */
-    public function mapToPHPStanPhpDocTypeNode(Type $type) : TypeNode
+    public function mapToPHPStanPhpDocTypeNode(Type $type): TypeNode
     {
         return $type->toPhpDocNode();
     }
     /**
      * @param HasPropertyType $type
      */
-    public function mapToPhpParserNode(Type $type, string $typeKind) : ?Node
+    public function mapToPhpParserNode(Type $type, string $typeKind): ?Node
     {
         return $this->objectWithoutClassTypeMapper->mapToPhpParserNode($type, $typeKind);
     }

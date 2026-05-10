@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411\Symplify\EasyParallel\ValueObject;
+namespace RectorPrefix202604\Symplify\EasyParallel\ValueObject;
 
 /**
  * From
@@ -13,14 +13,13 @@ final class Schedule
 {
     /**
      * @readonly
-     * @var int
      */
-    private $numberOfProcesses;
+    private int $numberOfProcesses;
     /**
      * @var array<array<string>>
      * @readonly
      */
-    private $jobs;
+    private array $jobs;
     /**
      * @param array<array<string>> $jobs
      */
@@ -29,14 +28,14 @@ final class Schedule
         $this->numberOfProcesses = $numberOfProcesses;
         $this->jobs = $jobs;
     }
-    public function getNumberOfProcesses() : int
+    public function getNumberOfProcesses(): int
     {
         return $this->numberOfProcesses;
     }
     /**
      * @return array<array<string>>
      */
-    public function getJobs() : array
+    public function getJobs(): array
     {
         return $this->jobs;
     }

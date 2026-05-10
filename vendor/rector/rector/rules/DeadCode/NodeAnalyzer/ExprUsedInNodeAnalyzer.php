@@ -13,20 +13,18 @@ final class ExprUsedInNodeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\DeadCode\NodeAnalyzer\UsedVariableNameAnalyzer
      */
-    private $usedVariableNameAnalyzer;
+    private \Rector\DeadCode\NodeAnalyzer\UsedVariableNameAnalyzer $usedVariableNameAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\CompactFuncCallAnalyzer
      */
-    private $compactFuncCallAnalyzer;
+    private CompactFuncCallAnalyzer $compactFuncCallAnalyzer;
     public function __construct(\Rector\DeadCode\NodeAnalyzer\UsedVariableNameAnalyzer $usedVariableNameAnalyzer, CompactFuncCallAnalyzer $compactFuncCallAnalyzer)
     {
         $this->usedVariableNameAnalyzer = $usedVariableNameAnalyzer;
         $this->compactFuncCallAnalyzer = $compactFuncCallAnalyzer;
     }
-    public function isUsed(Node $node, Variable $variable) : bool
+    public function isUsed(Node $node, Variable $variable): bool
     {
         if ($node instanceof Include_) {
             return \true;

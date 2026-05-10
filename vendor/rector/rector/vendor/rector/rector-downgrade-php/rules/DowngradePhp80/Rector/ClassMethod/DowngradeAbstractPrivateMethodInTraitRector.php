@@ -3,8 +3,8 @@
 declare (strict_types=1);
 namespace Rector\DowngradePhp80\Rector\ClassMethod;
 
+use PhpParser\Modifiers;
 use PhpParser\Node;
-use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Reflection\ClassReflection;
 use Rector\Rector\AbstractRector;
@@ -18,14 +18,13 @@ final class DowngradeAbstractPrivateMethodInTraitRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(ReflectionResolver $reflectionResolver)
     {
         $this->reflectionResolver = $reflectionResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove "abstract" from private methods in traits and adds an empty function body', [new CodeSample(<<<'CODE_SAMPLE'
 trait SomeTrait
@@ -44,25 +43,25 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkip($node)) {
             return null;
         }
         // remove abstract
-        $node->flags -= Class_::MODIFIER_ABSTRACT;
+        $node->flags -= Modifiers::ABSTRACT;
         // Add empty array for stmts to generate empty function body
         $node->stmts = [];
         return $node;
     }
-    private function shouldSkip(ClassMethod $classMethod) : bool
+    private function shouldSkip(ClassMethod $classMethod): bool
     {
         if (!$classMethod->isAbstract()) {
             return \true;

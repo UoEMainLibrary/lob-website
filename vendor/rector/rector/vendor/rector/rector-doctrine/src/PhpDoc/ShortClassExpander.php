@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\Doctrine\PhpDoc;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
@@ -15,17 +15,15 @@ final class ShortClassExpander
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\PHPStan\ObjectTypeSpecifier
      */
-    private $objectTypeSpecifier;
+    private ObjectTypeSpecifier $objectTypeSpecifier;
     /**
-     * @var string
      * @see https://regex101.com/r/548EJJ/1
+     * @var string
      */
     private const CLASS_CONST_REGEX = '#::class#';
     public function __construct(ReflectionProvider $reflectionProvider, ObjectTypeSpecifier $objectTypeSpecifier)
@@ -36,7 +34,7 @@ final class ShortClassExpander
     /**
      * @api
      */
-    public function resolveFqnTargetEntity(string $targetEntity, Node $node) : string
+    public function resolveFqnTargetEntity(string $targetEntity, Node $node): string
     {
         $targetEntity = $this->getCleanedUpTargetEntity($targetEntity);
         if ($this->reflectionProvider->hasClass($targetEntity)) {
@@ -57,7 +55,7 @@ final class ShortClassExpander
         // probably tested class
         return $targetEntity;
     }
-    private function getCleanedUpTargetEntity(string $targetEntity) : string
+    private function getCleanedUpTargetEntity(string $targetEntity): string
     {
         return Strings::replace($targetEntity, self::CLASS_CONST_REGEX, '');
     }

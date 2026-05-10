@@ -23,25 +23,24 @@ final class ClosureTypeMapper implements TypeMapperInterface
 {
     /**
      * @readonly
-     * @var \Rector\Php\PhpVersionProvider
      */
-    private $phpVersionProvider;
+    private PhpVersionProvider $phpVersionProvider;
     public function __construct(PhpVersionProvider $phpVersionProvider)
     {
         $this->phpVersionProvider = $phpVersionProvider;
     }
-    public function getNodeClass() : string
+    public function getNodeClass(): string
     {
         return ClosureType::class;
     }
     /**
      * @param ClosureType $type
      */
-    public function mapToPHPStanPhpDocTypeNode(Type $type) : TypeNode
+    public function mapToPHPStanPhpDocTypeNode(Type $type): TypeNode
     {
         $typeNode = $type->toPhpDocNode();
         $phpDocNodeTraverser = new PhpDocNodeTraverser();
-        $phpDocNodeTraverser->traverseWithCallable($typeNode, '', static function (AstNode $astNode) : ?FullyQualifiedIdentifierTypeNode {
+        $phpDocNodeTraverser->traverseWithCallable($typeNode, '', static function (AstNode $astNode): ?FullyQualifiedIdentifierTypeNode {
             if (!$astNode instanceof IdentifierTypeNode) {
                 return null;
             }
@@ -56,7 +55,7 @@ final class ClosureTypeMapper implements TypeMapperInterface
      * @param TypeKind::* $typeKind
      * @param ClosureType $type
      */
-    public function mapToPhpParserNode(Type $type, string $typeKind) : ?Node
+    public function mapToPhpParserNode(Type $type, string $typeKind): ?Node
     {
         // ref https://3v4l.org/iKMK6#v5.3.29
         if ($typeKind === TypeKind::PARAM && $this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::ANONYMOUS_FUNCTION_PARAM_TYPE)) {
@@ -66,13 +65,14 @@ final class ClosureTypeMapper implements TypeMapperInterface
         if ($typeKind === TypeKind::PROPERTY && $this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::TYPED_PROPERTIES)) {
             return new FullyQualified('Closure');
         }
-        if ($typeKind !== TypeKind::RETURN) {
-            return null;
-        }
         // ref https://3v4l.org/nUreN#v7.0.0
-        if (!$this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::ANONYMOUS_FUNCTION_RETURN_TYPE)) {
-            return null;
+        if ($typeKind === TypeKind::RETURN && $this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::ANONYMOUS_FUNCTION_RETURN_TYPE)) {
+            return new FullyQualified('Closure');
         }
-        return new FullyQualified('Closure');
+        // ref https://3v4l.org/ruh5g#v8.0.0
+        if ($typeKind === TypeKind::UNION && $this->phpVersionProvider->isAtLeastPhpVersion(PhpVersionFeature::UNION_TYPES)) {
+            return new FullyQualified('Closure');
+        }
+        return null;
     }
 }

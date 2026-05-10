@@ -9,24 +9,22 @@ final class ListAndEach
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\List_
      */
-    private $list;
+    private List_ $list;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\FuncCall
      */
-    private $eachFuncCall;
+    private FuncCall $eachFuncCall;
     public function __construct(List_ $list, FuncCall $eachFuncCall)
     {
         $this->list = $list;
         $this->eachFuncCall = $eachFuncCall;
     }
-    public function getList() : List_
+    public function getList(): List_
     {
         return $this->list;
     }
-    public function getEachFuncCall() : FuncCall
+    public function getEachFuncCall(): FuncCall
     {
         return $this->eachFuncCall;
     }

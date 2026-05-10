@@ -26,24 +26,20 @@ final class NarrowUnusedSetUpDefinedPropertyRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyManipulator
      */
-    private $propertyManipulator;
+    private PropertyManipulator $propertyManipulator;
     /**
      * @readonly
-     * @var \PhpParser\NodeFinder
      */
-    private $nodeFinder;
+    private NodeFinder $nodeFinder;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, ReflectionResolver $reflectionResolver, PropertyManipulator $propertyManipulator)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
@@ -51,7 +47,7 @@ final class NarrowUnusedSetUpDefinedPropertyRector extends AbstractRector
         $this->propertyManipulator = $propertyManipulator;
         $this->nodeFinder = new NodeFinder();
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Turn property used only in setUp() to variable', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -82,14 +78,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -109,7 +105,7 @@ CODE_SAMPLE
                 continue;
             }
             $property = $classStmt;
-            if (\count($property->props) !== 1) {
+            if (count($property->props) !== 1) {
                 continue;
             }
             $propertyName = $property->props[0]->name->toString();
@@ -122,7 +118,7 @@ CODE_SAMPLE
             $hasChanged = \true;
             unset($node->stmts[$key]);
             // change property to variable in setUp() method
-            $this->traverseNodesWithCallable($setUpClassMethod, function (Node $node) use($propertyName) : ?Variable {
+            $this->traverseNodesWithCallable($setUpClassMethod, function (Node $node) use ($propertyName): ?Variable {
                 if (!$node instanceof PropertyFetch) {
                     return null;
                 }
@@ -140,7 +136,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function isPropertyUsedOutsideSetUpClassMethod(Class_ $class, ClassMethod $setUpClassMethod, Property $property) : bool
+    private function isPropertyUsedOutsideSetUpClassMethod(Class_ $class, ClassMethod $setUpClassMethod, Property $property): bool
     {
         $isPropertyUsed = \false;
         $propertyName = $property->props[0]->name->toString();
@@ -150,7 +146,7 @@ CODE_SAMPLE
                 continue;
             }
             // check if property is used anywhere else than setup
-            $usedPropertyFetch = $this->nodeFinder->findFirst($classMethod, function (Node $node) use($propertyName) : bool {
+            $usedPropertyFetch = $this->nodeFinder->findFirst($classMethod, function (Node $node) use ($propertyName): bool {
                 if (!$node instanceof PropertyFetch) {
                     return \false;
                 }
@@ -165,7 +161,7 @@ CODE_SAMPLE
         }
         return $isPropertyUsed;
     }
-    private function shouldSkipProperty(bool $isFinalClass, Property $property, ClassReflection $classReflection, string $propertyName) : bool
+    private function shouldSkipProperty(bool $isFinalClass, Property $property, ClassReflection $classReflection, string $propertyName): bool
     {
         // possibly used by child
         if (!$isFinalClass && !$property->isPrivate()) {

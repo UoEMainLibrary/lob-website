@@ -4,7 +4,7 @@ declare (strict_types=1);
 namespace Rector\DowngradePhp81\Rector\LNumber;
 
 use PhpParser\Node;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -16,7 +16,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class DowngradeOctalNumberRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Downgrades octal numbers to decimal ones', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -41,25 +41,25 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [LNumber::class];
+        return [Int_::class];
     }
     /**
-     * @param LNumber $node
+     * @param Int_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $numberKind = $node->getAttribute(AttributeKey::KIND);
-        if ($numberKind !== LNumber::KIND_OCT) {
+        if ($numberKind !== Int_::KIND_OCT) {
             return null;
         }
         /** @var string $rawValue */
         $rawValue = $node->getAttribute(AttributeKey::RAW_VALUE);
-        if (\strncmp($rawValue, '0o', \strlen('0o')) !== 0 && \strncmp($rawValue, '0O', \strlen('0O')) !== 0) {
+        if (strncmp($rawValue, '0o', strlen('0o')) !== 0 && strncmp($rawValue, '0O', strlen('0O')) !== 0) {
             return null;
         }
-        $clearValue = '0' . \substr($rawValue, 2);
+        $clearValue = '0' . substr($rawValue, 2);
         $node->setAttribute(AttributeKey::RAW_VALUE, $clearValue);
         // invoke reprint
         $node->setAttribute(AttributeKey::ORIGINAL_NODE, null);

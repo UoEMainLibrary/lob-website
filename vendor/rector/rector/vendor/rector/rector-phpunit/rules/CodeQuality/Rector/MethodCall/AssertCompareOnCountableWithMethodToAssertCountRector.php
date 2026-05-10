@@ -21,14 +21,13 @@ final class AssertCompareOnCountableWithMethodToAssertCountRector extends Abstra
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replaces use of assertSame and assertEquals on Countable objects with count method', [new CodeSample(<<<'CODE_SAMPLE'
 $this->assertSame(1, $countable->count());
@@ -36,12 +35,12 @@ CODE_SAMPLE
 , <<<'CODE_SAMPLE'
 $this->assertCount(1, $countable);
 CODE_SAMPLE
-)]);
+), new CodeSample('$this->assertSame(10, count($anything), "message");', '$this->assertCount(10, $anything, "message");')]);
     }
     /**
      * @return array<class-string<MethodCall|StaticCall>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class, StaticCall::class];
     }
@@ -51,22 +50,25 @@ CODE_SAMPLE
      */
     public function refactor(Node $node)
     {
-        if (!$this->testsNodeAnalyzer->isPHPUnitMethodCallNames($node, ['assertSame', 'assertEquals'])) {
+        if (!$this->testsNodeAnalyzer->isPHPUnitMethodCallNames($node, ['assertSame', 'assertNotSame', 'assertEquals', 'assertNotEquals'])) {
             return null;
         }
         if ($node->isFirstClassCallable()) {
             return null;
         }
         $assertArgs = $node->getArgs();
-        if (\count($assertArgs) < 2) {
+        if (count($assertArgs) < 2) {
             return null;
         }
         $comparedExpr = $assertArgs[1]->value;
-        if ($comparedExpr instanceof FuncCall && $this->isName($comparedExpr->name, 'count')) {
+        if ($comparedExpr instanceof FuncCall && $this->isNames($comparedExpr->name, ['count', 'sizeof', 'iterator_count'])) {
             $countArg = $comparedExpr->getArgs()[0];
+            if ($this->isObjectType($countArg->value, new ObjectType('Generator'))) {
+                return null;
+            }
             $assertArgs[1] = new Arg($countArg->value);
             $node->args = $assertArgs;
-            $node->name = new Identifier('assertCount');
+            $this->renameMethod($node);
             return $node;
         }
         if ($comparedExpr instanceof MethodCall && $this->isName($comparedExpr->name, 'count') && $comparedExpr->getArgs() === []) {
@@ -75,9 +77,20 @@ CODE_SAMPLE
                 $args = $assertArgs;
                 $args[1] = new Arg($comparedExpr->var);
                 $node->args = $args;
-                $node->name = new Identifier('assertCount');
+                $this->renameMethod($node);
             }
         }
         return null;
+    }
+    /**
+     * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall $node
+     */
+    private function renameMethod($node): void
+    {
+        if ($this->isNames($node->name, ['assertSame', 'assertEquals'])) {
+            $node->name = new Identifier('assertCount');
+        } elseif ($this->isNames($node->name, ['assertNotSame', 'assertNotEquals'])) {
+            $node->name = new Identifier('assertNotCount');
+        }
     }
 }

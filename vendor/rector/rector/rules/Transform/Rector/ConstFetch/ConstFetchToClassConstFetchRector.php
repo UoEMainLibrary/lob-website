@@ -11,7 +11,7 @@ use Rector\Rector\AbstractRector;
 use Rector\Transform\ValueObject\ConstFetchToClassConstFetch;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see Rector\Tests\Transform\Rector\ConstFetch\ConstFetchToClassConstFetchRector\ConstFetchToClassConstFetchTest
  */
@@ -20,16 +20,16 @@ final class ConstFetchToClassConstFetchRector extends AbstractRector implements 
     /**
      * @var ConstFetchToClassConstFetch[]
      */
-    private $constFetchToClassConsts = [];
-    public function getRuleDefinition() : RuleDefinition
+    private array $constFetchToClassConsts = [];
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change const fetch to class const fetch', [new ConfiguredCodeSample('$x = CONTEXT_COURSE', '$x = course::LEVEL', [new ConstFetchToClassConstFetch('CONTEXT_COURSE', 'course', 'LEVEL')])]);
     }
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ConstFetch::class];
     }
-    public function refactor(Node $node) : ?ClassConstFetch
+    public function refactor(Node $node): ?ClassConstFetch
     {
         foreach ($this->constFetchToClassConsts as $constFetchToClassConst) {
             if (!$this->isName($node, $constFetchToClassConst->getOldConstName())) {
@@ -39,7 +39,7 @@ final class ConstFetchToClassConstFetchRector extends AbstractRector implements 
         }
         return null;
     }
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allIsAOf($configuration, ConstFetchToClassConstFetch::class);
         $this->constFetchToClassConsts = $configuration;

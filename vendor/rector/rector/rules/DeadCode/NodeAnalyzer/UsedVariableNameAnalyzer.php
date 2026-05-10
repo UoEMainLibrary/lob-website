@@ -12,16 +12,15 @@ final class UsedVariableNameAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function isVariableNamed(Node $node, Variable $variable) : bool
+    public function isVariableNamed(Node $node, Variable $variable): bool
     {
-        if (($node instanceof MethodCall || $node instanceof PropertyFetch) && ($node->name instanceof Variable && \is_string($node->name->name))) {
+        if (($node instanceof MethodCall || $node instanceof PropertyFetch) && ($node->name instanceof Variable && is_string($node->name->name))) {
             return $this->nodeNameResolver->isName($variable, $node->name->name);
         }
         if (!$node instanceof Variable) {

@@ -13,20 +13,20 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\For_;
-use PHPStan\Analyser\Scope;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\PHPStan\ScopeFetcher;
+use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\CodeQuality\Rector\For_\ForRepeatedCountToOwnVariableRector\ForRepeatedCountToOwnVariableRectorTest
  */
-final class ForRepeatedCountToOwnVariableRector extends AbstractScopeAwareRector
+final class ForRepeatedCountToOwnVariableRector extends AbstractRector
 {
     /**
      * @var string
      */
     private const COUNTER_NAME = 'counter';
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change count() in for function to own variable', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -56,7 +56,7 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [For_::class];
     }
@@ -64,8 +64,9 @@ CODE_SAMPLE
      * @param For_ $node
      * @return Stmt[]|null
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?array
+    public function refactor(Node $node): ?array
     {
+        $scope = ScopeFetcher::fetch($node);
         if ($scope->hasVariableType(self::COUNTER_NAME)->yes()) {
             return null;
         }

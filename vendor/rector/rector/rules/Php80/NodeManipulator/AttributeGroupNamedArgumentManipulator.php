@@ -12,7 +12,7 @@ final class AttributeGroupNamedArgumentManipulator
      * @var ConverterAttributeDecoratorInterface[]
      * @readonly
      */
-    private $converterAttributeDecorators;
+    private array $converterAttributeDecorators;
     /**
      * @param ConverterAttributeDecoratorInterface[] $converterAttributeDecorators
      */
@@ -23,7 +23,7 @@ final class AttributeGroupNamedArgumentManipulator
     /**
      * @param AttributeGroup[] $attributeGroups
      */
-    public function decorate(array $attributeGroups) : void
+    public function decorate(array $attributeGroups): void
     {
         foreach ($attributeGroups as $attributeGroup) {
             foreach ($attributeGroup->attrs as $attr) {

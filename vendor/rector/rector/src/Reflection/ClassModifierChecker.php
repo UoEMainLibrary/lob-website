@@ -9,14 +9,13 @@ final class ClassModifierChecker
 {
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private \Rector\Reflection\ReflectionResolver $reflectionResolver;
     public function __construct(\Rector\Reflection\ReflectionResolver $reflectionResolver)
     {
         $this->reflectionResolver = $reflectionResolver;
     }
-    public function isInsideFinalClass(Node $node) : bool
+    public function isInsideFinalClass(Node $node): bool
     {
         $classReflection = $this->reflectionResolver->resolveClassReflection($node);
         if (!$classReflection instanceof ClassReflection) {
@@ -24,7 +23,7 @@ final class ClassModifierChecker
         }
         return $classReflection->isFinalByKeyword();
     }
-    public function isInsideAbstractClass(Node $node) : bool
+    public function isInsideAbstractClass(Node $node): bool
     {
         $classReflection = $this->reflectionResolver->resolveClassReflection($node);
         if (!$classReflection instanceof ClassReflection) {

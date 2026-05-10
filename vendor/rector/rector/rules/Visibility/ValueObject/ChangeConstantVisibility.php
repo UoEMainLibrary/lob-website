@@ -9,19 +9,16 @@ final class ChangeConstantVisibility
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $constant;
+    private string $constant;
     /**
      * @readonly
-     * @var int
      */
-    private $visibility;
+    private int $visibility;
     public function __construct(string $class, string $constant, int $visibility)
     {
         $this->class = $class;
@@ -29,15 +26,15 @@ final class ChangeConstantVisibility
         $this->visibility = $visibility;
         RectorAssert::className($class);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->class);
     }
-    public function getConstant() : string
+    public function getConstant(): string
     {
         return $this->constant;
     }
-    public function getVisibility() : int
+    public function getVisibility(): int
     {
         return $this->visibility;
     }

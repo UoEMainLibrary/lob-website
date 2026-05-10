@@ -8,8 +8,11 @@ use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Scalar\String_;
+use PHPStan\Type\IntegerRangeType;
 use Rector\NodeAnalyzer\ArgsAnalyzer;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\PhpParser\Node\Value\ValueResolver;
+use Rector\PHPStan\ScopeFetcher;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -20,26 +23,27 @@ final class DowngradeHashAlgorithmXxHashRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ArgsAnalyzer
      */
-    private $argsAnalyzer;
+    private ArgsAnalyzer $argsAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
-    private const HASH_ALGORITHMS_TO_DOWNGRADE = ['xxh32' => \MHASH_XXH32, 'xxh64' => \MHASH_XXH64, 'xxh3' => \MHASH_XXH3, 'xxh128' => \MHASH_XXH128];
-    private const REPLACEMENT_ALGORITHM = 'md5';
+    private ValueResolver $valueResolver;
     /**
-     * @var int
+     * @var array<string, int>
      */
-    private $argNamedKey;
+    private const HASH_ALGORITHMS_TO_DOWNGRADE = ['xxh32' => \MHASH_XXH32, 'xxh64' => \MHASH_XXH64, 'xxh3' => \MHASH_XXH3, 'xxh128' => \MHASH_XXH128];
+    /**
+     * @var string
+     */
+    private const REPLACEMENT_ALGORITHM = 'md5';
+    private int $argNamedKey;
     public function __construct(ArgsAnalyzer $argsAnalyzer, ValueResolver $valueResolver)
     {
         $this->argsAnalyzer = $argsAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Downgrade hash algorithm xxh32, xxh64, xxh3 or xxh128 by default to md5. You can configure the algorithm to downgrade.', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -64,21 +68,24 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
     /**
      * @param FuncCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?FuncCall
     {
         if ($this->shouldSkip($node)) {
             return null;
         }
+        if ($node->getAttribute(AttributeKey::PHP_VERSION_CONDITIONED)) {
+            return null;
+        }
         $this->argNamedKey = 0;
         $algorithm = $this->getHashAlgorithm($node->getArgs());
-        if ($algorithm === null || !\array_key_exists($algorithm, self::HASH_ALGORITHMS_TO_DOWNGRADE)) {
+        if ($algorithm === null || !array_key_exists($algorithm, self::HASH_ALGORITHMS_TO_DOWNGRADE)) {
             return null;
         }
         $args = $node->getArgs();
@@ -89,17 +96,25 @@ CODE_SAMPLE
         $arg->value = new String_(self::REPLACEMENT_ALGORITHM);
         return $node;
     }
-    private function shouldSkip(FuncCall $funcCall) : bool
+    private function shouldSkip(FuncCall $funcCall): bool
     {
         if ($funcCall->isFirstClassCallable()) {
             return \true;
         }
-        return !$this->nodeNameResolver->isName($funcCall, 'hash');
+        if (!$this->isName($funcCall, 'hash')) {
+            return \true;
+        }
+        $scope = ScopeFetcher::fetch($funcCall);
+        $type = $scope->getPhpVersion()->getType();
+        if (!$type instanceof IntegerRangeType) {
+            return \false;
+        }
+        return $type->getMin() === 80100;
     }
     /**
      * @param Arg[] $args
      */
-    private function getHashAlgorithm(array $args) : ?string
+    private function getHashAlgorithm(array $args): ?string
     {
         $arg = null;
         if ($this->argsAnalyzer->hasNamedArg($args)) {
@@ -123,9 +138,9 @@ CODE_SAMPLE
                 return null;
         }
     }
-    private function mapConstantToString(string $constant) : string
+    private function mapConstantToString(string $constant): string
     {
-        $mappedConstant = \array_search(\constant($constant), self::HASH_ALGORITHMS_TO_DOWNGRADE, \true);
+        $mappedConstant = array_search(constant($constant), self::HASH_ALGORITHMS_TO_DOWNGRADE, \true);
         return $mappedConstant !== \false ? $mappedConstant : $constant;
     }
 }

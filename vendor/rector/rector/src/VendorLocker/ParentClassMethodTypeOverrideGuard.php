@@ -3,6 +3,7 @@
 declare (strict_types=1);
 namespace Rector\VendorLocker;
 
+use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Reflection\ClassReflection;
 use PHPStan\Reflection\MethodReflection;
@@ -17,29 +18,24 @@ final class ParentClassMethodTypeOverrideGuard
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\TypeComparator\TypeComparator
      */
-    private $typeComparator;
+    private TypeComparator $typeComparator;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\Reflection\ClassReflectionAnalyzer
      */
-    private $classReflectionAnalyzer;
+    private ClassReflectionAnalyzer $classReflectionAnalyzer;
     public function __construct(NodeNameResolver $nodeNameResolver, ReflectionResolver $reflectionResolver, TypeComparator $typeComparator, StaticTypeMapper $staticTypeMapper, ClassReflectionAnalyzer $classReflectionAnalyzer)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -51,7 +47,7 @@ final class ParentClassMethodTypeOverrideGuard
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PHPStan\Reflection\MethodReflection $classMethod
      */
-    public function hasParentClassMethod($classMethod) : bool
+    public function hasParentClassMethod($classMethod): bool
     {
         try {
             $parentClassMethod = $this->resolveParentClassMethod($classMethod);
@@ -65,7 +61,7 @@ final class ParentClassMethodTypeOverrideGuard
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PHPStan\Reflection\MethodReflection $classMethod
      */
-    public function getParentClassMethod($classMethod) : ?MethodReflection
+    public function getParentClassMethod($classMethod): ?MethodReflection
     {
         try {
             return $this->resolveParentClassMethod($classMethod);
@@ -73,9 +69,9 @@ final class ParentClassMethodTypeOverrideGuard
             return null;
         }
     }
-    public function shouldSkipReturnTypeChange(ClassMethod $classMethod, Type $parentType) : bool
+    public function shouldSkipReturnTypeChange(ClassMethod $classMethod, Type $parentType): bool
     {
-        if ($classMethod->returnType === null) {
+        if (!$classMethod->returnType instanceof Node) {
             return \false;
         }
         $currentReturnType = $this->staticTypeMapper->mapPhpParserNodePHPStanType($classMethod->returnType);
@@ -87,7 +83,7 @@ final class ParentClassMethodTypeOverrideGuard
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PHPStan\Reflection\MethodReflection $classMethod
      */
-    private function resolveParentClassMethod($classMethod) : ?MethodReflection
+    private function resolveParentClassMethod($classMethod): ?MethodReflection
     {
         // early got null on private method
         if ($classMethod->isPrivate()) {
@@ -118,9 +114,20 @@ final class ParentClassMethodTypeOverrideGuard
             }
             return $interfaceReflection->getNativeMethod($methodName);
         }
+        foreach ($classReflection->getTraits() as $traitReflection) {
+            if (!$traitReflection->hasNativeMethod($methodName)) {
+                continue;
+            }
+            $methodReflection = $traitReflection->getNativeMethod($methodName);
+            // any signature on non abstract trait method can be overridden
+            if ($methodReflection->isAbstract()) {
+                return $methodReflection;
+            }
+            return null;
+        }
         return null;
     }
-    private function hasClassParent(ClassReflection $classReflection) : bool
+    private function hasClassParent(ClassReflection $classReflection): bool
     {
         return $this->classReflectionAnalyzer->resolveParentClassName($classReflection) !== null;
     }

@@ -10,19 +10,17 @@ final class ReplaceArgumentDefaultValue implements ReplaceArgumentDefaultValueIn
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     /**
      * @var int<0, max>
      * @readonly
      */
-    private $position;
+    private int $position;
     /**
      * @readonly
      * @var mixed
@@ -51,15 +49,15 @@ final class ReplaceArgumentDefaultValue implements ReplaceArgumentDefaultValueIn
         $this->valueAfter = $valueAfter;
         RectorAssert::className($class);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->class);
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getPosition() : int
+    public function getPosition(): int
     {
         return $this->position;
     }

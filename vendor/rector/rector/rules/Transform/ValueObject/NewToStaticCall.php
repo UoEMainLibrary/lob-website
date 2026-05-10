@@ -9,19 +9,16 @@ final class NewToStaticCall
 {
     /**
      * @readonly
-     * @var string
      */
-    private $type;
+    private string $type;
     /**
      * @readonly
-     * @var string
      */
-    private $staticCallClass;
+    private string $staticCallClass;
     /**
      * @readonly
-     * @var string
      */
-    private $staticCallMethod;
+    private string $staticCallMethod;
     public function __construct(string $type, string $staticCallClass, string $staticCallMethod)
     {
         $this->type = $type;
@@ -31,15 +28,15 @@ final class NewToStaticCall
         RectorAssert::className($staticCallClass);
         RectorAssert::methodName($staticCallMethod);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->type);
     }
-    public function getStaticCallClass() : string
+    public function getStaticCallClass(): string
     {
         return $this->staticCallClass;
     }
-    public function getStaticCallMethod() : string
+    public function getStaticCallMethod(): string
     {
         return $this->staticCallMethod;
     }

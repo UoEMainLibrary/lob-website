@@ -19,14 +19,13 @@ final class UsesClassNameImportSkipVoter implements ClassNameImportSkipVoterInte
 {
     /**
      * @readonly
-     * @var \Rector\PostRector\Collector\UseNodesToAddCollector
      */
-    private $useNodesToAddCollector;
+    private UseNodesToAddCollector $useNodesToAddCollector;
     public function __construct(UseNodesToAddCollector $useNodesToAddCollector)
     {
         $this->useNodesToAddCollector = $useNodesToAddCollector;
     }
-    public function shouldSkip(File $file, FullyQualifiedObjectType $fullyQualifiedObjectType, Node $node) : bool
+    public function shouldSkip(File $file, FullyQualifiedObjectType $fullyQualifiedObjectType, Node $node): bool
     {
         $useImportTypes = $this->useNodesToAddCollector->getUseImportTypesByNode($file);
         foreach ($useImportTypes as $useImportType) {

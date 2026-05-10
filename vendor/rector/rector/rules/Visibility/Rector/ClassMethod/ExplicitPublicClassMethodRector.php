@@ -16,16 +16,15 @@ final class ExplicitPublicClassMethodRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Privatization\NodeManipulator\VisibilityManipulator
      */
-    private $visibilityManipulator;
+    private VisibilityManipulator $visibilityManipulator;
     public function __construct(VisibilityManipulator $visibilityManipulator)
     {
         $this->visibilityManipulator = $visibilityManipulator;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Add explicit public method visibility.', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Add explicit public method visibility', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     function foo()
@@ -46,14 +45,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         return $this->visibilityManipulator->publicize($node);
     }

@@ -27,29 +27,24 @@ final class TypedPropertyFromColumnTypeRector extends AbstractRector implements 
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeTypeAnalyzer\PropertyTypeDecorator
      */
-    private $propertyTypeDecorator;
+    private PropertyTypeDecorator $propertyTypeDecorator;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeManipulator\ColumnPropertyTypeResolver
      */
-    private $columnPropertyTypeResolver;
+    private ColumnPropertyTypeResolver $columnPropertyTypeResolver;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeManipulator\NullabilityColumnPropertyTypeResolver
      */
-    private $nullabilityColumnPropertyTypeResolver;
+    private NullabilityColumnPropertyTypeResolver $nullabilityColumnPropertyTypeResolver;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(PropertyTypeDecorator $propertyTypeDecorator, ColumnPropertyTypeResolver $columnPropertyTypeResolver, NullabilityColumnPropertyTypeResolver $nullabilityColumnPropertyTypeResolver, PhpDocInfoFactory $phpDocInfoFactory, StaticTypeMapper $staticTypeMapper)
     {
         $this->propertyTypeDecorator = $propertyTypeDecorator;
@@ -58,9 +53,9 @@ final class TypedPropertyFromColumnTypeRector extends AbstractRector implements 
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Complete @var annotations or types based on @ORM\\Column', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Complete @var annotations or types based on @ORM\Column', [new CodeSample(<<<'CODE_SAMPLE'
 use Doctrine\ORM\Mapping as ORM;
 
 class SimpleColumn
@@ -87,14 +82,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Property::class];
     }
     /**
      * @param Property $node
      */
-    public function refactor(Node $node) : ?\PhpParser\Node\Stmt\Property
+    public function refactor(Node $node): ?\PhpParser\Node\Stmt\Property
     {
         if ($node->type !== null) {
             return null;
@@ -120,7 +115,7 @@ CODE_SAMPLE
         $node->type = $typeNode;
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::TYPED_PROPERTIES;
     }

@@ -6,6 +6,7 @@ use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ExtendedMethodReflection;
 use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleErrorBuilder;
 
 /**
  * @implements Rule<Node\Expr\StaticCall>
@@ -39,10 +40,6 @@ class GlobalDrupalDependencyInjectionRule implements Rule
             'PHPUnit\Framework\Test',
             // Typed data objects cannot use dependency injection.
             'Drupal\Core\TypedData\TypedDataInterface',
-            // Render elements cannot use dependency injection.
-            'Drupal\Core\Render\Element\ElementInterface',
-            'Drupal\Core\Render\Element\FormElementInterface',
-            'Drupal\config_translation\FormElement\ElementInterface',
             // Entities don't use services for now
             // @see https://www.drupal.org/project/drupal/issues/2913224
             'Drupal\Core\Entity\EntityInterface',
@@ -71,8 +68,9 @@ class GlobalDrupalDependencyInjectionRule implements Rule
             return [];
         }
 
-        return [
-            '\Drupal calls should be avoided in classes, use dependency injection instead'
-        ];
+        return
+            [RuleErrorBuilder::message('\Drupal calls should be avoided in classes, use dependency injection instead')
+             ->identifier('globalDrupalDependencyInjection.useDependencyInjection')
+             ->build()];
     }
 }

@@ -18,16 +18,15 @@ final class TernaryToBooleanOrFalseToBooleanAndRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Change ternary of bool : false to && bool', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Change ternary of `bool : false` to `&& bool`', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     public function go()
@@ -60,14 +59,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Ternary::class];
     }
     /**
      * @param Ternary $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->if instanceof Expr) {
             return null;

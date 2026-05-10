@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\CodeQuality\Rector\Concat;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Scalar\String_;
@@ -21,12 +21,12 @@ final class JoinStringConcatRector extends AbstractRector
      */
     private const LINE_BREAK_POINT = 100;
     /**
-     * @var string
      * @see https://regex101.com/r/VaXM1t/1
      * @see https://stackoverflow.com/questions/4147646/determine-if-utf-8-text-is-all-ascii
+     * @var string
      */
-    private const ASCII_REGEX = '#[^\\x00-\\x7F]#';
-    public function getRuleDefinition() : RuleDefinition
+    private const ASCII_REGEX = '#[^\x00-\x7F]#';
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Joins concat of 2 strings, unless the length is too long', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -51,14 +51,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Concat::class];
     }
     /**
      * @param Concat $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->left instanceof String_) {
             return null;
@@ -73,11 +73,11 @@ CODE_SAMPLE
         }
         return $this->joinConcatIfStrings($node->left, $node->right);
     }
-    private function joinConcatIfStrings(String_ $leftString, String_ $rightString) : ?String_
+    private function joinConcatIfStrings(String_ $leftString, String_ $rightString): ?String_
     {
         $leftValue = $leftString->value;
         $rightValue = $rightString->value;
-        if (\strpos($leftValue, "\n") !== \false || \strpos($rightValue, "\n") !== \false) {
+        if (strpos($leftValue, "\n") !== \false || strpos($rightValue, "\n") !== \false) {
             return null;
         }
         $joinedStringValue = $leftValue . $rightValue;

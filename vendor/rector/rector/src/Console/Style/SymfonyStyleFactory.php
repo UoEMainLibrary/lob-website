@@ -4,17 +4,16 @@ declare (strict_types=1);
 namespace Rector\Console\Style;
 
 use Rector\Util\Reflection\PrivatesAccessor;
-use RectorPrefix202411\Symfony\Component\Console\Application;
-use RectorPrefix202411\Symfony\Component\Console\Input\ArgvInput;
-use RectorPrefix202411\Symfony\Component\Console\Output\ConsoleOutput;
-use RectorPrefix202411\Symfony\Component\Console\Output\OutputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Application;
+use RectorPrefix202604\Symfony\Component\Console\Input\ArgvInput;
+use RectorPrefix202604\Symfony\Component\Console\Output\ConsoleOutput;
+use RectorPrefix202604\Symfony\Component\Console\Output\OutputInterface;
 final class SymfonyStyleFactory
 {
     /**
      * @readonly
-     * @var \Rector\Util\Reflection\PrivatesAccessor
      */
-    private $privatesAccessor;
+    private PrivatesAccessor $privatesAccessor;
     public function __construct(PrivatesAccessor $privatesAccessor)
     {
         $this->privatesAccessor = $privatesAccessor;
@@ -22,7 +21,7 @@ final class SymfonyStyleFactory
     /**
      * @api
      */
-    public function create() : \Rector\Console\Style\RectorStyle
+    public function create(): \Rector\Console\Style\RectorStyle
     {
         // to prevent missing argv indexes
         if (!isset($_SERVER['argv'])) {
@@ -43,10 +42,10 @@ final class SymfonyStyleFactory
         return new \Rector\Console\Style\RectorStyle($argvInput, $consoleOutput);
     }
     /**
-     * Never ever used static methods if not neccesary, this is just handy for tests + src to prevent duplication.
+     * Never ever used static methods if not necessary, this is just handy for tests + src to prevent duplication.
      */
-    private function isPHPUnitRun() : bool
+    private function isPHPUnitRun(): bool
     {
-        return \defined('PHPUNIT_COMPOSER_INSTALL') || \defined('__PHPUNIT_PHAR__');
+        return defined('PHPUNIT_COMPOSER_INSTALL') || defined('__PHPUNIT_PHAR__');
     }
 }

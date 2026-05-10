@@ -16,9 +16,9 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class SwitchNegatedTernaryRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Switch negated ternary condition rector', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Switch negated ternary condition', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     public function run(bool $upper, string $name)
@@ -45,14 +45,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Ternary::class];
     }
     /**
      * @param Ternary $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->cond instanceof BooleanNot) {
             return null;
@@ -61,10 +61,17 @@ CODE_SAMPLE
             return null;
         }
         $node->cond = $node->cond->expr;
-        [$node->if, $node->else] = [$node->else, $node->if];
+        $else = clone $node->else;
+        $if = clone $node->if;
+        $node->else = $if;
+        $node->if = $else;
         if ($node->if instanceof Ternary) {
             $ternary = $node->if;
-            $ternary->setAttribute(AttributeKey::KIND, 'wrapped_with_brackets');
+            $ternary->setAttribute(AttributeKey::KIND, AttributeKey::WRAPPED_IN_PARENTHESES);
+            $ternary->setAttribute(AttributeKey::ORIGINAL_NODE, null);
+        }
+        if ($node->else instanceof Ternary) {
+            $ternary = $node->else;
             $ternary->setAttribute(AttributeKey::ORIGINAL_NODE, null);
         }
         return $node;

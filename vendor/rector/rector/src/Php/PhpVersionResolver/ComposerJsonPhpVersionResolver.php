@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\Php\PhpVersionResolver;
 
-use RectorPrefix202411\Composer\Semver\VersionParser;
+use RectorPrefix202604\Composer\Semver\VersionParser;
 use Rector\Exception\Configuration\InvalidConfigurationException;
 use Rector\FileSystem\JsonFileSystem;
 use Rector\Util\PhpVersionFactory;
@@ -16,33 +16,33 @@ final class ComposerJsonPhpVersionResolver
     /**
      * @var array<string, PhpVersion::*|null>
      */
-    private static $cachedPhpVersions = [];
+    private static array $cachedPhpVersions = [];
     /**
      * @return PhpVersion::*
      */
-    public static function resolveFromCwdOrFail() : int
+    public static function resolveFromCwdOrFail(): int
     {
         // use composer.json PHP version
-        $projectComposerJsonFilePath = \getcwd() . '/composer.json';
-        if (\file_exists($projectComposerJsonFilePath)) {
+        $projectComposerJsonFilePath = getcwd() . '/composer.json';
+        if (file_exists($projectComposerJsonFilePath)) {
             $projectPhpVersion = self::resolve($projectComposerJsonFilePath);
-            if (\is_int($projectPhpVersion)) {
+            if (is_int($projectPhpVersion)) {
                 return $projectPhpVersion;
             }
         }
-        throw new InvalidConfigurationException(\sprintf('We could not find local "composer.json" to determine your PHP version.%sPlease, fill the PHP version set in withPhpSets() manually.', \PHP_EOL));
+        throw new InvalidConfigurationException(sprintf('We could not find local "composer.json" to determine your PHP version.%sPlease, fill the PHP version set in withPhpSets() manually.', \PHP_EOL));
     }
     /**
      * @return PhpVersion::*|null
      */
-    public static function resolve(string $composerJson) : ?int
+    public static function resolve(string $composerJson): ?int
     {
-        if (\array_key_exists($composerJson, self::$cachedPhpVersions)) {
+        if (array_key_exists($composerJson, self::$cachedPhpVersions)) {
             return self::$cachedPhpVersions[$composerJson];
         }
         $projectComposerJson = JsonFileSystem::readFilePath($composerJson);
-        // give this one a priority, as more generic one
-        $requirePhpVersion = $projectComposerJson['require']['php'] ?? null;
+        // give this one a priority, as more generic one. see https://github.com/composer/composer/issues/7914
+        $requirePhpVersion = $projectComposerJson['require']['php'] ?? $projectComposerJson['require']['php-64bit'] ?? null;
         if ($requirePhpVersion !== null) {
             self::$cachedPhpVersions[$composerJson] = self::createIntVersionFromComposerVersion($requirePhpVersion);
             return self::$cachedPhpVersions[$composerJson];
@@ -58,7 +58,7 @@ final class ComposerJsonPhpVersionResolver
     /**
      * @return PhpVersion::*
      */
-    private static function createIntVersionFromComposerVersion(string $projectPhpVersion) : int
+    private static function createIntVersionFromComposerVersion(string $projectPhpVersion): int
     {
         $versionParser = new VersionParser();
         $constraint = $versionParser->parseConstraints($projectPhpVersion);

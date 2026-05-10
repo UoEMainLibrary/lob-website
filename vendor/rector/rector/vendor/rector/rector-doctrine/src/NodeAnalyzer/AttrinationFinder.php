@@ -18,14 +18,12 @@ final class AttrinationFinder
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeAnalyzer\AttributeFinder
      */
-    private $attributeFinder;
+    private \Rector\Doctrine\NodeAnalyzer\AttributeFinder $attributeFinder;
     public function __construct(PhpDocInfoFactory $phpDocInfoFactory, \Rector\Doctrine\NodeAnalyzer\AttributeFinder $attributeFinder)
     {
         $this->phpDocInfoFactory = $phpDocInfoFactory;
@@ -46,7 +44,7 @@ final class AttrinationFinder
     /**
      * @param \PhpParser\Node\Stmt\Property|\PhpParser\Node\Stmt\Class_|\PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Param $node
      */
-    public function hasByOne($node, string $name) : bool
+    public function hasByOne($node, string $name): bool
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
         if ($phpDocInfo instanceof PhpDocInfo && $phpDocInfo->hasByAnnotationClass($name)) {
@@ -56,10 +54,41 @@ final class AttrinationFinder
         return $attribute instanceof Attribute;
     }
     /**
+     * @return array<DoctrineAnnotationTagValueNode|Attribute>
+     * @param \PhpParser\Node\Stmt\Property|\PhpParser\Node\Stmt\Class_|\PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Param $node
+     */
+    public function findManyBy($node, string $name): array
+    {
+        $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
+        $doctrineAnnotationTagValueNodes = [];
+        if ($phpDocInfo instanceof PhpDocInfo) {
+            $doctrineAnnotationTagValueNodes = $phpDocInfo->findByAnnotationClass($name);
+        }
+        return array_merge($doctrineAnnotationTagValueNodes, $this->attributeFinder->findManyByClass($node, $name));
+    }
+    /**
+     * @param string[] $names
+     * @return array<DoctrineAnnotationTagValueNode|Attribute>
+     * @param \PhpParser\Node\Stmt\Property|\PhpParser\Node\Stmt\Class_|\PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Param $node
+     */
+    public function findManyByMany($node, array $names): array
+    {
+        $phpDocInfo = $this->phpDocInfoFactory->createFromNode($node);
+        $doctrineAnnotationTagValueNodes = [];
+        if ($phpDocInfo instanceof PhpDocInfo) {
+            foreach ($names as $name) {
+                foreach ($phpDocInfo->findByAnnotationClass($name) as $annotationTagValueNode) {
+                    $doctrineAnnotationTagValueNodes[] = $annotationTagValueNode;
+                }
+            }
+        }
+        return array_merge($doctrineAnnotationTagValueNodes, $this->attributeFinder->findManyByClasses($node, $names));
+    }
+    /**
      * @param string[] $classNames
      * @param \PhpParser\Node\Stmt\Class_|\PhpParser\Node\Stmt\Property $property
      */
-    public function hasByMany($property, array $classNames) : bool
+    public function hasByMany($property, array $classNames): bool
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNode($property);
         if ($phpDocInfo instanceof PhpDocInfo && $phpDocInfo->hasByAnnotationClasses($classNames)) {

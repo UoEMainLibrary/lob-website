@@ -11,14 +11,14 @@ final class ConfiguredCodeSample extends AbstractCodeSample implements CodeSampl
     /**
      * @var mixed[]
      */
-    private $configuration = [];
+    private array $configuration = [];
     /**
      * @param mixed[] $configuration
      */
     public function __construct(string $badCode, string $goodCode, array $configuration)
     {
         if ($configuration === []) {
-            $message = \sprintf('Configuration cannot be empty. Look for "%s"', $badCode);
+            $message = sprintf('Configuration cannot be empty. Look for "%s"', $badCode);
             throw new ShouldNotHappenException($message);
         }
         $this->configuration = $configuration;
@@ -27,7 +27,7 @@ final class ConfiguredCodeSample extends AbstractCodeSample implements CodeSampl
     /**
      * @return mixed[]
      */
-    public function getConfiguration() : array
+    public function getConfiguration(): array
     {
         return $this->configuration;
     }

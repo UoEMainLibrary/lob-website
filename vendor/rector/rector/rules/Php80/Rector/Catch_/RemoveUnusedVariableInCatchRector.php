@@ -5,10 +5,11 @@ namespace Rector\Php80\Rector\Catch_;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Stmt\Finally_;
 use PhpParser\Node\Stmt\TryCatch;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\DeadCode\NodeAnalyzer\ExprUsedInNodeAnalyzer;
 use Rector\NodeManipulator\StmtsManipulator;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
@@ -22,28 +23,25 @@ final class RemoveUnusedVariableInCatchRector extends AbstractRector implements 
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\StmtsManipulator
      */
-    private $stmtsManipulator;
+    private StmtsManipulator $stmtsManipulator;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\DeadCode\NodeAnalyzer\ExprUsedInNodeAnalyzer
      */
-    private $exprUsedInNodeAnalyzer;
+    private ExprUsedInNodeAnalyzer $exprUsedInNodeAnalyzer;
     public function __construct(StmtsManipulator $stmtsManipulator, BetterNodeFinder $betterNodeFinder, ExprUsedInNodeAnalyzer $exprUsedInNodeAnalyzer)
     {
         $this->stmtsManipulator = $stmtsManipulator;
         $this->betterNodeFinder = $betterNodeFinder;
         $this->exprUsedInNodeAnalyzer = $exprUsedInNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Remove unused variable in catch()', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Remove unused variable in `catch()`', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
 {
     public function run()
@@ -70,14 +68,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -94,9 +92,7 @@ CODE_SAMPLE
                 }
                 /** @var string $variableName */
                 $variableName = $this->getName($caughtVar);
-                $isFoundInCatchStmts = (bool) $this->betterNodeFinder->findFirst($catch->stmts, function (Node $subNode) use($caughtVar) : bool {
-                    return $this->exprUsedInNodeAnalyzer->isUsed($subNode, $caughtVar);
-                });
+                $isFoundInCatchStmts = (bool) $this->betterNodeFinder->findFirst(array_merge($catch->stmts, $stmt->finally instanceof Finally_ ? $stmt->finally->stmts : []), fn(Node $subNode): bool => $this->exprUsedInNodeAnalyzer->isUsed($subNode, $caughtVar));
                 if ($isFoundInCatchStmts) {
                     continue;
                 }
@@ -112,7 +108,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::NON_CAPTURING_CATCH;
     }

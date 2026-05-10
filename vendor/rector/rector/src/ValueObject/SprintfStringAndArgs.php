@@ -9,14 +9,13 @@ final class SprintfStringAndArgs
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Scalar\String_
      */
-    private $string;
+    private String_ $string;
     /**
      * @var Expr[]
      * @readonly
      */
-    private $arrayItems;
+    private array $arrayItems;
     /**
      * @param Expr[] $arrayItems
      */
@@ -28,11 +27,11 @@ final class SprintfStringAndArgs
     /**
      * @return Expr[]
      */
-    public function getArrayItems() : array
+    public function getArrayItems(): array
     {
         return $this->arrayItems;
     }
-    public function getStringValue() : string
+    public function getStringValue(): string
     {
         return $this->string->value;
     }

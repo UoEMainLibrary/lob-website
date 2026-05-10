@@ -25,14 +25,13 @@ final class CleanupUnneededNullsafeOperatorRector extends AbstractRector impleme
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeAnalyzer\ReturnStrictTypeAnalyzer
      */
-    private $returnStrictTypeAnalyzer;
+    private ReturnStrictTypeAnalyzer $returnStrictTypeAnalyzer;
     public function __construct(ReturnStrictTypeAnalyzer $returnStrictTypeAnalyzer)
     {
         $this->returnStrictTypeAnalyzer = $returnStrictTypeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Cleanup unneeded nullsafe operator', [new CodeSample(<<<'CODE_SAMPLE'
 class HelloWorld {
@@ -69,14 +68,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [NullsafeMethodCall::class];
     }
     /**
      * @param NullsafeMethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->name instanceof Identifier) {
             return null;
@@ -90,7 +89,7 @@ CODE_SAMPLE
         }
         return new MethodCall($node->var, $node->name, $node->args);
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::NULLSAFE_OPERATOR;
     }

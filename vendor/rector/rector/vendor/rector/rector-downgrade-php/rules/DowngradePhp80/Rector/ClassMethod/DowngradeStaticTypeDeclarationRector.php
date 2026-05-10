@@ -19,14 +19,12 @@ final class DowngradeStaticTypeDeclarationRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpDocDecorator\PhpDocFromTypeDeclarationDecorator
      */
-    private $phpDocFromTypeDeclarationDecorator;
+    private PhpDocFromTypeDeclarationDecorator $phpDocFromTypeDeclarationDecorator;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(PhpDocFromTypeDeclarationDecorator $phpDocFromTypeDeclarationDecorator, ReflectionResolver $reflectionResolver)
     {
         $this->phpDocFromTypeDeclarationDecorator = $phpDocFromTypeDeclarationDecorator;
@@ -35,11 +33,11 @@ final class DowngradeStaticTypeDeclarationRector extends AbstractRector
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class];
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove "static" return and param type, add a "@param $this" and "@return $this" tag instead', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -67,7 +65,7 @@ CODE_SAMPLE
     /**
      * @param ClassMethod $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->params === [] && !$node->returnType instanceof Node) {
             return null;

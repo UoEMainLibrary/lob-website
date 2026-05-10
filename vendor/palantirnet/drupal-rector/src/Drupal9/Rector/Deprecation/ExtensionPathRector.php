@@ -15,7 +15,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 class ExtensionPathRector extends AbstractRector implements ConfigurableRectorInterface
 {
     /**
-     * @var \DrupalRector\Drupal9\Rector\ValueObject\ExtensionPathConfiguration[]
+     * @var ExtensionPathConfiguration[]
      */
     private array $configuration;
 
@@ -32,7 +32,7 @@ class ExtensionPathRector extends AbstractRector implements ConfigurableRectorIn
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof ExtensionPathConfiguration)) {
+            if (!$value instanceof ExtensionPathConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', ExtensionPathConfiguration::class));
             }
         }
@@ -135,14 +135,12 @@ class ExtensionPathRector extends AbstractRector implements ConfigurableRectorIn
 drupal_get_filename('module', 'node');
 drupal_get_filename('theme', 'seven');
 drupal_get_filename('profile', 'standard');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal::service('extension.list.module')->getPathname('node');
 \Drupal::service('extension.list.theme')->getPathname('seven');
 \Drupal::service('extension.list.profile')->getPathname('standard');
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new ExtensionPathConfiguration('drupal_get_filename', 'getPathname'),
                 ]
@@ -152,14 +150,12 @@ CODE_AFTER
 drupal_get_path('module', 'node');
 drupal_get_path('theme', 'seven');
 drupal_get_path('profile', 'standard');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal::service('extension.list.module')->getPath('node');
 \Drupal::service('extension.list.theme')->getPath('seven');
 \Drupal::service('extension.list.profile')->getPath('standard');
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new ExtensionPathConfiguration('drupal_get_path', 'getPath'),
                 ]

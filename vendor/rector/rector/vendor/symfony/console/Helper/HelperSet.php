@@ -8,9 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Helper;
+namespace RectorPrefix202604\Symfony\Component\Console\Helper;
 
-use RectorPrefix202411\Symfony\Component\Console\Exception\InvalidArgumentException;
+use RectorPrefix202604\Symfony\Component\Console\Exception\InvalidArgumentException;
 /**
  * HelperSet represents a set of helpers to be used with a command.
  *
@@ -21,7 +21,7 @@ use RectorPrefix202411\Symfony\Component\Console\Exception\InvalidArgumentExcept
 class HelperSet implements \IteratorAggregate
 {
     /** @var array<string, HelperInterface> */
-    private $helpers = [];
+    private array $helpers = [];
     /**
      * @param HelperInterface[] $helpers
      */
@@ -45,7 +45,7 @@ class HelperSet implements \IteratorAggregate
     /**
      * Returns true if the helper if defined.
      */
-    public function has(string $name) : bool
+    public function has(string $name): bool
     {
         return isset($this->helpers[$name]);
     }
@@ -54,14 +54,14 @@ class HelperSet implements \IteratorAggregate
      *
      * @throws InvalidArgumentException if the helper is not defined
      */
-    public function get(string $name) : HelperInterface
+    public function get(string $name): HelperInterface
     {
         if (!$this->has($name)) {
             throw new InvalidArgumentException(\sprintf('The helper "%s" is not defined.', $name));
         }
         return $this->helpers[$name];
     }
-    public function getIterator() : \Traversable
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->helpers);
     }

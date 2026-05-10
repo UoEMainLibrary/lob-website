@@ -3,11 +3,12 @@
 declare (strict_types=1);
 namespace Rector\Testing\TestingParser;
 
-use RectorPrefix202411\Nette\Utils\FileSystem;
+use RectorPrefix202604\Nette\Utils\FileSystem;
 use PhpParser\Node;
 use Rector\Application\Provider\CurrentFileProvider;
 use Rector\NodeTypeResolver\NodeScopeAndMetadataDecorator;
 use Rector\NodeTypeResolver\Reflection\BetterReflection\SourceLocatorProvider\DynamicSourceLocatorProvider;
+use Rector\PhpParser\Node\FileNode;
 use Rector\PhpParser\Parser\RectorParser;
 use Rector\ValueObject\Application\File;
 /**
@@ -17,24 +18,20 @@ final class TestingParser
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Parser\RectorParser
      */
-    private $rectorParser;
+    private RectorParser $rectorParser;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeScopeAndMetadataDecorator
      */
-    private $nodeScopeAndMetadataDecorator;
+    private NodeScopeAndMetadataDecorator $nodeScopeAndMetadataDecorator;
     /**
      * @readonly
-     * @var \Rector\Application\Provider\CurrentFileProvider
      */
-    private $currentFileProvider;
+    private CurrentFileProvider $currentFileProvider;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\Reflection\BetterReflection\SourceLocatorProvider\DynamicSourceLocatorProvider
      */
-    private $dynamicSourceLocatorProvider;
+    private DynamicSourceLocatorProvider $dynamicSourceLocatorProvider;
     public function __construct(RectorParser $rectorParser, NodeScopeAndMetadataDecorator $nodeScopeAndMetadataDecorator, CurrentFileProvider $currentFileProvider, DynamicSourceLocatorProvider $dynamicSourceLocatorProvider)
     {
         $this->rectorParser = $rectorParser;
@@ -42,31 +39,34 @@ final class TestingParser
         $this->currentFileProvider = $currentFileProvider;
         $this->dynamicSourceLocatorProvider = $dynamicSourceLocatorProvider;
     }
-    public function parseFilePathToFile(string $filePath) : File
+    public function parseFilePathToFile(string $filePath): File
     {
-        // needed for PHPStan reflection, as it caches the last processed file
-        $this->dynamicSourceLocatorProvider->setFilePath($filePath);
-        $fileContent = FileSystem::read($filePath);
-        $file = new File($filePath, $fileContent);
-        $stmts = $this->rectorParser->parseString($fileContent);
-        $stmts = $this->nodeScopeAndMetadataDecorator->decorateNodesFromFile($filePath, $stmts);
-        $file->hydrateStmtsAndTokens($stmts, $stmts, []);
-        $this->currentFileProvider->setFile($file);
+        [$file, $stmts] = $this->parseToFileAndStmts($filePath);
         return $file;
     }
     /**
      * @return Node[]
      */
-    public function parseFileToDecoratedNodes(string $filePath) : array
+    public function parseFileToDecoratedNodes(string $filePath): array
+    {
+        [$file, $stmts] = $this->parseToFileAndStmts($filePath);
+        return $stmts;
+    }
+    /**
+     * @return array{0: File, 1: Node[]}
+     */
+    private function parseToFileAndStmts(string $filePath): array
     {
         // needed for PHPStan reflection, as it caches the last processed file
         $this->dynamicSourceLocatorProvider->setFilePath($filePath);
         $fileContent = FileSystem::read($filePath);
-        $stmts = $this->rectorParser->parseString($fileContent);
         $file = new File($filePath, $fileContent);
+        $stmts = $this->rectorParser->parseString($fileContent);
+        // wrap in FileNode to enable file-level rules
+        $stmts = [new FileNode($stmts)];
         $stmts = $this->nodeScopeAndMetadataDecorator->decorateNodesFromFile($filePath, $stmts);
         $file->hydrateStmtsAndTokens($stmts, $stmts, []);
         $this->currentFileProvider->setFile($file);
-        return $stmts;
+        return [$file, $stmts];
     }
 }

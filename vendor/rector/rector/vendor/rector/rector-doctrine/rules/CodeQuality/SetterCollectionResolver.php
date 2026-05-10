@@ -13,8 +13,9 @@ use PHPStan\Type\Generic\GenericObjectType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 use PHPStan\Type\UnionType;
-use Rector\Doctrine\CodeQuality\Enum\DoctrineClass;
+use Rector\Doctrine\Enum\DoctrineClass;
 use Rector\Doctrine\TypeAnalyzer\CollectionTypeFactory;
+use Rector\Doctrine\TypeAnalyzer\CollectionTypeResolver;
 use Rector\Doctrine\TypeAnalyzer\CollectionVarTagValueNodeResolver;
 use Rector\NodeManipulator\AssignManipulator;
 use Rector\NodeNameResolver\NodeNameResolver;
@@ -25,35 +26,33 @@ final class SetterCollectionResolver
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\AssignManipulator
      */
-    private $assignManipulator;
+    private AssignManipulator $assignManipulator;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\Doctrine\TypeAnalyzer\CollectionVarTagValueNodeResolver
      */
-    private $collectionVarTagValueNodeResolver;
+    private CollectionVarTagValueNodeResolver $collectionVarTagValueNodeResolver;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\Doctrine\TypeAnalyzer\CollectionTypeFactory
      */
-    private $collectionTypeFactory;
-    public function __construct(AssignManipulator $assignManipulator, ReflectionResolver $reflectionResolver, NodeNameResolver $nodeNameResolver, CollectionVarTagValueNodeResolver $collectionVarTagValueNodeResolver, StaticTypeMapper $staticTypeMapper, CollectionTypeFactory $collectionTypeFactory)
+    private CollectionTypeFactory $collectionTypeFactory;
+    /**
+     * @readonly
+     */
+    private CollectionTypeResolver $collectionTypeResolver;
+    public function __construct(AssignManipulator $assignManipulator, ReflectionResolver $reflectionResolver, NodeNameResolver $nodeNameResolver, CollectionVarTagValueNodeResolver $collectionVarTagValueNodeResolver, StaticTypeMapper $staticTypeMapper, CollectionTypeFactory $collectionTypeFactory, CollectionTypeResolver $collectionTypeResolver)
     {
         $this->assignManipulator = $assignManipulator;
         $this->reflectionResolver = $reflectionResolver;
@@ -61,11 +60,12 @@ final class SetterCollectionResolver
         $this->collectionVarTagValueNodeResolver = $collectionVarTagValueNodeResolver;
         $this->staticTypeMapper = $staticTypeMapper;
         $this->collectionTypeFactory = $collectionTypeFactory;
+        $this->collectionTypeResolver = $collectionTypeResolver;
     }
-    public function resolveAssignedGenericCollectionType(Class_ $class, ClassMethod $classMethod) : ?GenericObjectType
+    public function resolveAssignedGenericCollectionType(Class_ $class, ClassMethod $classMethod): ?GenericObjectType
     {
         $propertyFetches = $this->assignManipulator->resolveAssignsToLocalPropertyFetches($classMethod);
-        if (\count($propertyFetches) !== 1) {
+        if (count($propertyFetches) !== 1) {
             return null;
         }
         $phpPropertyReflection = $this->reflectionResolver->resolvePropertyReflectionFromPropertyFetch($propertyFetches[0]);
@@ -91,10 +91,10 @@ final class SetterCollectionResolver
                 }
                 $nonCollectionTypes[] = $unionedType;
             }
-            if (\count($nonCollectionTypes) === 1) {
+            if (count($nonCollectionTypes) === 1) {
                 $soleType = $nonCollectionTypes[0];
                 if ($soleType instanceof ArrayType && $soleType->getItemType() instanceof ObjectType) {
-                    return $this->collectionTypeFactory->createType($soleType->getItemType());
+                    return $this->collectionTypeFactory->createType($soleType->getItemType(), $this->collectionTypeResolver->hasIndexBy($property), $property);
                 }
             }
         }
@@ -103,7 +103,7 @@ final class SetterCollectionResolver
         }
         return null;
     }
-    private function isCollectionType(Type $type) : bool
+    private function isCollectionType(Type $type): bool
     {
         if ($type instanceof ShortenedObjectType && $type->getFullyQualifiedName() === DoctrineClass::COLLECTION) {
             return \true;

@@ -5,42 +5,28 @@ namespace PHPStan\PhpDocParser\Parser;
 
 use PHPStan\PhpDocParser\Ast;
 use PHPStan\PhpDocParser\Lexer\Lexer;
+use PHPStan\PhpDocParser\ParserConfig;
 use function str_replace;
 use function strtolower;
-use function substr;
 class ConstExprParser
 {
-    /** @var bool */
-    private $unescapeStrings;
-    /** @var bool */
-    private $quoteAwareConstExprString;
-    /** @var bool */
-    private $useLinesAttributes;
-    /** @var bool */
-    private $useIndexAttributes;
-    /** @var bool */
-    private $parseDoctrineStrings;
-    /**
-     * @param array{lines?: bool, indexes?: bool} $usedAttributes
-     */
-    public function __construct(bool $unescapeStrings = \false, bool $quoteAwareConstExprString = \false, array $usedAttributes = [])
+    private ParserConfig $config;
+    private bool $parseDoctrineStrings;
+    public function __construct(ParserConfig $config)
     {
-        $this->unescapeStrings = $unescapeStrings;
-        $this->quoteAwareConstExprString = $quoteAwareConstExprString;
-        $this->useLinesAttributes = $usedAttributes['lines'] ?? \false;
-        $this->useIndexAttributes = $usedAttributes['indexes'] ?? \false;
+        $this->config = $config;
         $this->parseDoctrineStrings = \false;
     }
     /**
      * @internal
      */
-    public function toDoctrine() : self
+    public function toDoctrine(): self
     {
-        $self = new self($this->unescapeStrings, $this->quoteAwareConstExprString, ['lines' => $this->useLinesAttributes, 'indexes' => $this->useIndexAttributes]);
+        $self = new self($this->config);
         $self->parseDoctrineStrings = \true;
         return $self;
     }
-    public function parse(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens, bool $trimStrings = \false) : Ast\ConstExpr\ConstExprNode
+    public function parse(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens): Ast\ConstExpr\ConstExprNode
     {
         $startLine = $tokens->currentTokenLine();
         $startIndex = $tokens->currentTokenIndex();
@@ -68,20 +54,10 @@ class ConstExprParser
                 $tokens->next();
                 return $this->enrichWithAttributes($tokens, $this->parseDoctrineString($value, $tokens), $startLine, $startIndex);
             }
-            $value = $tokens->currentTokenValue();
+            $value = \PHPStan\PhpDocParser\Parser\StringUnescaper::unescapeString($tokens->currentTokenValue());
             $type = $tokens->currentTokenType();
-            if ($trimStrings) {
-                if ($this->unescapeStrings) {
-                    $value = \PHPStan\PhpDocParser\Parser\StringUnescaper::unescapeString($value);
-                } else {
-                    $value = substr($value, 1, -1);
-                }
-            }
             $tokens->next();
-            if ($this->quoteAwareConstExprString) {
-                return $this->enrichWithAttributes($tokens, new Ast\ConstExpr\QuoteAwareConstExprStringNode($value, $type === Lexer::TOKEN_SINGLE_QUOTED_STRING ? Ast\ConstExpr\QuoteAwareConstExprStringNode::SINGLE_QUOTED : Ast\ConstExpr\QuoteAwareConstExprStringNode::DOUBLE_QUOTED), $startLine, $startIndex);
-            }
-            return $this->enrichWithAttributes($tokens, new Ast\ConstExpr\ConstExprStringNode($value), $startLine, $startIndex);
+            return $this->enrichWithAttributes($tokens, new Ast\ConstExpr\ConstExprStringNode($value, $type === Lexer::TOKEN_SINGLE_QUOTED_STRING ? Ast\ConstExpr\ConstExprStringNode::SINGLE_QUOTED : Ast\ConstExpr\ConstExprStringNode::DOUBLE_QUOTED), $startLine, $startIndex);
         } elseif ($tokens->isCurrentTokenType(Lexer::TOKEN_IDENTIFIER)) {
             $identifier = $tokens->currentTokenValue();
             $tokens->next();
@@ -128,7 +104,7 @@ class ConstExprParser
         }
         throw new \PHPStan\PhpDocParser\Parser\ParserException($tokens->currentTokenValue(), $tokens->currentTokenType(), $tokens->currentTokenOffset(), Lexer::TOKEN_IDENTIFIER, null, $tokens->currentTokenLine());
     }
-    private function parseArray(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens, int $endToken, int $startIndex) : Ast\ConstExpr\ConstExprArrayNode
+    private function parseArray(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens, int $endToken, int $startIndex): Ast\ConstExpr\ConstExprArrayNode
     {
         $items = [];
         $startLine = $tokens->currentTokenLine();
@@ -144,7 +120,7 @@ class ConstExprParser
      * This method is supposed to be called with TokenIterator after reading TOKEN_DOUBLE_QUOTED_STRING and shifting
      * to the next token.
      */
-    public function parseDoctrineString(string $text, \PHPStan\PhpDocParser\Parser\TokenIterator $tokens) : Ast\ConstExpr\DoctrineConstExprStringNode
+    public function parseDoctrineString(string $text, \PHPStan\PhpDocParser\Parser\TokenIterator $tokens): Ast\ConstExpr\DoctrineConstExprStringNode
     {
         // Because of how Lexer works, a valid Doctrine string
         // can consist of a sequence of TOKEN_DOUBLE_QUOTED_STRING and TOKEN_DOCTRINE_ANNOTATION_STRING
@@ -154,7 +130,7 @@ class ConstExprParser
         }
         return new Ast\ConstExpr\DoctrineConstExprStringNode(Ast\ConstExpr\DoctrineConstExprStringNode::unescape($text));
     }
-    private function parseArrayItem(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens) : Ast\ConstExpr\ConstExprArrayItemNode
+    private function parseArrayItem(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens): Ast\ConstExpr\ConstExprArrayItemNode
     {
         $startLine = $tokens->currentTokenLine();
         $startIndex = $tokens->currentTokenIndex();
@@ -173,13 +149,13 @@ class ConstExprParser
      * @param T $node
      * @return T
      */
-    private function enrichWithAttributes(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens, Ast\ConstExpr\ConstExprNode $node, int $startLine, int $startIndex) : Ast\ConstExpr\ConstExprNode
+    private function enrichWithAttributes(\PHPStan\PhpDocParser\Parser\TokenIterator $tokens, Ast\ConstExpr\ConstExprNode $node, int $startLine, int $startIndex): Ast\ConstExpr\ConstExprNode
     {
-        if ($this->useLinesAttributes) {
+        if ($this->config->useLinesAttributes) {
             $node->setAttribute(Ast\Attribute::START_LINE, $startLine);
             $node->setAttribute(Ast\Attribute::END_LINE, $tokens->currentTokenLine());
         }
-        if ($this->useIndexAttributes) {
+        if ($this->config->useIndexAttributes) {
             $node->setAttribute(Ast\Attribute::START_INDEX, $startIndex);
             $node->setAttribute(Ast\Attribute::END_INDEX, $tokens->endIndexOfLastRelevantToken());
         }

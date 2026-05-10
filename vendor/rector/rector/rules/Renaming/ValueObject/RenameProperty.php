@@ -9,19 +9,16 @@ final class RenameProperty
 {
     /**
      * @readonly
-     * @var string
      */
-    private $type;
+    private string $type;
     /**
      * @readonly
-     * @var string
      */
-    private $oldProperty;
+    private string $oldProperty;
     /**
      * @readonly
-     * @var string
      */
-    private $newProperty;
+    private string $newProperty;
     public function __construct(string $type, string $oldProperty, string $newProperty)
     {
         $this->type = $type;
@@ -31,15 +28,15 @@ final class RenameProperty
         RectorAssert::propertyName($oldProperty);
         RectorAssert::propertyName($newProperty);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->type);
     }
-    public function getOldProperty() : string
+    public function getOldProperty(): string
     {
         return $this->oldProperty;
     }
-    public function getNewProperty() : string
+    public function getNewProperty(): string
     {
         return $this->newProperty;
     }

@@ -10,19 +10,16 @@ final class RenameAnnotationByType implements RenameAnnotationInterface
 {
     /**
      * @readonly
-     * @var string
      */
-    private $type;
+    private string $type;
     /**
      * @readonly
-     * @var string
      */
-    private $oldAnnotation;
+    private string $oldAnnotation;
     /**
      * @readonly
-     * @var string
      */
-    private $newAnnotation;
+    private string $newAnnotation;
     public function __construct(string $type, string $oldAnnotation, string $newAnnotation)
     {
         $this->type = $type;
@@ -30,15 +27,15 @@ final class RenameAnnotationByType implements RenameAnnotationInterface
         $this->newAnnotation = $newAnnotation;
         RectorAssert::className($type);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->type);
     }
-    public function getOldAnnotation() : string
+    public function getOldAnnotation(): string
     {
         return $this->oldAnnotation;
     }
-    public function getNewAnnotation() : string
+    public function getNewAnnotation(): string
     {
         return $this->newAnnotation;
     }

@@ -14,9 +14,8 @@ final class VariableAndCallForeach
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\Variable
      */
-    private $variable;
+    private Variable $variable;
     /**
      * @readonly
      * @var \PhpParser\Node\Expr\FuncCall|\PhpParser\Node\Expr\StaticCall|\PhpParser\Node\Expr\MethodCall
@@ -24,9 +23,8 @@ final class VariableAndCallForeach
     private $expr;
     /**
      * @readonly
-     * @var string
      */
-    private $variableName;
+    private string $variableName;
     /**
      * @readonly
      * @var \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_|\PhpParser\Node\Expr\Closure
@@ -43,7 +41,7 @@ final class VariableAndCallForeach
         $this->variableName = $variableName;
         $this->functionLike = $functionLike;
     }
-    public function getVariable() : Variable
+    public function getVariable(): Variable
     {
         return $this->variable;
     }
@@ -54,7 +52,7 @@ final class VariableAndCallForeach
     {
         return $this->expr;
     }
-    public function getVariableName() : string
+    public function getVariableName(): string
     {
         return $this->variableName;
     }

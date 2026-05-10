@@ -43,7 +43,7 @@ class SystemTimeZonesRector extends AbstractDrupalCoreRector
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof DrupalIntroducedVersionConfiguration)) {
+            if (!$value instanceof DrupalIntroducedVersionConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', DrupalIntroducedVersionConfiguration::class));
             }
         }
@@ -86,15 +86,13 @@ system_time_zones();
 system_time_zones(FALSE, TRUE);
 system_time_zones(NULL, FALSE);
 system_time_zones(TRUE, FALSE);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsList();
 \Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsListByRegion();
 \Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsList(NULL);
 \Drupal\Core\Datetime\TimeZoneFormHelper::getOptionsList(TRUE);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new DrupalIntroducedVersionConfiguration('10.1.0'),
                 ]

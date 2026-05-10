@@ -16,26 +16,33 @@ final class MessengerHelper
 {
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\PhpAttributeGroupFactory
      */
-    private $phpAttributeGroupFactory;
+    private PhpAttributeGroupFactory $phpAttributeGroupFactory;
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\AttributeArrayNameInliner
      */
-    private $attributeArrayNameInliner;
+    private AttributeArrayNameInliner $attributeArrayNameInliner;
     /**
      * @readonly
-     * @var \Rector\Symfony\DataProvider\ServiceMapProvider
      */
-    private $serviceMapProvider;
-    public const MESSAGE_HANDLER_INTERFACE = 'Symfony\\Component\\Messenger\\Handler\\MessageHandlerInterface';
-    public const MESSAGE_SUBSCRIBER_INTERFACE = 'Symfony\\Component\\Messenger\\Handler\\MessageSubscriberInterface';
-    public const AS_MESSAGE_HANDLER_ATTRIBUTE = 'Symfony\\Component\\Messenger\\Attribute\\AsMessageHandler';
+    private ServiceMapProvider $serviceMapProvider;
     /**
      * @var string
      */
-    private $messengerTagName = 'messenger.message_handler';
+    public const MESSAGE_HANDLER_INTERFACE = 'Symfony\Component\Messenger\Handler\MessageHandlerInterface';
+    /**
+     * @var string
+     */
+    public const MESSAGE_SUBSCRIBER_INTERFACE = 'Symfony\Component\Messenger\Handler\MessageSubscriberInterface';
+    /**
+     * @var string
+     */
+    public const AS_MESSAGE_HANDLER_ATTRIBUTE = 'Symfony\Component\Messenger\Attribute\AsMessageHandler';
+    private string $messengerTagName = 'messenger.message_handler';
+    /**
+     * @var ServiceDefinition[]
+     */
+    private array $handlersFromServices = [];
     public function __construct(PhpAttributeGroupFactory $phpAttributeGroupFactory, AttributeArrayNameInliner $attributeArrayNameInliner, ServiceMapProvider $serviceMapProvider)
     {
         $this->phpAttributeGroupFactory = $phpAttributeGroupFactory;
@@ -45,7 +52,7 @@ final class MessengerHelper
     /**
      * @return array<string, mixed>
      */
-    public function extractOptionsFromServiceDefinition(ServiceDefinition $serviceDefinition) : array
+    public function extractOptionsFromServiceDefinition(ServiceDefinition $serviceDefinition): array
     {
         $options = [];
         foreach ($serviceDefinition->getTags() as $tag) {
@@ -62,10 +69,14 @@ final class MessengerHelper
     /**
      * @return ServiceDefinition[]
      */
-    public function getHandlersFromServices() : array
+    public function getHandlersFromServices(): array
     {
+        if ($this->handlersFromServices !== []) {
+            return $this->handlersFromServices;
+        }
         $serviceMap = $this->serviceMapProvider->provide();
-        return $serviceMap->getServicesByTag($this->messengerTagName);
+        $this->handlersFromServices = $serviceMap->getServicesByTag($this->messengerTagName);
+        return $this->handlersFromServices;
     }
     /**
      * @param array<string, mixed> $options
@@ -76,7 +87,7 @@ final class MessengerHelper
     {
         $args = $this->phpAttributeGroupFactory->createArgsFromItems($options, self::AS_MESSAGE_HANDLER_ATTRIBUTE);
         $args = $this->attributeArrayNameInliner->inlineArrayToArgs($args);
-        $node->attrGroups = \array_merge($node->attrGroups, [new AttributeGroup([new Attribute(new FullyQualified(self::AS_MESSAGE_HANDLER_ATTRIBUTE), $args)])]);
+        $node->attrGroups = array_merge($node->attrGroups, [new AttributeGroup([new Attribute(new FullyQualified(self::AS_MESSAGE_HANDLER_ATTRIBUTE), $args)])]);
         return $node;
     }
 }

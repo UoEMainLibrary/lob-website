@@ -18,24 +18,20 @@ final class FormInstanceToFormClassConstFetchConverter
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormType\CreateFormTypeOptionsArgMover
      */
-    private $createFormTypeOptionsArgMover;
+    private CreateFormTypeOptionsArgMover $createFormTypeOptionsArgMover;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormType\FormTypeClassResolver
      */
-    private $formTypeClassResolver;
+    private FormTypeClassResolver $formTypeClassResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(CreateFormTypeOptionsArgMover $createFormTypeOptionsArgMover, NodeFactory $nodeFactory, FormTypeClassResolver $formTypeClassResolver, NodeTypeResolver $nodeTypeResolver)
     {
         $this->createFormTypeOptionsArgMover = $createFormTypeOptionsArgMover;
@@ -43,7 +39,7 @@ final class FormInstanceToFormClassConstFetchConverter
         $this->formTypeClassResolver = $formTypeClassResolver;
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
-    public function processNewInstance(MethodCall $methodCall, int $position, int $optionsPosition) : ?MethodCall
+    public function processNewInstance(MethodCall $methodCall, int $position, int $optionsPosition): ?MethodCall
     {
         $args = $methodCall->getArgs();
         if (!isset($args[$position])) {
@@ -54,8 +50,8 @@ final class FormInstanceToFormClassConstFetchConverter
         if ($formClassName === null) {
             return null;
         }
-        // better skip and ahndle manualyl
-        if ($argValue instanceof Variable && $this->isVariableOfTypeWithRequiredConstructorParmaeters($argValue)) {
+        // better skip and handle manually
+        if ($argValue instanceof Variable && $this->isVariableOfTypeWithRequiredConstructorParameters($argValue)) {
             return null;
         }
         if ($argValue instanceof New_ && $argValue->getArgs() !== []) {
@@ -69,7 +65,7 @@ final class FormInstanceToFormClassConstFetchConverter
         $currentArg->value = $classConstFetch;
         return $methodCall;
     }
-    private function isVariableOfTypeWithRequiredConstructorParmaeters(Variable $variable) : bool
+    private function isVariableOfTypeWithRequiredConstructorParameters(Variable $variable): bool
     {
         // if form type is object with constructor args, handle manually
         $variableType = $this->nodeTypeResolver->getType($variable);

@@ -16,14 +16,14 @@ use Rector\Rector\AbstractRector;
 abstract class AbstractDrupalCoreRector extends AbstractRector implements ConfigurableRectorInterface
 {
     /**
-     * @var array|\DrupalRector\Contract\VersionedConfigurationInterface[]
+     * @var array|VersionedConfigurationInterface[]
      */
     protected array $configuration = [];
 
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof VersionedConfigurationInterface)) {
+            if (!$value instanceof VersionedConfigurationInterface) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', VersionedConfigurationInterface::class));
             }
         }

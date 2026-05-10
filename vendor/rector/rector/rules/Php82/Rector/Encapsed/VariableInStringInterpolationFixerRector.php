@@ -4,8 +4,9 @@ declare (strict_types=1);
 namespace Rector\Php82\Rector\Encapsed;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Scalar\Encapsed;
+use PhpParser\Node\Scalar\InterpolatedString;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
@@ -17,9 +18,9 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class VariableInStringInterpolationFixerRector extends AbstractRector implements MinPhpVersionInterface
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Replace deprecated "${var}" to "{$var}"', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Replace deprecated `${var}` to `{$var}`', [new CodeSample(<<<'CODE_SAMPLE'
 $c = "football";
 echo "I like playing ${c}";
 CODE_SAMPLE
@@ -32,32 +33,33 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [Encapsed::class];
+        return [InterpolatedString::class];
     }
     /**
-     * @param Encapsed $node
+     * @param InterpolatedString $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        $oldTokens = $this->file->getOldTokens();
+        $oldTokens = $this->getFile()->getOldTokens();
         $hasChanged = \false;
         foreach ($node->parts as $part) {
-            if (!$part instanceof Variable) {
+            if (!$part instanceof Variable && !($part instanceof ArrayDimFetch && $part->var instanceof Variable)) {
                 continue;
             }
             $startTokenPos = $part->getStartTokenPos();
             if (!isset($oldTokens[$startTokenPos])) {
                 continue;
             }
-            if (!\is_array($oldTokens[$startTokenPos])) {
+            if ((string) $oldTokens[$startTokenPos] !== '${') {
                 continue;
             }
-            if ($oldTokens[$startTokenPos][1] !== '${') {
-                continue;
+            if ($part instanceof Variable) {
+                $part->setAttribute(AttributeKey::ORIGINAL_NODE, null);
+            } else {
+                $oldTokens[$startTokenPos]->text = '{$';
             }
-            $part->setAttribute(AttributeKey::ORIGINAL_NODE, null);
             $hasChanged = \true;
         }
         if (!$hasChanged) {
@@ -65,7 +67,7 @@ CODE_SAMPLE
         }
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::DEPRECATE_VARIABLE_IN_STRING_INTERPOLATION;
     }

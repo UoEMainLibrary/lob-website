@@ -8,24 +8,22 @@ final class PropertyAndAnnotation
 {
     /**
      * @readonly
-     * @var string
      */
-    private $property;
+    private string $property;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDoc\DoctrineAnnotationTagValueNode
      */
-    private $doctrineAnnotationTagValueNode;
+    private DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode;
     public function __construct(string $property, DoctrineAnnotationTagValueNode $doctrineAnnotationTagValueNode)
     {
         $this->property = $property;
         $this->doctrineAnnotationTagValueNode = $doctrineAnnotationTagValueNode;
     }
-    public function getProperty() : string
+    public function getProperty(): string
     {
         return $this->property;
     }
-    public function getDoctrineAnnotationTagValueNode() : DoctrineAnnotationTagValueNode
+    public function getDoctrineAnnotationTagValueNode(): DoctrineAnnotationTagValueNode
     {
         return $this->doctrineAnnotationTagValueNode;
     }

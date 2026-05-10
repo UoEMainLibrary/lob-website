@@ -3,7 +3,7 @@
 declare (strict_types=1);
 namespace Rector\PHPUnit\PHPUnit70\Rector\Class_;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\Class_;
@@ -22,26 +22,23 @@ final class RemoveDataProviderTestPrefixRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeFinder\DataProviderClassMethodFinder
      */
-    private $dataProviderClassMethodFinder;
+    private DataProviderClassMethodFinder $dataProviderClassMethodFinder;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\PhpDoc\DataProviderMethodRenamer
      */
-    private $dataProviderMethodRenamer;
+    private DataProviderMethodRenamer $dataProviderMethodRenamer;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, DataProviderClassMethodFinder $dataProviderClassMethodFinder, DataProviderMethodRenamer $dataProviderMethodRenamer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
         $this->dataProviderClassMethodFinder = $dataProviderClassMethodFinder;
         $this->dataProviderMethodRenamer = $dataProviderMethodRenamer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Data provider methods cannot start with "test" prefix', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass extends PHPUnit\Framework\TestCase
@@ -82,14 +79,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -98,11 +95,11 @@ CODE_SAMPLE
         $dataProviderClassMethods = $this->dataProviderClassMethodFinder->find($node);
         foreach ($dataProviderClassMethods as $dataProviderClassMethod) {
             $dataProviderClassMethodName = $dataProviderClassMethod->name->toString();
-            if (\strncmp($dataProviderClassMethodName, 'test', \strlen('test')) !== 0) {
+            if (strncmp($dataProviderClassMethodName, 'test', strlen('test')) !== 0) {
                 continue;
             }
             $shortMethodName = Strings::substring($dataProviderClassMethodName, 4);
-            $shortMethodName = \lcfirst($shortMethodName);
+            $shortMethodName = lcfirst($shortMethodName);
             $dataProviderClassMethod->name = new Identifier($shortMethodName);
             $hasChanged = \true;
         }

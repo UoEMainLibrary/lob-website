@@ -3,7 +3,6 @@
 declare (strict_types=1);
 namespace Rector\PHPStanStaticTypeMapper\TypeMapper;
 
-use PhpParser\Node;
 use PhpParser\Node\Name;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\Type\ThisType;
@@ -14,21 +13,21 @@ use Rector\PHPStanStaticTypeMapper\Contract\TypeMapperInterface;
  */
 final class ThisTypeMapper implements TypeMapperInterface
 {
-    public function getNodeClass() : string
+    public function getNodeClass(): string
     {
         return ThisType::class;
     }
     /**
      * @param ThisType $type
      */
-    public function mapToPHPStanPhpDocTypeNode(Type $type) : TypeNode
+    public function mapToPHPStanPhpDocTypeNode(Type $type): TypeNode
     {
         return $type->toPhpDocNode();
     }
     /**
      * @param ThisType $type
      */
-    public function mapToPhpParserNode(Type $type, string $typeKind) : ?Node
+    public function mapToPhpParserNode(Type $type, string $typeKind): Name
     {
         return new Name('self');
     }

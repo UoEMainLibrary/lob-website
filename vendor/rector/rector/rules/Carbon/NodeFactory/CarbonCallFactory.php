@@ -3,24 +3,24 @@
 declare (strict_types=1);
 namespace Rector\Carbon\NodeFactory;
 
-use RectorPrefix202411\Nette\Utils\Strings;
+use RectorPrefix202604\Nette\Utils\Strings;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 final class CarbonCallFactory
 {
     /**
-     * @var string
      * @see https://regex101.com/r/LLMrFw/1
-     */
-    private const PLUS_MINUS_COUNT_REGEX = '#(?<operator>\\+|-)(\\s+)?(?<count>\\d+)(\\s+)?(?<unit>seconds|second|sec|minutes|minute|min|hours|hour|days|day|weeks|week|months|month|years|year)#';
-    /**
      * @var string
+     */
+    private const PLUS_MINUS_COUNT_REGEX = '#(?<operator>\+|-)(\s+)?(?<count>\d+)(\s+)?(?<unit>seconds|second|sec|minutes|minute|min|hours|hour|days|day|weeks|week|months|month|years|year)#';
+    /**
      * @see https://regex101.com/r/IhxHTO/1
+     * @var string
      */
     private const STATIC_DATE_REGEX = '#now|yesterday|today|tomorrow#';
     /**
@@ -32,7 +32,7 @@ final class CarbonCallFactory
         $string->value = Strings::replace($string->value, self::STATIC_DATE_REGEX);
         // Handle add/sub multiple times
         while ($match = Strings::match($string->value, self::PLUS_MINUS_COUNT_REGEX)) {
-            $methodCall = $this->createModifyMethodCall($carbonCall, new LNumber((int) $match['count']), $match['unit'], $match['operator']);
+            $methodCall = $this->createModifyMethodCall($carbonCall, new Int_((int) $match['count']), $match['unit'], $match['operator']);
             if ($methodCall instanceof MethodCall) {
                 $carbonCall = $methodCall;
                 $string->value = Strings::replace($string->value, self::PLUS_MINUS_COUNT_REGEX, '', 1);
@@ -50,7 +50,7 @@ final class CarbonCallFactory
                 return $carbonCall;
             }
             // If we fallback to a parse we want to include tomorrow/today/yesterday etc
-            if ($currentCall->name instanceof Identifier && $currentCall->name->name != 'now') {
+            if ($currentCall->name instanceof Identifier && $currentCall->name->name !== 'now') {
                 $rest .= ' ' . $currentCall->name->name;
             }
             $currentCall->name = new Identifier('parse');
@@ -60,7 +60,7 @@ final class CarbonCallFactory
         }
         return $carbonCall;
     }
-    private function createStaticCall(FullyQualified $carbonFullyQualified, String_ $string) : StaticCall
+    private function createStaticCall(FullyQualified $carbonFullyQualified, String_ $string): StaticCall
     {
         $startDate = Strings::match($string->value, self::STATIC_DATE_REGEX)[0] ?? 'now';
         return new StaticCall($carbonFullyQualified, new Identifier($startDate));
@@ -68,7 +68,7 @@ final class CarbonCallFactory
     /**
      * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall $carbonCall
      */
-    private function createModifyMethodCall($carbonCall, LNumber $countLNumber, string $unit, string $operator) : ?MethodCall
+    private function createModifyMethodCall($carbonCall, Int_ $int, string $unit, string $operator): ?MethodCall
     {
         switch ($unit) {
             case 'sec':
@@ -119,8 +119,8 @@ final class CarbonCallFactory
         if ($unit === null || $operator === null) {
             return null;
         }
-        $methodName = $operator . \ucfirst($unit);
-        return new MethodCall($carbonCall, new Identifier($methodName), [new Arg($countLNumber)]);
+        $methodName = $operator . ucfirst($unit);
+        return new MethodCall($carbonCall, new Identifier($methodName), [new Arg($int)]);
     }
     /**
      * @param MethodCall[] $callStack
@@ -132,7 +132,7 @@ final class CarbonCallFactory
             return $staticCall;
         }
         $currentCall = $staticCall;
-        $callStack = \array_reverse($callStack);
+        $callStack = array_reverse($callStack);
         foreach ($callStack as $call) {
             $call->var = $currentCall;
             $currentCall = $call;

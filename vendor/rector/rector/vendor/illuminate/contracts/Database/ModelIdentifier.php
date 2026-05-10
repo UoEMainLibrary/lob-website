@@ -1,13 +1,18 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Contracts\Database;
+namespace RectorPrefix202604\Illuminate\Contracts\Database;
 
+use RectorPrefix202604\Illuminate\Database\Eloquent\Relations\Relation;
 class ModelIdentifier
 {
     /**
+     * Use the Relation morphMap for a Model's name when serializing.
+     */
+    protected static bool $useMorphMap = \false;
+    /**
      * The class name of the model.
      *
-     * @var string
+     * @var class-string<\Illuminate\Database\Eloquent\Model>|string|null
      */
     public $class;
     /**
@@ -33,34 +38,55 @@ class ModelIdentifier
     /**
      * The class name of the model collection.
      *
-     * @var string|null
+     * @var class-string<\Illuminate\Database\Eloquent\Collection>|null
      */
     public $collectionClass;
     /**
      * Create a new model identifier.
      *
-     * @param  string  $class
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>|null  $class
      * @param  mixed  $id
      * @param  array  $relations
      * @param  mixed  $connection
-     * @return void
      */
     public function __construct($class, $id, array $relations, $connection)
     {
-        $this->id = $id;
+        if ($class !== null && self::$useMorphMap) {
+            $class = Relation::getMorphAlias($class);
+        }
         $this->class = $class;
+        $this->id = $id;
         $this->relations = $relations;
         $this->connection = $connection;
     }
     /**
      * Specify the collection class that should be used when serializing / restoring collections.
      *
-     * @param  string|null  $collectionClass
+     * @param  class-string<\Illuminate\Database\Eloquent\Collection>  $collectionClass
      * @return $this
      */
     public function useCollectionClass(?string $collectionClass)
     {
         $this->collectionClass = $collectionClass;
         return $this;
+    }
+    /**
+     * Get the fully-qualified class name of the Model.
+     *
+     * @return class-string<\Illuminate\Database\Eloquent\Model>|null
+     */
+    public function getClass(): ?string
+    {
+        if (self::$useMorphMap && $this->class !== null) {
+            return Relation::getMorphedModel($this->class) ?? $this->class;
+        }
+        return $this->class;
+    }
+    /**
+     * Indicate whether to use the relational morph-map when serializing Models.
+     */
+    public static function useMorphMap(bool $useMorphMap = \true): void
+    {
+        static::$useMorphMap = $useMorphMap;
     }
 }

@@ -18,26 +18,23 @@ final class OverrideFromAnonymousClassMethodAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ClassAnalyzer
      */
-    private $classAnalyzer;
+    private ClassAnalyzer $classAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(ClassAnalyzer $classAnalyzer, NodeNameResolver $nodeNameResolver, ReflectionProvider $reflectionProvider)
     {
         $this->classAnalyzer = $classAnalyzer;
         $this->nodeNameResolver = $nodeNameResolver;
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function matchAncestorClassReflectionOverrideable(ClassLike $classLike, ClassMethod $classMethod) : ?ClassReflection
+    public function matchAncestorClassReflectionOverridable(ClassLike $classLike, ClassMethod $classMethod): ?ClassReflection
     {
         if (!$this->classAnalyzer->isAnonymousClass($classLike)) {
             return null;
@@ -59,7 +56,7 @@ final class OverrideFromAnonymousClassMethodAnalyzer
         }
         return $this->resolveClassReflectionWithNotPrivateMethod($classLike->extends, $classMethod);
     }
-    private function resolveClassReflectionWithNotPrivateMethod(FullyQualified $fullyQualified, ClassMethod $classMethod) : ?ClassReflection
+    private function resolveClassReflectionWithNotPrivateMethod(FullyQualified $fullyQualified, ClassMethod $classMethod): ?ClassReflection
     {
         $ancestorClassLike = $fullyQualified->toString();
         if (!$this->reflectionProvider->hasClass($ancestorClassLike)) {

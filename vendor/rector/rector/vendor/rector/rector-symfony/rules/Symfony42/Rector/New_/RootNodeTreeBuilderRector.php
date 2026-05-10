@@ -11,7 +11,7 @@ use PhpParser\Node\Identifier;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Expression;
 use PHPStan\Type\ObjectType;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -25,14 +25,13 @@ final class RootNodeTreeBuilderRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     public function __construct(BetterNodeFinder $betterNodeFinder)
     {
         $this->betterNodeFinder = $betterNodeFinder;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Changes TreeBuilder with root() call to constructor passed root and getRootNode() call', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -53,14 +52,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -81,7 +80,7 @@ CODE_SAMPLE
             if (isset($new->getArgs()[1])) {
                 continue;
             }
-            if (!$this->isObjectType($new->class, new ObjectType('Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder'))) {
+            if (!$this->isObjectType($new->class, new ObjectType('Symfony\Component\Config\Definition\Builder\TreeBuilder'))) {
                 continue;
             }
             $rootMethodCallNode = $this->getRootMethodCallNode($node);
@@ -98,14 +97,17 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function getRootMethodCallNode(StmtsAwareInterface $stmtsAware) : ?Node
+    /**
+     * @param StmtsAware $stmtsAware
+     */
+    private function getRootMethodCallNode(Node $stmtsAware): ?Node
     {
         $methodCalls = $this->betterNodeFinder->findInstanceOf($stmtsAware, MethodCall::class);
         foreach ($methodCalls as $methodCall) {
             if (!$this->isName($methodCall->name, 'root')) {
                 continue;
             }
-            if (!$this->isObjectType($methodCall->var, new ObjectType('Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder'))) {
+            if (!$this->isObjectType($methodCall->var, new ObjectType('Symfony\Component\Config\Definition\Builder\TreeBuilder'))) {
                 continue;
             }
             if (!isset($methodCall->getArgs()[0])) {

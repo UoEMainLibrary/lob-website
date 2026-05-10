@@ -6,13 +6,13 @@ namespace Rector\CodeQuality\Rector\If_;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
-use PhpParser\Node\Expr\Throw_ as ExprThrow_;
+use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\Node\Stmt\Throw_;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\NodeManipulator\IfManipulator;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersionFeature;
@@ -26,20 +26,18 @@ final class ConsecutiveNullCompareReturnsToNullCoalesceQueueRector extends Abstr
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\IfManipulator
      */
-    private $ifManipulator;
+    private IfManipulator $ifManipulator;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(IfManipulator $ifManipulator, ValueResolver $valueResolver)
     {
         $this->ifManipulator = $ifManipulator;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change multiple null compares to ?? queue', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -72,14 +70,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -101,7 +99,7 @@ CODE_SAMPLE
             $ifKeys[] = $key;
         }
         // at least 2 coalescing nodes are needed
-        if (\count($coalescingExprs) < 2) {
+        if (count($coalescingExprs) < 2) {
             return null;
         }
         // remove last return null
@@ -109,7 +107,7 @@ CODE_SAMPLE
         $hasChanged = \false;
         $originalStmts = $node->stmts;
         foreach ($node->stmts as $key => $stmt) {
-            if (\in_array($key, $ifKeys, \true)) {
+            if (in_array($key, $ifKeys, \true)) {
                 unset($node->stmts[$key]);
                 $hasChanged = \true;
                 continue;
@@ -117,9 +115,9 @@ CODE_SAMPLE
             if (!$hasChanged) {
                 continue;
             }
-            if ($stmt instanceof Throw_) {
+            if ($stmt instanceof Expression && $stmt->expr instanceof Throw_) {
                 unset($node->stmts[$key]);
-                $appendExpr = new ExprThrow_($stmt->expr);
+                $appendExpr = $stmt->expr;
                 continue;
             }
             if (!$this->isReturnNull($stmt)) {
@@ -129,18 +127,18 @@ CODE_SAMPLE
                     continue;
                 }
                 $node->stmts = $originalStmts;
-                return $node;
+                return null;
             }
             unset($node->stmts[$key]);
         }
-        $node->stmts[] = $this->createCealesceReturn($coalescingExprs, $appendExpr);
+        $node->stmts[] = $this->createCoalesceReturn($coalescingExprs, $appendExpr);
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::NULL_COALESCE;
     }
-    private function isReturnNull(Stmt $stmt) : bool
+    private function isReturnNull(Stmt $stmt): bool
     {
         if (!$stmt instanceof Return_) {
             return \false;
@@ -153,12 +151,12 @@ CODE_SAMPLE
     /**
      * @param Expr[] $coalescingExprs
      */
-    private function createCealesceReturn(array $coalescingExprs, ?Expr $appendExpr) : Return_
+    private function createCoalesceReturn(array $coalescingExprs, ?Expr $appendExpr): Return_
     {
         /** @var Expr $leftExpr */
-        $leftExpr = \array_shift($coalescingExprs);
+        $leftExpr = array_shift($coalescingExprs);
         /** @var Expr $rightExpr */
-        $rightExpr = \array_shift($coalescingExprs);
+        $rightExpr = array_shift($coalescingExprs);
         $coalesce = new Coalesce($leftExpr, $rightExpr);
         foreach ($coalescingExprs as $coalescingExpr) {
             $coalesce = new Coalesce($coalesce, $coalescingExpr);

@@ -5,11 +5,12 @@
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
 declare (strict_types=1);
-namespace RectorPrefix202411\Nette\Utils;
+namespace RectorPrefix202604\Nette\Utils;
 
-use RectorPrefix202411\JetBrains\PhpStorm\Language;
-use RectorPrefix202411\Nette;
-use function is_array, is_int, is_object, count;
+use RectorPrefix202604\JetBrains\PhpStorm\Language;
+use RectorPrefix202604\Nette;
+use function array_combine, array_intersect_key, array_is_list, array_key_exists, array_key_first, array_key_last, array_keys, array_reverse, array_search, array_slice, array_walk_recursive, count, func_num_args, in_array, is_array, is_int, is_object, key, preg_split;
+use const PREG_GREP_INVERT, PREG_SPLIT_DELIM_CAPTURE, PREG_SPLIT_NO_EMPTY;
 /**
  * Array tools library.
  */
@@ -28,10 +29,10 @@ class Arrays
     public static function get(array $array, $key, $default = null)
     {
         foreach (is_array($key) ? $key : [$key] as $k) {
-            if (is_array($array) && \array_key_exists($k, $array)) {
+            if (is_array($array) && array_key_exists($k, $array)) {
                 $array = $array[$k];
             } else {
-                if (\func_num_args() < 3) {
+                if (func_num_args() < 3) {
                     throw new Nette\InvalidArgumentException("Missing item '{$k}'.");
                 }
                 return $default;
@@ -66,12 +67,12 @@ class Arrays
      * @template T2
      * @param  array<T1>  $array1
      * @param  array<T2>  $array2
-     * @return array<T1|T2>
+     * @return array<T1|T2|array<mixed>>
      */
-    public static function mergeTree(array $array1, array $array2) : array
+    public static function mergeTree(array $array1, array $array2): array
     {
         $res = $array1 + $array2;
-        foreach (\array_intersect_key($array1, $array2) as $k => $v) {
+        foreach (array_intersect_key($array1, $array2) as $k => $v) {
             if (is_array($v) && is_array($array2[$k])) {
                 $res[$k] = self::mergeTree($v, $array2[$k]);
             }
@@ -80,34 +81,40 @@ class Arrays
     }
     /**
      * Returns zero-indexed position of given array key. Returns null if key is not found.
+     * @param  array<mixed>  $array
      * @param string|int $key
      */
-    public static function getKeyOffset(array $array, $key) : ?int
+    public static function getKeyOffset(array $array, $key): ?int
     {
-        return Helpers::falseToNull(\array_search(self::toKey($key), \array_keys($array), \true));
+        return Helpers::falseToNull(array_search(self::toKey($key), array_keys($array), \true));
     }
     /**
+     * @param  array<mixed>  $array
      * @deprecated  use  getKeyOffset()
+     * @param string|int $key
      */
-    public static function searchKey(array $array, $key) : ?int
+    public static function searchKey(array $array, $key): ?int
     {
         return self::getKeyOffset($array, $key);
     }
     /**
      * Tests an array for the presence of value.
+     * @param  array<mixed>  $array
      * @param mixed $value
      */
-    public static function contains(array $array, $value) : bool
+    public static function contains(array $array, $value): bool
     {
-        return \in_array($value, $array, \true);
+        return in_array($value, $array, \true);
     }
     /**
      * Returns the first item (matching the specified predicate if given). If there is no such item, it returns result of invoking $else or null.
      * @template K of int|string
      * @template V
+     * @template E
      * @param  array<K, V>  $array
      * @param  ?callable(V, K, array<K, V>): bool  $predicate
-     * @return ?V
+     * @param  ?callable(): E  $else
+     * @return ($else is null ? ?V : V|E)
      */
     public static function first(array $array, ?callable $predicate = null, ?callable $else = null)
     {
@@ -118,9 +125,11 @@ class Arrays
      * Returns the last item (matching the specified predicate if given). If there is no such item, it returns result of invoking $else or null.
      * @template K of int|string
      * @template V
+     * @template E
      * @param  array<K, V>  $array
      * @param  ?callable(V, K, array<K, V>): bool  $predicate
-     * @return ?V
+     * @param  ?callable(): E  $else
+     * @return ($else is null ? ?V : V|E)
      */
     public static function last(array $array, ?callable $predicate = null, ?callable $else = null)
     {
@@ -138,8 +147,7 @@ class Arrays
     public static function firstKey(array $array, ?callable $predicate = null)
     {
         if (!$predicate) {
-            \reset($array);
-            return \key($array);
+            return array_key_first($array);
         }
         foreach ($array as $k => $v) {
             if ($predicate($v, $k, $array)) {
@@ -158,46 +166,50 @@ class Arrays
      */
     public static function lastKey(array $array, ?callable $predicate = null)
     {
-        \end($array);
-        return $predicate ? self::firstKey(\array_reverse($array, \true), $predicate) : \key($array);
+        return $predicate ? self::firstKey(array_reverse($array, \true), $predicate) : array_key_last($array);
     }
     /**
      * Inserts the contents of the $inserted array into the $array immediately after the $key.
      * If $key is null (or does not exist), it is inserted at the beginning.
+     * @param  array<mixed>  $array
+     * @param  array<mixed>  $inserted
      * @param string|int|null $key
      */
-    public static function insertBefore(array &$array, $key, array $inserted) : void
+    public static function insertBefore(array &$array, $key, array $inserted): void
     {
         $offset = $key === null ? 0 : (int) self::getKeyOffset($array, $key);
-        $array = \array_slice($array, 0, $offset, \true) + $inserted + \array_slice($array, $offset, count($array), \true);
+        $array = array_slice($array, 0, $offset, \true) + $inserted + array_slice($array, $offset, count($array), \true);
     }
     /**
      * Inserts the contents of the $inserted array into the $array before the $key.
      * If $key is null (or does not exist), it is inserted at the end.
+     * @param  array<mixed>  $array
+     * @param  array<mixed>  $inserted
      * @param string|int|null $key
      */
-    public static function insertAfter(array &$array, $key, array $inserted) : void
+    public static function insertAfter(array &$array, $key, array $inserted): void
     {
         if ($key === null || ($offset = self::getKeyOffset($array, $key)) === null) {
             $offset = count($array) - 1;
         }
-        $array = \array_slice($array, 0, $offset + 1, \true) + $inserted + \array_slice($array, $offset + 1, count($array), \true);
+        $array = array_slice($array, 0, $offset + 1, \true) + $inserted + array_slice($array, $offset + 1, count($array), \true);
     }
     /**
      * Renames key in array.
+     * @param  array<mixed>  $array
      * @param string|int $oldKey
      * @param string|int $newKey
      */
-    public static function renameKey(array &$array, $oldKey, $newKey) : bool
+    public static function renameKey(array &$array, $oldKey, $newKey): bool
     {
         $offset = self::getKeyOffset($array, $oldKey);
         if ($offset === null) {
             return \false;
         }
         $val =& $array[$oldKey];
-        $keys = \array_keys($array);
+        $keys = array_keys($array);
         $keys[$offset] = $newKey;
-        $array = \array_combine($keys, $array);
+        $array = array_combine($keys, $array);
         $array[$newKey] =& $val;
         return \true;
     }
@@ -214,23 +226,25 @@ class Arrays
          */
         string $pattern,
         $invert = \false
-    ) : array
+    ): array
     {
-        $flags = $invert ? \PREG_GREP_INVERT : 0;
+        $flags = $invert ? PREG_GREP_INVERT : 0;
         return Strings::pcre('preg_grep', [$pattern, $array, $flags]);
     }
     /**
      * Transforms multidimensional array to flat array.
+     * @param  array<mixed>  $array
+     * @return array<mixed>
      */
-    public static function flatten(array $array, bool $preserveKeys = \false) : array
+    public static function flatten(array $array, bool $preserveKeys = \false): array
     {
         $res = [];
-        $cb = $preserveKeys ? function ($v, $k) use(&$res) : void {
+        $cb = $preserveKeys ? function ($v, $k) use (&$res): void {
             $res[$k] = $v;
-        } : function ($v) use(&$res) : void {
+        } : function ($v) use (&$res): void {
             $res[] = $v;
         };
-        \array_walk_recursive($array, $cb);
+        array_walk_recursive($array, $cb);
         return $res;
     }
     /**
@@ -238,11 +252,11 @@ class Arrays
      * @return ($value is list ? true : false)
      * @param mixed $value
      */
-    public static function isList($value) : bool
+    public static function isList($value): bool
     {
-        $arrayIsListFunction = function (array $array) : bool {
-            if (\function_exists('array_is_list')) {
-                return \array_is_list($array);
+        $arrayIsListFunction = function (array $array): bool {
+            if (function_exists('array_is_list')) {
+                return array_is_list($array);
             }
             if ($array === []) {
                 return \true;
@@ -256,18 +270,19 @@ class Arrays
             }
             return \true;
         };
-        return is_array($value) && (\PHP_VERSION_ID < 80100 ? !$value || \array_keys($value) === \range(0, count($value) - 1) : $arrayIsListFunction($value));
+        return is_array($value) && $arrayIsListFunction($value);
     }
     /**
      * Reformats table to associative tree. Path looks like 'field|field[]field->field=field'.
-     * @param  string|string[]  $path
-     * @return mixed[]|\stdClass
+     * @param  array<mixed>  $array
+     * @param  string|list<string>  $path
+     * @return array<mixed>|\stdClass
      */
     public static function associate(array $array, $path)
     {
-        $parts = is_array($path) ? $path : \preg_split('#(\\[\\]|->|=|\\|)#', $path, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+        $parts = is_array($path) ? $path : preg_split('#(\[\]|->|=|\|)#', $path, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
         if (!$parts || $parts === ['->'] || $parts[0] === '=' || $parts[0] === '|') {
-            throw new Nette\InvalidArgumentException("Invalid path '{$path}'.");
+            throw new Nette\InvalidArgumentException("Invalid path '" . (is_array($path) ? implode('', $path) : $path) . "'.");
         }
         $res = $parts[0] === '->' ? new \stdClass() : [];
         foreach ($array as $rowOrig) {
@@ -282,6 +297,8 @@ class Arrays
                         $x = $row[$parts[$i]];
                         $row = null;
                     }
+                    break;
+                    // '=' is always the final operation
                 } elseif ($part === '->') {
                     if (isset($parts[++$i])) {
                         if ($x === null) {
@@ -303,9 +320,11 @@ class Arrays
     }
     /**
      * Normalizes array to associative array. Replace numeric keys with their values, the new value will be $filling.
+     * @param  array<mixed>  $array
+     * @return array<string, mixed>
      * @param mixed $filling
      */
-    public static function normalize(array $array, $filling = null) : array
+    public static function normalize(array $array, $filling = null): array
     {
         $res = [];
         foreach ($array as $k => $v) {
@@ -325,11 +344,11 @@ class Arrays
      */
     public static function pick(array &$array, $key, $default = null)
     {
-        if (\array_key_exists($key, $array)) {
+        if (array_key_exists($key, $array)) {
             $value = $array[$key];
             unset($array[$key]);
             return $value;
-        } elseif (\func_num_args() < 3) {
+        } elseif (func_num_args() < 3) {
             throw new Nette\InvalidArgumentException("Missing item '{$key}'.");
         } else {
             return $default;
@@ -342,7 +361,7 @@ class Arrays
      * @param  array<K, V>  $array
      * @param  callable(V, K, array<K, V>): bool  $predicate
      */
-    public static function some(iterable $array, callable $predicate) : bool
+    public static function some(iterable $array, callable $predicate): bool
     {
         foreach ($array as $k => $v) {
             if ($predicate($v, $k, $array)) {
@@ -358,7 +377,7 @@ class Arrays
      * @param  array<K, V>  $array
      * @param  callable(V, K, array<K, V>): bool  $predicate
      */
-    public static function every(iterable $array, callable $predicate) : bool
+    public static function every(iterable $array, callable $predicate): bool
     {
         foreach ($array as $k => $v) {
             if (!$predicate($v, $k, $array)) {
@@ -375,7 +394,7 @@ class Arrays
      * @param  callable(V, K, array<K, V>): bool  $predicate
      * @return array<K, V>
      */
-    public static function filter(array $array, callable $predicate) : array
+    public static function filter(array $array, callable $predicate): array
     {
         $res = [];
         foreach ($array as $k => $v) {
@@ -394,7 +413,7 @@ class Arrays
      * @param  callable(V, K, array<K, V>): R  $transformer
      * @return array<K, R>
      */
-    public static function map(iterable $array, callable $transformer) : array
+    public static function map(iterable $array, callable $transformer): array
     {
         $res = [];
         foreach ($array as $k => $v) {
@@ -413,7 +432,7 @@ class Arrays
      * @param  callable(V, K, array<K, V>): ?array{ResK, ResV}  $transformer
      * @return array<ResK, ResV>
      */
-    public static function mapWithKeys(array $array, callable $transformer) : array
+    public static function mapWithKeys(array $array, callable $transformer): array
     {
         $res = [];
         foreach ($array as $k => $v) {
@@ -427,8 +446,10 @@ class Arrays
     /**
      * Invokes all callbacks and returns array of results.
      * @param  callable[]  $callbacks
+     * @return array<mixed>
+     * @param mixed ...$args
      */
-    public static function invoke(iterable $callbacks, ...$args) : array
+    public static function invoke(iterable $callbacks, ...$args): array
     {
         $res = [];
         foreach ($callbacks as $k => $cb) {
@@ -439,8 +460,10 @@ class Arrays
     /**
      * Invokes method on every object in an array and returns array of results.
      * @param  object[]  $objects
+     * @return array<mixed>
+     * @param mixed ...$args
      */
-    public static function invokeMethod(iterable $objects, string $method, ...$args) : array
+    public static function invokeMethod(iterable $objects, string $method, ...$args): array
     {
         $res = [];
         foreach ($objects as $k => $obj) {
@@ -451,10 +474,11 @@ class Arrays
     /**
      * Copies the elements of the $array array to the $object object and then returns it.
      * @template T of object
+     * @param  iterable<mixed>  $array
      * @param  T  $object
      * @return T
      */
-    public static function toObject(iterable $array, object $object) : object
+    public static function toObject(iterable $array, object $object): object
     {
         foreach ($array as $k => $v) {
             $object->{$k} = $v;
@@ -468,7 +492,7 @@ class Arrays
      */
     public static function toKey($value)
     {
-        return \key([$value => null]);
+        return key(@[$value => null]);
     }
     /**
      * Returns copy of the $array where every item is converted to string
@@ -476,7 +500,7 @@ class Arrays
      * @param  string[]  $array
      * @return string[]
      */
-    public static function wrap(array $array, string $prefix = '', string $suffix = '') : array
+    public static function wrap(array $array, string $prefix = '', string $suffix = ''): array
     {
         $res = [];
         foreach ($array as $k => $v) {

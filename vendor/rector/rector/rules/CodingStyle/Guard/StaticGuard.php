@@ -15,14 +15,12 @@ final class StaticGuard
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(BetterNodeFinder $betterNodeFinder, ReflectionResolver $reflectionResolver)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -31,13 +29,13 @@ final class StaticGuard
     /**
      * @param \PhpParser\Node\Expr\Closure|\PhpParser\Node\Expr\ArrowFunction $node
      */
-    public function isLegal($node) : bool
+    public function isLegal($node): bool
     {
         if ($node->static) {
             return \false;
         }
         $nodes = $node instanceof Closure ? $node->stmts : [$node->expr];
-        return !(bool) $this->betterNodeFinder->findFirst($nodes, function (Node $subNode) : bool {
+        return !(bool) $this->betterNodeFinder->findFirst($nodes, function (Node $subNode): bool {
             if (!$subNode instanceof StaticCall) {
                 return $subNode instanceof Variable && $subNode->name === 'this';
             }

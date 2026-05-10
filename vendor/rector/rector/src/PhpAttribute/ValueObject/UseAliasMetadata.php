@@ -3,40 +3,37 @@
 declare (strict_types=1);
 namespace Rector\PhpAttribute\ValueObject;
 
-use PhpParser\Node\Stmt\UseUse;
+use PhpParser\Node\UseItem;
 final class UseAliasMetadata
 {
     /**
      * @readonly
-     * @var string
      */
-    private $shortAttributeName;
+    private string $shortAttributeName;
     /**
      * @readonly
-     * @var string
      */
-    private $useImportName;
+    private string $useImportName;
     /**
      * @readonly
-     * @var \PhpParser\Node\Stmt\UseUse
      */
-    private $useUse;
-    public function __construct(string $shortAttributeName, string $useImportName, UseUse $useUse)
+    private UseItem $useItem;
+    public function __construct(string $shortAttributeName, string $useImportName, UseItem $useItem)
     {
         $this->shortAttributeName = $shortAttributeName;
         $this->useImportName = $useImportName;
-        $this->useUse = $useUse;
+        $this->useItem = $useItem;
     }
-    public function getShortAttributeName() : string
+    public function getShortAttributeName(): string
     {
         return $this->shortAttributeName;
     }
-    public function getUseImportName() : string
+    public function getUseImportName(): string
     {
         return $this->useImportName;
     }
-    public function getUseUse() : UseUse
+    public function getUseUse(): UseItem
     {
-        return $this->useUse;
+        return $this->useItem;
     }
 }

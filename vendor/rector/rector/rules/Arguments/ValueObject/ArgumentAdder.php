@@ -10,24 +10,20 @@ final class ArgumentAdder
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     /**
      * @readonly
-     * @var int
      */
-    private $position;
+    private int $position;
     /**
      * @readonly
-     * @var string|null
      */
-    private $argumentName;
+    private ?string $argumentName = null;
     /**
      * @var mixed|null
      */
@@ -39,9 +35,8 @@ final class ArgumentAdder
     private $argumentType = null;
     /**
      * @readonly
-     * @var string|null
      */
-    private $scope;
+    private ?string $scope = null;
     /**
      * @param mixed|null $argumentDefaultValue
      */
@@ -56,19 +51,19 @@ final class ArgumentAdder
         $this->scope = $scope;
         RectorAssert::className($class);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->class);
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getPosition() : int
+    public function getPosition(): int
     {
         return $this->position;
     }
-    public function getArgumentName() : ?string
+    public function getArgumentName(): ?string
     {
         return $this->argumentName;
     }
@@ -79,11 +74,11 @@ final class ArgumentAdder
     {
         return $this->argumentDefaultValue;
     }
-    public function getArgumentType() : ?Type
+    public function getArgumentType(): ?Type
     {
         return $this->argumentType;
     }
-    public function getScope() : ?string
+    public function getScope(): ?string
     {
         return $this->scope;
     }

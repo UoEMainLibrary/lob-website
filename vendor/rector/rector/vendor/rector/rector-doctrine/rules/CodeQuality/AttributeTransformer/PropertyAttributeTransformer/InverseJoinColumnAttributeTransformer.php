@@ -15,9 +15,8 @@ final class InverseJoinColumnAttributeTransformer implements PropertyAttributeTr
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     public function __construct(NodeFactory $nodeFactory)
     {
         $this->nodeFactory = $nodeFactory;
@@ -25,21 +24,22 @@ final class InverseJoinColumnAttributeTransformer implements PropertyAttributeTr
     /**
      * @param \PhpParser\Node\Stmt\Property|\PhpParser\Node\Param $property
      */
-    public function transform(EntityMapping $entityMapping, $property) : void
+    public function transform(EntityMapping $entityMapping, $property): bool
     {
         $joinTableMapping = $entityMapping->matchManyToManyPropertyMapping($property)['joinTable'] ?? null;
-        if (!\is_array($joinTableMapping)) {
-            return;
+        if (!is_array($joinTableMapping)) {
+            return \false;
         }
         $joinColumns = $joinTableMapping['inverseJoinColumns'] ?? null;
-        if (!\is_array($joinColumns)) {
-            return;
+        if (!is_array($joinColumns)) {
+            return \false;
         }
         foreach ($joinColumns as $columnName => $joinColumn) {
             $property->attrGroups[] = $this->createInverseJoinColumnAttrGroup($columnName, $joinColumn);
         }
+        return \true;
     }
-    public function getClassName() : string
+    public function getClassName(): string
     {
         return MappingClass::INVERSE_JOIN_COLUMN;
     }
@@ -47,9 +47,9 @@ final class InverseJoinColumnAttributeTransformer implements PropertyAttributeTr
      * @param int|string $columnName
      * @param mixed $joinColumn
      */
-    private function createInverseJoinColumnAttrGroup($columnName, $joinColumn) : AttributeGroup
+    private function createInverseJoinColumnAttrGroup($columnName, $joinColumn): AttributeGroup
     {
-        $joinColumn = \array_merge(['name' => $columnName], $joinColumn);
+        $joinColumn = array_merge(['name' => $columnName], $joinColumn);
         $args = $this->nodeFactory->createArgs($joinColumn);
         return AttributeFactory::createGroup($this->getClassName(), $args);
     }

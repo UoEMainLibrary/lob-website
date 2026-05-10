@@ -1,0 +1,10 @@
+parameters:
+	level: 6
+	paths:
+		- config
+		- src
+		- rector.php
+	dynamicConstantNames:
+		- Drupal::VERSION
+includes:
+	- phpstan-1-baseline.neon

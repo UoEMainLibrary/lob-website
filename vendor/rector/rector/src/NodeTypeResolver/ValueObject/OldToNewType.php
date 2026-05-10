@@ -8,24 +8,22 @@ final class OldToNewType
 {
     /**
      * @readonly
-     * @var \PHPStan\Type\Type
      */
-    private $oldType;
+    private Type $oldType;
     /**
      * @readonly
-     * @var \PHPStan\Type\Type
      */
-    private $newType;
+    private Type $newType;
     public function __construct(Type $oldType, Type $newType)
     {
         $this->oldType = $oldType;
         $this->newType = $newType;
     }
-    public function getOldType() : Type
+    public function getOldType(): Type
     {
         return $this->oldType;
     }
-    public function getNewType() : Type
+    public function getNewType(): Type
     {
         return $this->newType;
     }

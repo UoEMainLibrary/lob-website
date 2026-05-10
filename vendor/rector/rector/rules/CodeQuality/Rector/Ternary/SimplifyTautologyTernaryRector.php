@@ -19,37 +19,32 @@ final class SimplifyTautologyTernaryRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\BinaryOpManipulator
      */
-    private $binaryOpManipulator;
+    private BinaryOpManipulator $binaryOpManipulator;
     public function __construct(BinaryOpManipulator $binaryOpManipulator)
     {
         $this->binaryOpManipulator = $binaryOpManipulator;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Simplify tautology ternary to value', [new CodeSample('$value = ($fullyQualifiedTypeHint !== $typeHint) ? $fullyQualifiedTypeHint : $typeHint;', '$value = $fullyQualifiedTypeHint;')]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Ternary::class];
     }
     /**
      * @param Ternary $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->cond instanceof NotIdentical && !$node->cond instanceof Identical) {
             return null;
         }
-        $twoNodeMatch = $this->binaryOpManipulator->matchFirstAndSecondConditionNode($node->cond, function (Node $leftNode) use($node) : bool {
-            return $this->nodeComparator->areNodesEqual($leftNode, $node->if);
-        }, function (Node $leftNode) use($node) : bool {
-            return $this->nodeComparator->areNodesEqual($leftNode, $node->else);
-        });
+        $twoNodeMatch = $this->binaryOpManipulator->matchFirstAndSecondConditionNode($node->cond, fn(Node $leftNode): bool => $this->nodeComparator->areNodesEqual($leftNode, $node->if), fn(Node $leftNode): bool => $this->nodeComparator->areNodesEqual($leftNode, $node->else));
         if (!$twoNodeMatch instanceof TwoNodeMatch) {
             return null;
         }

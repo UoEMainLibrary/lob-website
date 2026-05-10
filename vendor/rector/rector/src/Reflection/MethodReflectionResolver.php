@@ -10,9 +10,8 @@ final class MethodReflectionResolver
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(ReflectionProvider $reflectionProvider)
     {
         $this->reflectionProvider = $reflectionProvider;
@@ -20,7 +19,7 @@ final class MethodReflectionResolver
     /**
      * @param class-string $className
      */
-    public function resolveMethodReflection(string $className, string $methodName, ?Scope $scope) : ?MethodReflection
+    public function resolveMethodReflection(string $className, string $methodName, ?Scope $scope): ?MethodReflection
     {
         if (!$this->reflectionProvider->hasClass($className)) {
             return null;

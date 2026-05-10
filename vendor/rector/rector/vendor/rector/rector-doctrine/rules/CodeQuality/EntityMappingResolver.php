@@ -5,21 +5,20 @@ namespace Rector\Doctrine\CodeQuality;
 
 use PHPStan\Reflection\ReflectionProvider;
 use Rector\Doctrine\CodeQuality\ValueObject\EntityMapping;
-use RectorPrefix202411\Symfony\Component\Finder\Finder;
-use RectorPrefix202411\Symfony\Component\Finder\SplFileInfo;
-use RectorPrefix202411\Symfony\Component\Yaml\Yaml;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Symfony\Component\Finder\Finder;
+use RectorPrefix202604\Symfony\Component\Finder\SplFileInfo;
+use RectorPrefix202604\Symfony\Component\Yaml\Yaml;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 final class EntityMappingResolver
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @var EntityMapping[]
      */
-    private $entityMappings = [];
+    private array $entityMappings = [];
     public function __construct(ReflectionProvider $reflectionProvider)
     {
         $this->reflectionProvider = $reflectionProvider;
@@ -28,7 +27,7 @@ final class EntityMappingResolver
      * @param string[] $yamlMappingDirectories
      * @return EntityMapping[]
      */
-    public function resolveFromDirectories(array $yamlMappingDirectories) : array
+    public function resolveFromDirectories(array $yamlMappingDirectories): array
     {
         Assert::allString($yamlMappingDirectories);
         if ($this->entityMappings !== []) {
@@ -44,20 +43,20 @@ final class EntityMappingResolver
      * @param string[] $yamlMappingDirectories
      * @return SplFileInfo[]
      */
-    private function findYamlFileInfos(array $yamlMappingDirectories) : array
+    private function findYamlFileInfos(array $yamlMappingDirectories): array
     {
         Assert::notEmpty($yamlMappingDirectories);
         Assert::allString($yamlMappingDirectories);
         Assert::allFileExists($yamlMappingDirectories);
         $finder = new Finder();
-        $finder->files()->name('#\\.(yml|yaml)$#')->in($yamlMappingDirectories)->notPath('DataFixtures')->getIterator();
-        return \iterator_to_array($finder->getIterator());
+        $finder->files()->name('#\.(yml|yaml)$#')->in($yamlMappingDirectories)->notPath('DataFixtures')->getIterator();
+        return iterator_to_array($finder->getIterator());
     }
     /**
      * @param SplFileInfo[] $yamlFileInfos
      * @return EntityMapping[]
      */
-    private function createEntityMappingsFromYamlFileInfos(array $yamlFileInfos) : array
+    private function createEntityMappingsFromYamlFileInfos(array $yamlFileInfos): array
     {
         Assert::allIsInstanceOf($yamlFileInfos, SplFileInfo::class);
         $entityMappings = [];
@@ -66,7 +65,7 @@ final class EntityMappingResolver
             $yaml = Yaml::parse($yamlFileInfo->getContents());
             foreach ($yaml as $key => $value) {
                 // for tests
-                if (!$this->reflectionProvider->hasClass($key) && \strpos((string) $key, 'Rector\\Doctrine\\Tests\\CodeQuality') === \false) {
+                if (!$this->reflectionProvider->hasClass($key) && strpos((string) $key, 'Rector\Doctrine\Tests\CodeQuality') === \false) {
                     continue;
                 }
                 $entityMappings[] = new EntityMapping($key, $value);

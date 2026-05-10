@@ -5,8 +5,8 @@ namespace Rector\Symfony\Symfony62\Rector\MethodCall;
 
 use PhpParser\Node;
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PHPStan\Type\ObjectType;
 use Rector\Rector\AbstractRector;
@@ -20,14 +20,13 @@ final class SimplifyFormRenderingRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\TypeAnalyzer\ControllerAnalyzer
      */
-    private $controllerAnalyzer;
+    private ControllerAnalyzer $controllerAnalyzer;
     public function __construct(ControllerAnalyzer $controllerAnalyzer)
     {
         $this->controllerAnalyzer = $controllerAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Symplify form rendering by not calling `->createView()` on `render` function', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -60,14 +59,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->controllerAnalyzer->isController($node->var)) {
             return null;
@@ -94,24 +93,21 @@ CODE_SAMPLE
         return $node;
     }
     /**
-     * @param ArrayItem[]|null[] $arrayItems
+     * @param ArrayItem[]$arrayItems
      *
-     * @return array<ArrayItem|null>|null
+     * @return array<(ArrayItem)>|null
      */
-    private function processRemoveCreateView(array $arrayItems) : ?array
+    private function processRemoveCreateView(array $arrayItems): ?array
     {
         $replaced = \false;
         foreach ($arrayItems as $arrayItem) {
-            if (!$arrayItem instanceof ArrayItem) {
-                continue;
-            }
             if (!$arrayItem->value instanceof MethodCall) {
                 continue;
             }
             if (!$this->isName($arrayItem->value->name, 'createView')) {
                 continue;
             }
-            if (!$this->isObjectType($arrayItem->value->var, new ObjectType('Symfony\\Component\\Form\\FormInterface'))) {
+            if (!$this->isObjectType($arrayItem->value->var, new ObjectType('Symfony\Component\Form\FormInterface'))) {
                 continue;
             }
             $replaced = \true;

@@ -8,25 +8,23 @@ final class RemoveFuncCallArg
 {
     /**
      * @readonly
-     * @var string
      */
-    private $function;
+    private string $function;
     /**
      * @readonly
-     * @var int
      */
-    private $argumentPosition;
+    private int $argumentPosition;
     public function __construct(string $function, int $argumentPosition)
     {
         $this->function = $function;
         $this->argumentPosition = $argumentPosition;
         RectorAssert::functionName($function);
     }
-    public function getFunction() : string
+    public function getFunction(): string
     {
         return $this->function;
     }
-    public function getArgumentPosition() : int
+    public function getArgumentPosition(): int
     {
         return $this->argumentPosition;
     }

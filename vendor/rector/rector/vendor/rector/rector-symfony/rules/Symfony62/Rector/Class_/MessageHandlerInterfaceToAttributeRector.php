@@ -5,10 +5,11 @@ namespace Rector\Symfony\Symfony62\Rector\Class_;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
+use PHPStan\Reflection\ReflectionProvider;
+use PHPStan\Type\ObjectType;
 use Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer;
 use Rector\Rector\AbstractRector;
 use Rector\Symfony\Helper\MessengerHelper;
-use Rector\Symfony\NodeAnalyzer\ClassAnalyzer;
 use Rector\Symfony\NodeManipulator\ClassManipulator;
 use Rector\Symfony\ValueObject\ServiceDefinition;
 use Rector\ValueObject\PhpVersionFeature;
@@ -22,36 +23,32 @@ final class MessageHandlerInterfaceToAttributeRector extends AbstractRector impl
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\Helper\MessengerHelper
      */
-    private $messengerHelper;
+    private MessengerHelper $messengerHelper;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeManipulator\ClassManipulator
      */
-    private $classManipulator;
+    private ClassManipulator $classManipulator;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\ClassAnalyzer
      */
-    private $classAnalyzer;
+    private PhpAttributeAnalyzer $phpAttributeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer
      */
-    private $phpAttributeAnalyzer;
-    public function __construct(MessengerHelper $messengerHelper, ClassManipulator $classManipulator, ClassAnalyzer $classAnalyzer, PhpAttributeAnalyzer $phpAttributeAnalyzer)
+    private ReflectionProvider $reflectionProvider;
+    public function __construct(MessengerHelper $messengerHelper, ClassManipulator $classManipulator, PhpAttributeAnalyzer $phpAttributeAnalyzer, ReflectionProvider $reflectionProvider)
     {
         $this->messengerHelper = $messengerHelper;
         $this->classManipulator = $classManipulator;
-        $this->classAnalyzer = $classAnalyzer;
         $this->phpAttributeAnalyzer = $phpAttributeAnalyzer;
+        $this->reflectionProvider = $reflectionProvider;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::ATTRIBUTES;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replaces MessageHandlerInterface with AsMessageHandler attribute', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
@@ -81,19 +78,24 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        if (!$this->reflectionProvider->hasClass(MessengerHelper::AS_MESSAGE_HANDLER_ATTRIBUTE)) {
+            return null;
+        }
         if ($this->phpAttributeAnalyzer->hasPhpAttribute($node, MessengerHelper::AS_MESSAGE_HANDLER_ATTRIBUTE)) {
             return null;
         }
-        if (!$this->classAnalyzer->hasImplements($node, MessengerHelper::MESSAGE_HANDLER_INTERFACE)) {
+        $classType = $this->getType($node);
+        $messageHandlerObjectType = new ObjectType(MessengerHelper::MESSAGE_HANDLER_INTERFACE);
+        if (!$messageHandlerObjectType->isSuperTypeOf($classType)->yes()) {
             $handlers = $this->messengerHelper->getHandlersFromServices();
             if ($handlers === []) {
                 return null;
@@ -101,12 +103,16 @@ CODE_SAMPLE
             return $this->checkForServices($node, $handlers);
         }
         $this->classManipulator->removeImplements($node, [MessengerHelper::MESSAGE_HANDLER_INTERFACE]);
+        // no need to add the attribute
+        if ($node->isAbstract()) {
+            return $node;
+        }
         return $this->messengerHelper->addAttribute($node);
     }
     /**
      * @param ServiceDefinition[] $handlers
      */
-    private function checkForServices(Class_ $class, array $handlers) : ?Class_
+    private function checkForServices(Class_ $class, array $handlers): ?Class_
     {
         $hasChanged = \false;
         foreach ($handlers as $handler) {

@@ -10,14 +10,13 @@ final class ParamAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function getParamByName(string $desiredParamName, FunctionLike $functionLike) : ?Param
+    public function getParamByName(string $desiredParamName, FunctionLike $functionLike): ?Param
     {
         foreach ($functionLike->getParams() as $param) {
             $paramName = $this->nodeNameResolver->getName($param);

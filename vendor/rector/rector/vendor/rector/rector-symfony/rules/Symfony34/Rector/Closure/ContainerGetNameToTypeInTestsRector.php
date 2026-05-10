@@ -22,22 +22,20 @@ final class ContainerGetNameToTypeInTestsRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\ServiceTypeMethodCallResolver
      */
-    private $serviceTypeMethodCallResolver;
+    private ServiceTypeMethodCallResolver $serviceTypeMethodCallResolver;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer, ServiceTypeMethodCallResolver $serviceTypeMethodCallResolver)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
         $this->serviceTypeMethodCallResolver = $serviceTypeMethodCallResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Change $container->get("some_name") to bare type, useful since Symfony 3.4', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Change $container->get("some_name") in tests to bare type, useful since Symfony 3.4', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
 
 final class SomeTest extends TestCase
@@ -66,19 +64,19 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node->name, 'get')) {
             return null;
         }
-        if (!$this->isObjectType($node->var, new ObjectType('Symfony\\Component\\DependencyInjection\\ContainerInterface'))) {
+        if (!$this->isObjectType($node->var, new ObjectType('Symfony\Component\DependencyInjection\ContainerInterface'))) {
             return null;
         }
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {

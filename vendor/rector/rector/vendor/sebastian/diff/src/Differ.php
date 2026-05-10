@@ -9,7 +9,7 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\SebastianBergmann\Diff;
+namespace RectorPrefix202604\SebastianBergmann\Diff;
 
 use const PHP_INT_SIZE;
 use const PREG_SPLIT_DELIM_CAPTURE;
@@ -28,36 +28,48 @@ use function prev;
 use function reset;
 use function str_ends_with;
 use function substr;
-use RectorPrefix202411\SebastianBergmann\Diff\Output\DiffOutputBuilderInterface;
+use RectorPrefix202604\SebastianBergmann\Diff\Output\DiffOutputBuilderInterface;
 final class Differ
 {
-    public const OLD = 0;
-    public const ADDED = 1;
-    public const REMOVED = 2;
-    public const DIFF_LINE_END_WARNING = 3;
-    public const NO_LINE_END_EOF_WARNING = 4;
     /**
-     * @var \SebastianBergmann\Diff\Output\DiffOutputBuilderInterface
+     * @var int
      */
-    private $outputBuilder;
+    public const OLD = 0;
+    /**
+     * @var int
+     */
+    public const ADDED = 1;
+    /**
+     * @var int
+     */
+    public const REMOVED = 2;
+    /**
+     * @var int
+     */
+    public const DIFF_LINE_END_WARNING = 3;
+    /**
+     * @var int
+     */
+    public const NO_LINE_END_EOF_WARNING = 4;
+    private DiffOutputBuilderInterface $outputBuilder;
     public function __construct(DiffOutputBuilderInterface $outputBuilder)
     {
         $this->outputBuilder = $outputBuilder;
     }
     /**
-     * @param mixed[]|string $from
-     * @param mixed[]|string $to
+     * @param list<string>|string $from
+     * @param list<string>|string $to
      */
-    public function diff($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null) : string
+    public function diff($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null): string
     {
         $diff = $this->diffToArray($from, $to, $lcs);
         return $this->outputBuilder->getDiff($diff);
     }
     /**
-     * @param mixed[]|string $from
-     * @param mixed[]|string $to
+     * @param list<string>|string $from
+     * @param list<string>|string $to
      */
-    public function diffToArray($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null) : array
+    public function diffToArray($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null): array
     {
         if (is_string($from)) {
             $from = $this->splitStringByLines($from);
@@ -77,10 +89,10 @@ final class Differ
         reset($from);
         reset($to);
         foreach ($common as $token) {
-            while (($fromToken = reset($from)) !== $token) {
+            while (reset($from) !== $token) {
                 $diff[] = [array_shift($from), self::REMOVED];
             }
-            while (($toToken = reset($to)) !== $token) {
+            while (reset($to) !== $token) {
                 $diff[] = [array_shift($to), self::ADDED];
             }
             $diff[] = [$token, self::OLD];
@@ -101,11 +113,11 @@ final class Differ
         }
         return $diff;
     }
-    private function splitStringByLines(string $input) : array
+    private function splitStringByLines(string $input): array
     {
-        return preg_split('/(.*\\R)/', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        return preg_split('/(.*\R)/', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
     }
-    private function selectLcsImplementation(array $from, array $to) : LongestCommonSubsequenceCalculator
+    private function selectLcsImplementation(array $from, array $to): LongestCommonSubsequenceCalculator
     {
         // We do not want to use the time-efficient implementation if its memory
         // footprint will probably exceed this value. Note that the footprint
@@ -117,15 +129,12 @@ final class Differ
         }
         return new TimeEfficientLongestCommonSubsequenceCalculator();
     }
-    /**
-     * @return float|int
-     */
-    private function calculateEstimatedFootprint(array $from, array $to)
+    private function calculateEstimatedFootprint(array $from, array $to): int
     {
         $itemSize = PHP_INT_SIZE === 4 ? 76 : 144;
         return $itemSize * min(count($from), count($to)) ** 2;
     }
-    private function detectUnmatchedLineEndings(array $diff) : bool
+    private function detectUnmatchedLineEndings(array $diff): bool
     {
         $newLineBreaks = ['' => \true];
         $oldLineBreaks = ['' => \true];
@@ -157,7 +166,7 @@ final class Differ
         }
         return \false;
     }
-    private function getLinebreak($line) : string
+    private function getLinebreak($line): string
     {
         if (!is_string($line)) {
             return '';
@@ -169,12 +178,12 @@ final class Differ
         if ("\n" !== $lc) {
             return '';
         }
-        if (\substr_compare($line, "\r\n", -\strlen("\r\n")) === 0) {
+        if (substr_compare($line, "\r\n", -strlen("\r\n")) === 0) {
             return "\r\n";
         }
         return "\n";
     }
-    private static function getArrayDiffParted(array &$from, array &$to) : array
+    private static function getArrayDiffParted(array &$from, array &$to): array
     {
         $start = [];
         $end = [];

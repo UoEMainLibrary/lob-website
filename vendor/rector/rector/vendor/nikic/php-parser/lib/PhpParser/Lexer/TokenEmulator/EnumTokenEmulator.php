@@ -3,23 +3,23 @@
 declare (strict_types=1);
 namespace PhpParser\Lexer\TokenEmulator;
 
-use PhpParser\Lexer\Emulative;
+use PhpParser\PhpVersion;
 final class EnumTokenEmulator extends \PhpParser\Lexer\TokenEmulator\KeywordEmulator
 {
-    public function getPhpVersion() : string
+    public function getPhpVersion(): PhpVersion
     {
-        return Emulative::PHP_8_1;
+        return PhpVersion::fromComponents(8, 1);
     }
-    public function getKeywordString() : string
+    public function getKeywordString(): string
     {
         return 'enum';
     }
-    public function getKeywordToken() : int
+    public function getKeywordToken(): int
     {
         return \T_ENUM;
     }
-    protected function isKeywordContext(array $tokens, int $pos) : bool
+    protected function isKeywordContext(array $tokens, int $pos): bool
     {
-        return parent::isKeywordContext($tokens, $pos) && isset($tokens[$pos + 2]) && $tokens[$pos + 1][0] === \T_WHITESPACE && $tokens[$pos + 2][0] === \T_STRING;
+        return parent::isKeywordContext($tokens, $pos) && isset($tokens[$pos + 2]) && $tokens[$pos + 1]->id === \T_WHITESPACE && $tokens[$pos + 2]->id === \T_STRING;
     }
 }

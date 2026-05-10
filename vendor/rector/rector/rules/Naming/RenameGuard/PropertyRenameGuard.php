@@ -12,31 +12,28 @@ final class PropertyRenameGuard
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\Naming\Guard\DateTimeAtNamingConventionGuard
      */
-    private $dateTimeAtNamingConventionGuard;
+    private DateTimeAtNamingConventionGuard $dateTimeAtNamingConventionGuard;
     /**
      * @readonly
-     * @var \Rector\Naming\Guard\HasMagicGetSetGuard
      */
-    private $hasMagicGetSetGuard;
+    private HasMagicGetSetGuard $hasMagicGetSetGuard;
     public function __construct(NodeTypeResolver $nodeTypeResolver, DateTimeAtNamingConventionGuard $dateTimeAtNamingConventionGuard, HasMagicGetSetGuard $hasMagicGetSetGuard)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
         $this->dateTimeAtNamingConventionGuard = $dateTimeAtNamingConventionGuard;
         $this->hasMagicGetSetGuard = $hasMagicGetSetGuard;
     }
-    public function shouldSkip(PropertyRename $propertyRename) : bool
+    public function shouldSkip(PropertyRename $propertyRename): bool
     {
         if (!$propertyRename->isPrivateProperty()) {
             return \true;
         }
-        if ($this->nodeTypeResolver->isObjectType($propertyRename->getProperty(), new ObjectType('Ramsey\\Uuid\\UuidInterface'))) {
+        if ($this->nodeTypeResolver->isObjectType($propertyRename->getProperty(), new ObjectType('Ramsey\Uuid\UuidInterface'))) {
             return \true;
         }
         if ($this->dateTimeAtNamingConventionGuard->isConflicting($propertyRename)) {

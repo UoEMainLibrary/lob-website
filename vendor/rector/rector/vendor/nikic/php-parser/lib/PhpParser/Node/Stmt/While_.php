@@ -4,18 +4,19 @@ declare (strict_types=1);
 namespace PhpParser\Node\Stmt;
 
 use PhpParser\Node;
-class While_ extends Node\Stmt implements \Rector\Contract\PhpParser\Node\StmtsAwareInterface
+use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
+class While_ extends Node\Stmt implements StmtsAwareInterface
 {
     /** @var Node\Expr Condition */
-    public $cond;
+    public Node\Expr $cond;
     /** @var Node\Stmt[] Statements */
-    public $stmts;
+    public array $stmts;
     /**
      * Constructs a while node.
      *
-     * @param Node\Expr   $cond       Condition
-     * @param Node\Stmt[] $stmts      Statements
-     * @param array       $attributes Additional attributes
+     * @param Node\Expr $cond Condition
+     * @param Node\Stmt[] $stmts Statements
+     * @param array<string, mixed> $attributes Additional attributes
      */
     public function __construct(Node\Expr $cond, array $stmts = [], array $attributes = [])
     {
@@ -23,11 +24,11 @@ class While_ extends Node\Stmt implements \Rector\Contract\PhpParser\Node\StmtsA
         $this->cond = $cond;
         $this->stmts = $stmts;
     }
-    public function getSubNodeNames() : array
+    public function getSubNodeNames(): array
     {
         return ['cond', 'stmts'];
     }
-    public function getType() : string
+    public function getType(): string
     {
         return 'Stmt_While';
     }

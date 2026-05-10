@@ -12,7 +12,7 @@ use Rector\Transform\NodeAnalyzer\FuncCallStaticCallToMethodCallAnalyzer;
 use Rector\Transform\ValueObject\FuncCallToMethodCall;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\Transform\Rector\FuncCall\FuncCallToMethodCallRector\FuncCallToMethodCallRectorTest
  */
@@ -20,20 +20,19 @@ final class FuncCallToMethodCallRector extends AbstractRector implements Configu
 {
     /**
      * @readonly
-     * @var \Rector\Transform\NodeAnalyzer\FuncCallStaticCallToMethodCallAnalyzer
      */
-    private $funcCallStaticCallToMethodCallAnalyzer;
+    private FuncCallStaticCallToMethodCallAnalyzer $funcCallStaticCallToMethodCallAnalyzer;
     /**
      * @var FuncCallToMethodCall[]
      */
-    private $funcNameToMethodCallNames = [];
+    private array $funcNameToMethodCallNames = [];
     public function __construct(FuncCallStaticCallToMethodCallAnalyzer $funcCallStaticCallToMethodCallAnalyzer)
     {
         $this->funcCallStaticCallToMethodCallAnalyzer = $funcCallStaticCallToMethodCallAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Turns defined function calls to local method calls.', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Turn defined function calls to local method calls', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 class SomeClass
 {
     public function run()
@@ -61,19 +60,19 @@ class SomeClass
     }
 }
 CODE_SAMPLE
-, [new FuncCallToMethodCall('view', 'Namespaced\\SomeRenderer', 'render')])]);
+, [new FuncCallToMethodCall('view', 'Namespaced\SomeRenderer', 'render')])]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $hasChanged = \false;
         $class = $node;
@@ -84,7 +83,7 @@ CODE_SAMPLE
             if ($classMethod->isAbstract()) {
                 continue;
             }
-            $this->traverseNodesWithCallable($classMethod, function (Node $node) use($class, $classMethod, &$hasChanged) : ?Node {
+            $this->traverseNodesWithCallable($classMethod, function (Node $node) use ($class, $classMethod, &$hasChanged): ?Node {
                 if (!$node instanceof FuncCall) {
                     return null;
                 }
@@ -107,7 +106,7 @@ CODE_SAMPLE
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allIsAOf($configuration, FuncCallToMethodCall::class);
         $this->funcNameToMethodCallNames = $configuration;

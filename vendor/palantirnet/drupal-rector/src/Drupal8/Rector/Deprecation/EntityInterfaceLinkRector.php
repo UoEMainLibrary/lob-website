@@ -42,8 +42,7 @@ final class EntityInterfaceLinkRector extends AbstractRector
             new CodeSample(
                 <<<'CODE_BEFORE'
 $url = $entity->link();
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $url = $entity->toLink()->toString();
 CODE_AFTER
@@ -87,7 +86,7 @@ CODE_AFTER
             return $node;
         }
 
-        if ($node->expr instanceof Node\Expr\Assign && $node->expr->expr instanceof Node\Expr\MethodCall) {
+        if ($node->expr->expr instanceof Node\Expr\MethodCall) {
             $methodCall = $this->getMethodCall($node->expr->expr, $node);
             $node->expr->expr = $methodCall;
 

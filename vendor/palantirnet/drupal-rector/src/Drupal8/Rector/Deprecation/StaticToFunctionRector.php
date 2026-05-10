@@ -37,7 +37,7 @@ class StaticToFunctionRector extends AbstractRector implements ConfigurableRecto
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof StaticToFunctionConfiguration)) {
+            if (!$value instanceof StaticToFunctionConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', StaticToFunctionConfiguration::class));
             }
         }
@@ -68,12 +68,10 @@ class StaticToFunctionRector extends AbstractRector implements ConfigurableRecto
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 $length = \Drupal\Component\Utility\Unicode::strlen('example');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $length = mb_strlen('example');
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new StaticToFunctionConfiguration('Drupal\Component\Utility\Unicode', 'strlen', 'mb_strlen'),
                 ]
@@ -81,12 +79,10 @@ CODE_AFTER
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 $string = \Drupal\Component\Utility\Unicode::strtolower('example');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $string = mb_strtolower('example');
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new StaticToFunctionConfiguration('Drupal\Component\Utility\Unicode', 'strtolower', 'mb_strtolower'),
                 ]
@@ -94,12 +90,10 @@ CODE_AFTER
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 $string = \Drupal\Component\Utility\Unicode::substr('example', 0, 2);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $string = mb_substr('example', 0, 2);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new StaticToFunctionConfiguration('Drupal\Component\Utility\Unicode', 'substr', 'mb_substr'),
                 ]

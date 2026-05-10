@@ -16,11 +16,12 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use PHPStan\Reflection\ClassReflection;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\ObjectType;
 use Rector\NodeManipulator\IfManipulator;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\Rector\AbstractRector;
 use Rector\Reflection\ReflectionResolver;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -32,20 +33,18 @@ final class RemoveDeadInstanceOfRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\IfManipulator
      */
-    private $ifManipulator;
+    private IfManipulator $ifManipulator;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(IfManipulator $ifManipulator, ReflectionResolver $reflectionResolver)
     {
         $this->ifManipulator = $ifManipulator;
         $this->reflectionResolver = $reflectionResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove dead instanceof check on type hinted variable', [new CodeSample(<<<'CODE_SAMPLE'
 function run(stdClass $stdClass)
@@ -68,13 +67,13 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [If_::class];
     }
     /**
      * @param If_ $node
-     * @return Stmt[]|null|int|If_
+     * @return Stmt[]|null|NodeVisitor::REMOVE_NODE|If_
      */
     public function refactor(Node $node)
     {
@@ -93,7 +92,7 @@ CODE_SAMPLE
         return null;
     }
     /**
-     * @return null|Stmt[]|int
+     * @return null|Stmt[]|NodeVisitor::REMOVE_NODE
      */
     private function refactorStmtAndInstanceof(If_ $if, Instanceof_ $instanceof)
     {
@@ -104,31 +103,32 @@ CODE_SAMPLE
             return null;
         }
         if ($instanceof->expr instanceof Assign) {
+            $instanceof->expr->setAttribute(AttributeKey::WRAPPED_IN_PARENTHESES, \false);
             $assignExpression = new Expression($instanceof->expr);
-            return \array_merge([$assignExpression], $if->stmts);
+            return array_merge([$assignExpression], $if->stmts);
         }
         if ($if->cond !== $instanceof) {
-            return NodeTraverser::REMOVE_NODE;
+            return NodeVisitor::REMOVE_NODE;
         }
         if ($if->stmts === []) {
-            return NodeTraverser::REMOVE_NODE;
+            return NodeVisitor::REMOVE_NODE;
         }
         // unwrap stmts
         return $if->stmts;
     }
-    private function shouldSkipFromNotTypedParam(Instanceof_ $instanceof) : bool
+    private function shouldSkipFromNotTypedParam(Instanceof_ $instanceof): bool
     {
         $nativeParamType = $this->nodeTypeResolver->getNativeType($instanceof->expr);
         return $nativeParamType instanceof MixedType;
     }
-    private function isPropertyFetch(Expr $expr) : bool
+    private function isPropertyFetch(Expr $expr): bool
     {
         if ($expr instanceof PropertyFetch) {
             return \true;
         }
         return $expr instanceof StaticPropertyFetch;
     }
-    private function isInstanceofTheSameType(Instanceof_ $instanceof) : ?bool
+    private function isInstanceofTheSameType(Instanceof_ $instanceof): ?bool
     {
         if (!$instanceof->class instanceof Name) {
             return null;
@@ -148,7 +148,7 @@ CODE_SAMPLE
         $className = $instanceof->class->toString();
         return $exprType->isInstanceOf($className)->yes();
     }
-    private function refactorIfWithBooleanAnd(If_ $if) : ?\PhpParser\Node\Stmt\If_
+    private function refactorIfWithBooleanAnd(If_ $if): ?\PhpParser\Node\Stmt\If_
     {
         if (!$if->cond instanceof BooleanAnd) {
             return null;

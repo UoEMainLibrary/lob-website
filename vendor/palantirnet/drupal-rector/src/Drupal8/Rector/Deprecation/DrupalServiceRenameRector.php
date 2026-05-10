@@ -14,14 +14,14 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 class DrupalServiceRenameRector extends AbstractRector implements ConfigurableRectorInterface
 {
     /**
-     * @var \DrupalRector\Drupal8\Rector\ValueObject\DrupalServiceRenameConfiguration[]
+     * @var DrupalServiceRenameConfiguration[]
      */
     protected array $staticArgumentRenameConfigs = [];
 
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof DrupalServiceRenameConfiguration)) {
+            if (!$value instanceof DrupalServiceRenameConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', DrupalServiceRenameConfiguration::class));
             }
         }
@@ -64,12 +64,10 @@ class DrupalServiceRenameRector extends AbstractRector implements ConfigurableRe
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 \Drupal::service('old')->foo();
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal::service('bar')->foo();
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new DrupalServiceRenameConfiguration(
                         'old',

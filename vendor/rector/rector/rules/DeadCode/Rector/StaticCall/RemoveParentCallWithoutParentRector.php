@@ -25,26 +25,23 @@ final class RemoveParentCallWithoutParentRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\ClassMethodManipulator
      */
-    private $classMethodManipulator;
+    private ClassMethodManipulator $classMethodManipulator;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\ClassAnalyzer
      */
-    private $classAnalyzer;
+    private ClassAnalyzer $classAnalyzer;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(ClassMethodManipulator $classMethodManipulator, ClassAnalyzer $classAnalyzer, ReflectionProvider $reflectionProvider)
     {
         $this->classMethodManipulator = $classMethodManipulator;
         $this->classAnalyzer = $classAnalyzer;
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Remove unused parent call with no parent class', [new CodeSample(<<<'CODE_SAMPLE'
 class OrphanClass
@@ -68,14 +65,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkipClass($node)) {
             return null;
@@ -115,14 +112,17 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function isParentStaticCall(Expr $expr) : bool
+    private function isParentStaticCall(Expr $expr): bool
     {
         if (!$expr instanceof StaticCall) {
             return \false;
         }
+        if ($expr->name instanceof Expr) {
+            return \false;
+        }
         return $this->isName($expr->class, ObjectReference::PARENT);
     }
-    private function shouldSkipClass(Class_ $class) : bool
+    private function shouldSkipClass(Class_ $class): bool
     {
         // skip cases when parent class reflection is not found
         if ($class->extends instanceof FullyQualified && !$this->reflectionProvider->hasClass($class->extends->toString())) {
@@ -131,13 +131,13 @@ CODE_SAMPLE
         // currently the classMethodManipulator isn't able to find usages of anonymous classes
         return $this->classAnalyzer->isAnonymousClass($class);
     }
-    private function doesCalledMethodExistInParent(StaticCall $staticCall, Class_ $class) : bool
+    private function doesCalledMethodExistInParent(StaticCall $staticCall, Class_ $class): bool
     {
         if (!$class->extends instanceof Name) {
             return \false;
         }
         $calledMethodName = $this->getName($staticCall->name);
-        if (!\is_string($calledMethodName)) {
+        if (!is_string($calledMethodName)) {
             return \false;
         }
         return $this->classMethodManipulator->hasParentMethodOrInterfaceMethod($class, $calledMethodName);

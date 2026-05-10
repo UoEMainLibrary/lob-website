@@ -9,17 +9,13 @@ use function trim;
 class ParamTagValueNode implements \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode
 {
     use NodeAttributes;
-    /** @var TypeNode */
-    public $type;
-    /** @var bool */
-    public $isReference;
-    /** @var bool */
-    public $isVariadic;
-    /** @var string */
-    public $parameterName;
+    public TypeNode $type;
+    public bool $isReference;
+    public bool $isVariadic;
+    public string $parameterName;
     /** @var string (may be empty) */
-    public $description;
-    public function __construct(TypeNode $type, bool $isVariadic, string $parameterName, string $description, bool $isReference = \false)
+    public string $description;
+    public function __construct(TypeNode $type, bool $isVariadic, string $parameterName, string $description, bool $isReference)
     {
         $this->type = $type;
         $this->isReference = $isReference;
@@ -27,10 +23,23 @@ class ParamTagValueNode implements \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagVal
         $this->parameterName = $parameterName;
         $this->description = $description;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
         $reference = $this->isReference ? '&' : '';
         $variadic = $this->isVariadic ? '...' : '';
         return trim("{$this->type} {$reference}{$variadic}{$this->parameterName} {$this->description}");
+    }
+    /**
+     * @param array<string, mixed> $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        $instance = new self($properties['type'], $properties['isVariadic'], $properties['parameterName'], $properties['description'], $properties['isReference']);
+        if (isset($properties['attributes'])) {
+            foreach ($properties['attributes'] as $key => $value) {
+                $instance->setAttribute($key, $value);
+            }
+        }
+        return $instance;
     }
 }

@@ -7,7 +7,7 @@ use PhpParser\Node;
 use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\UnionType;
-use RectorPrefix202411\PHPUnit\Framework\MockObject\MockObject;
+use RectorPrefix202604\PHPUnit\Framework\MockObject\MockObject;
 use Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -19,14 +19,13 @@ final class SingleMockPropertyTypeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     public function __construct(TestsNodeAnalyzer $testsNodeAnalyzer)
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Make properties in tests with intersection mock object either object type or mock type', [new CodeSample(<<<'CODE_SAMPLE'
 use PHPUnit\Framework\TestCase;
@@ -61,14 +60,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Class_
+    public function refactor(Node $node): ?Class_
     {
         if (!$this->testsNodeAnalyzer->isInTestClass($node)) {
             return null;
@@ -79,7 +78,7 @@ CODE_SAMPLE
                 continue;
             }
             $complexType = $property->type;
-            if (\count($complexType->types) !== 2) {
+            if (count($complexType->types) !== 2) {
                 continue;
             }
             foreach ($complexType->types as $intersectionType) {

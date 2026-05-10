@@ -15,20 +15,19 @@ final class SetUpMethodDecorator
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\AstResolver
      */
-    private $astResolver;
+    private AstResolver $astResolver;
     public function __construct(AstResolver $astResolver)
     {
         $this->astResolver = $astResolver;
     }
-    public function decorate(ClassMethod $classMethod) : void
+    public function decorate(ClassMethod $classMethod): void
     {
         // skip test run
         if (StaticPHPUnitEnvironment::isPHPUnitRun()) {
             return;
         }
-        $setUpClassMethod = $this->astResolver->resolveClassMethod('PHPUnit\\Framework\\TestCase', MethodName::SET_UP);
+        $setUpClassMethod = $this->astResolver->resolveClassMethod('PHPUnit\Framework\TestCase', MethodName::SET_UP);
         if (!$setUpClassMethod instanceof ClassMethod) {
             return;
         }

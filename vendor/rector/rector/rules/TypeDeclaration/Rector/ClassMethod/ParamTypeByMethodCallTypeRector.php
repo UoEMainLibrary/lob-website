@@ -4,17 +4,19 @@ declare (strict_types=1);
 namespace Rector\TypeDeclaration\Rector\ClassMethod;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Param;
-use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
-use PHPStan\Analyser\Scope;
+use PhpParser\Node\Stmt\Function_;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\NodeTypeResolver\PHPStan\Type\TypeFactory;
 use Rector\PhpParser\Node\BetterNodeFinder;
 use Rector\PHPStanStaticTypeMapper\Enum\TypeKind;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\Rector\AbstractRector;
 use Rector\StaticTypeMapper\Mapper\PhpParserNodeMapper;
 use Rector\StaticTypeMapper\StaticTypeMapper;
 use Rector\TypeDeclaration\Guard\ParamTypeAddGuard;
@@ -25,43 +27,36 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\TypeDeclaration\Rector\ClassMethod\ParamTypeByMethodCallTypeRector\ParamTypeByMethodCallTypeRectorTest
  */
-final class ParamTypeByMethodCallTypeRector extends AbstractScopeAwareRector
+final class ParamTypeByMethodCallTypeRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\CallerParamMatcher
      */
-    private $callerParamMatcher;
+    private CallerParamMatcher $callerParamMatcher;
     /**
      * @readonly
-     * @var \Rector\VendorLocker\ParentClassMethodTypeOverrideGuard
      */
-    private $parentClassMethodTypeOverrideGuard;
+    private ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\Guard\ParamTypeAddGuard
      */
-    private $paramTypeAddGuard;
+    private ParamTypeAddGuard $paramTypeAddGuard;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\Mapper\PhpParserNodeMapper
      */
-    private $phpParserNodeMapper;
+    private PhpParserNodeMapper $phpParserNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     public function __construct(CallerParamMatcher $callerParamMatcher, ParentClassMethodTypeOverrideGuard $parentClassMethodTypeOverrideGuard, ParamTypeAddGuard $paramTypeAddGuard, BetterNodeFinder $betterNodeFinder, PhpParserNodeMapper $phpParserNodeMapper, StaticTypeMapper $staticTypeMapper, TypeFactory $typeFactory)
     {
         $this->callerParamMatcher = $callerParamMatcher;
@@ -72,7 +67,7 @@ final class ParamTypeByMethodCallTypeRector extends AbstractScopeAwareRector
         $this->staticTypeMapper = $staticTypeMapper;
         $this->typeFactory = $typeFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change param type based on passed method call type', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeTypedService
@@ -121,63 +116,83 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [Class_::class];
+        return [ClassMethod::class, Function_::class, Closure::class, ArrowFunction::class];
     }
     /**
-     * @param Class_ $node
+     * @param ClassMethod|Function_|Closure|ArrowFunction $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        $hasChanged = \false;
-        foreach ($node->getMethods() as $classMethod) {
-            if ($this->shouldSkipClassMethod($classMethod)) {
-                continue;
-            }
-            /** @var array<StaticCall|MethodCall|FuncCall> $callers */
-            $callers = $this->betterNodeFinder->findInstancesOf($classMethod, [StaticCall::class, MethodCall::class, FuncCall::class]);
-            $hasClassMethodChanged = $this->refactorClassMethod($classMethod, $callers, $scope);
-            if ($hasClassMethodChanged) {
-                $hasChanged = \true;
-            }
+        if ($node->params === []) {
+            return null;
         }
+        // has params with at least one missing type
+        if (!$this->hasAtLeastOneParamWithoutType($node)) {
+            return null;
+        }
+        if ($node instanceof ClassMethod && $this->shouldSkipClassMethod($node)) {
+            return null;
+        }
+        /** @var array<StaticCall|MethodCall|FuncCall> $callers */
+        $callers = $this->betterNodeFinder->findInstancesOfScoped([$node], [StaticCall::class, MethodCall::class, FuncCall::class]);
+        // keep only callers with args
+        $callersWithArgs = array_filter($callers, fn($caller): bool => $caller->args !== []);
+        if ($callersWithArgs === []) {
+            return null;
+        }
+        $hasChanged = $this->refactorFunctionLike($node, $callersWithArgs);
         if ($hasChanged) {
             return $node;
         }
         return null;
     }
-    private function shouldSkipClassMethod(ClassMethod $classMethod) : bool
+    private function shouldSkipClassMethod(ClassMethod $classMethod): bool
     {
-        if ($classMethod->params === []) {
+        $isMissingParameterTypes = \false;
+        foreach ($classMethod->params as $param) {
+            if ($param->type instanceof Node) {
+                continue;
+            }
+            if ($param->variadic) {
+                continue;
+            }
+            $isMissingParameterTypes = \true;
+        }
+        if ($isMissingParameterTypes === \false) {
             return \true;
         }
         return $this->parentClassMethodTypeOverrideGuard->hasParentClassMethod($classMethod);
     }
-    private function shouldSkipParam(Param $param, ClassMethod $classMethod) : bool
+    /**
+     * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_|\PhpParser\Node\Expr\Closure|\PhpParser\Node\Expr\ArrowFunction $functionLike
+     */
+    private function shouldSkipParam(Param $param, $functionLike): bool
     {
         // already has type, skip
-        if ($param->type !== null) {
+        if ($param->type instanceof Node) {
             return \true;
         }
         if ($param->variadic) {
             return \true;
         }
-        return !$this->paramTypeAddGuard->isLegal($param, $classMethod);
+        return !$this->paramTypeAddGuard->isLegal($param, $functionLike);
     }
     /**
      * @param array<StaticCall|MethodCall|FuncCall> $callers
+     * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Expr\Closure|\PhpParser\Node\Stmt\Function_|\PhpParser\Node\Expr\ArrowFunction $functionLike
      */
-    private function refactorClassMethod(ClassMethod $classMethod, array $callers, Scope $scope) : bool
+    private function refactorFunctionLike($functionLike, array $callers): bool
     {
         $hasChanged = \false;
-        foreach ($classMethod->params as $param) {
-            if ($this->shouldSkipParam($param, $classMethod)) {
+        foreach ($functionLike->params as $param) {
+            if ($this->shouldSkipParam($param, $functionLike)) {
                 continue;
             }
             $paramTypes = [];
             foreach ($callers as $caller) {
-                $matchCallParam = $this->callerParamMatcher->matchCallParam($caller, $param, $scope);
+                $matchCallParam = $this->callerParamMatcher->matchCallParam($caller, $param);
                 // nothing to do with param, continue
                 if (!$matchCallParam instanceof Param) {
                     continue;
@@ -187,8 +202,11 @@ CODE_SAMPLE
                     $paramTypes = [];
                     break;
                 }
+                if ($caller->getAttribute(AttributeKey::IS_RIGHT_AND)) {
+                    $paramTypes = [];
+                    break;
+                }
                 $paramTypes[] = $this->phpParserNodeMapper->mapToPHPStanType($paramType);
-                $hasChanged = \true;
             }
             if ($paramTypes === []) {
                 continue;
@@ -197,8 +215,21 @@ CODE_SAMPLE
             $paramNodeType = $this->staticTypeMapper->mapPHPStanTypeToPhpParserNode($type, TypeKind::PARAM);
             if ($paramNodeType instanceof Node) {
                 $param->type = $paramNodeType;
+                $hasChanged = \true;
             }
         }
         return $hasChanged;
+    }
+    /**
+     * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_|\PhpParser\Node\Expr\Closure|\PhpParser\Node\Expr\ArrowFunction $functionLike
+     */
+    private function hasAtLeastOneParamWithoutType($functionLike): bool
+    {
+        foreach ($functionLike->params as $param) {
+            if (!$param->type instanceof Node) {
+                return \true;
+            }
+        }
+        return \false;
     }
 }

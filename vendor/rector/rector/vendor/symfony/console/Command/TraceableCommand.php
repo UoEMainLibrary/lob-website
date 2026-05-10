@@ -8,18 +8,18 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Command;
+namespace RectorPrefix202604\Symfony\Component\Console\Command;
 
-use RectorPrefix202411\Symfony\Component\Console\Application;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionInput;
-use RectorPrefix202411\Symfony\Component\Console\Completion\CompletionSuggestions;
-use RectorPrefix202411\Symfony\Component\Console\Helper\HelperInterface;
-use RectorPrefix202411\Symfony\Component\Console\Helper\HelperSet;
-use RectorPrefix202411\Symfony\Component\Console\Input\InputDefinition;
-use RectorPrefix202411\Symfony\Component\Console\Input\InputInterface;
-use RectorPrefix202411\Symfony\Component\Console\Output\ConsoleOutputInterface;
-use RectorPrefix202411\Symfony\Component\Console\Output\OutputInterface;
-use RectorPrefix202411\Symfony\Component\Stopwatch\Stopwatch;
+use RectorPrefix202604\Symfony\Component\Console\Application;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionInput;
+use RectorPrefix202604\Symfony\Component\Console\Completion\CompletionSuggestions;
+use RectorPrefix202604\Symfony\Component\Console\Helper\HelperInterface;
+use RectorPrefix202604\Symfony\Component\Console\Helper\HelperSet;
+use RectorPrefix202604\Symfony\Component\Console\Input\InputDefinition;
+use RectorPrefix202604\Symfony\Component\Console\Input\InputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Output\ConsoleOutputInterface;
+use RectorPrefix202604\Symfony\Component\Console\Output\OutputInterface;
+use RectorPrefix202604\Symfony\Component\Stopwatch\Stopwatch;
 /**
  * @internal
  *
@@ -29,56 +29,27 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
 {
     /**
      * @readonly
-     * @var \Symfony\Component\Stopwatch\Stopwatch
      */
-    private $stopwatch;
+    private Stopwatch $stopwatch;
     /**
      * @readonly
-     * @var \Symfony\Component\Console\Command\Command
      */
-    public $command;
-    /**
-     * @var int
-     */
-    public $exitCode;
-    /**
-     * @var int|null
-     */
-    public $interruptedBySignal;
-    /**
-     * @var bool
-     */
-    public $ignoreValidation;
-    /**
-     * @var bool
-     */
-    public $isInteractive = \false;
-    /**
-     * @var string
-     */
-    public $duration = 'n/a';
-    /**
-     * @var string
-     */
-    public $maxMemoryUsage = 'n/a';
-    /**
-     * @var \Symfony\Component\Console\Input\InputInterface
-     */
-    public $input;
-    /**
-     * @var \Symfony\Component\Console\Output\OutputInterface
-     */
-    public $output;
+    public Command $command;
+    public int $exitCode;
+    public ?int $interruptedBySignal = null;
+    public bool $ignoreValidation;
+    public bool $isInteractive = \false;
+    public string $duration = 'n/a';
+    public string $maxMemoryUsage = 'n/a';
+    public InputInterface $input;
+    public OutputInterface $output;
     /** @var array<string, mixed> */
-    public $arguments;
+    public array $arguments;
     /** @var array<string, mixed> */
-    public $options;
+    public array $options;
     /** @var array<string, mixed> */
-    public $interactiveInputs = [];
-    /**
-     * @var mixed[]
-     */
-    public $handledSignals = [];
+    public array $interactiveInputs = [];
+    public array $handledSignals = [];
     public function __construct(Command $command, Stopwatch $stopwatch)
     {
         $this->stopwatch = $stopwatch;
@@ -111,7 +82,7 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
     {
         return $this->command->{$name}(...$arguments);
     }
-    public function getSubscribedSignals() : array
+    public function getSubscribedSignals(): array
     {
         return $this->command instanceof SignalableCommandInterface ? $this->command->getSubscribedSignals() : [];
     }
@@ -132,7 +103,7 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         }
         ++$this->handledSignals[$signal]['handled'];
         $this->handledSignals[$signal]['duration'] += $event->getDuration();
-        $this->handledSignals[$signal]['memory'] = \max($this->handledSignals[$signal]['memory'], $event->getMemory() >> 20);
+        $this->handledSignals[$signal]['memory'] = max($this->handledSignals[$signal]['memory'], $event->getMemory() >> 20);
         return $exit;
     }
     /**
@@ -140,33 +111,33 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
      *
      * Calling parent method is required to be used in {@see parent::run()}.
      */
-    public function ignoreValidationErrors() : void
+    public function ignoreValidationErrors(): void
     {
         $this->ignoreValidation = \true;
         $this->command->ignoreValidationErrors();
         parent::ignoreValidationErrors();
     }
-    public function setApplication(?Application $application = null) : void
+    public function setApplication(?Application $application = null): void
     {
         $this->command->setApplication($application);
     }
-    public function getApplication() : ?Application
+    public function getApplication(): ?Application
     {
         return $this->command->getApplication();
     }
-    public function setHelperSet(HelperSet $helperSet) : void
+    public function setHelperSet(HelperSet $helperSet): void
     {
         $this->command->setHelperSet($helperSet);
     }
-    public function getHelperSet() : ?HelperSet
+    public function getHelperSet(): ?HelperSet
     {
         return $this->command->getHelperSet();
     }
-    public function isEnabled() : bool
+    public function isEnabled(): bool
     {
         return $this->command->isEnabled();
     }
-    public function complete(CompletionInput $input, CompletionSuggestions $suggestions) : void
+    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         $this->command->complete($input, $suggestions);
     }
@@ -179,7 +150,7 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
     public function setCode(callable $code)
     {
         $this->command->setCode($code);
-        return parent::setCode(function (InputInterface $input, OutputInterface $output) use($code) : int {
+        return parent::setCode(function (InputInterface $input, OutputInterface $output) use ($code): int {
             $event = $this->stopwatch->start($this->getName() . '.code');
             $this->exitCode = $code($input, $output);
             $event->stop();
@@ -189,7 +160,7 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
     /**
      * @internal
      */
-    public function mergeApplicationDefinition(bool $mergeArgs = \true) : void
+    public function mergeApplicationDefinition(bool $mergeArgs = \true): void
     {
         $this->command->mergeApplicationDefinition($mergeArgs);
     }
@@ -202,11 +173,11 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         $this->command->setDefinition($definition);
         return $this;
     }
-    public function getDefinition() : InputDefinition
+    public function getDefinition(): InputDefinition
     {
         return $this->command->getDefinition();
     }
-    public function getNativeDefinition() : InputDefinition
+    public function getNativeDefinition(): InputDefinition
     {
         return $this->command->getNativeDefinition();
     }
@@ -250,15 +221,15 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         $this->command->setHelp($help);
         return $this;
     }
-    public function getHelp() : string
+    public function getHelp(): string
     {
         return $this->command->getHelp();
     }
-    public function getProcessedHelp() : string
+    public function getProcessedHelp(): string
     {
         return $this->command->getProcessedHelp();
     }
-    public function getSynopsis(bool $short = \false) : string
+    public function getSynopsis(bool $short = \false): string
     {
         return $this->command->getSynopsis($short);
     }
@@ -270,15 +241,15 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         $this->command->addUsage($usage);
         return $this;
     }
-    public function getUsages() : array
+    public function getUsages(): array
     {
         return $this->command->getUsages();
     }
-    public function getHelper(string $name) : HelperInterface
+    public function getHelper(string $name): HelperInterface
     {
         return $this->command->getHelper($name);
     }
-    public function run(InputInterface $input, OutputInterface $output) : int
+    public function run(InputInterface $input, OutputInterface $output): int
     {
         $this->input = $input;
         $this->output = $output;
@@ -286,7 +257,7 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         $this->options = $input->getOptions();
         $event = $this->stopwatch->start($this->getName(), 'command');
         try {
-            $this->exitCode = parent::run($input, $output);
+            $this->exitCode = $this->command->run($input, $output);
         } finally {
             $event->stop();
             if ($output instanceof ConsoleOutputInterface && $output->isDebug()) {
@@ -300,29 +271,29 @@ final class TraceableCommand extends Command implements SignalableCommandInterfa
         }
         return $this->exitCode;
     }
-    protected function initialize(InputInterface $input, OutputInterface $output) : void
+    protected function initialize(InputInterface $input, OutputInterface $output): void
     {
         $event = $this->stopwatch->start($this->getName() . '.init', 'command');
         $this->command->initialize($input, $output);
         $event->stop();
     }
-    protected function interact(InputInterface $input, OutputInterface $output) : void
+    protected function interact(InputInterface $input, OutputInterface $output): void
     {
-        if (!($this->isInteractive = Command::class !== (new \ReflectionMethod($this->command, 'interact'))->getDeclaringClass()->getName())) {
+        if (!$this->isInteractive = Command::class !== (new \ReflectionMethod($this->command, 'interact'))->getDeclaringClass()->getName()) {
             return;
         }
         $event = $this->stopwatch->start($this->getName() . '.interact', 'command');
         $this->command->interact($input, $output);
         $event->stop();
     }
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $event = $this->stopwatch->start($this->getName() . '.execute', 'command');
         $exitCode = $this->command->execute($input, $output);
         $event->stop();
         return $exitCode;
     }
-    private function extractInteractiveInputs(array $arguments, array $options) : void
+    private function extractInteractiveInputs(array $arguments, array $options): void
     {
         foreach ($arguments as $argName => $argValue) {
             if (\array_key_exists($argName, $this->arguments) && $this->arguments[$argName] === $argValue) {

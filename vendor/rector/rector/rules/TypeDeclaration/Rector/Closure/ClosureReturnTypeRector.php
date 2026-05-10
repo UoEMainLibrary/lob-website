@@ -21,20 +21,18 @@ final class ClosureReturnTypeRector extends AbstractRector implements MinPhpVers
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\ReturnTypeInferer
      */
-    private $returnTypeInferer;
+    private ReturnTypeInferer $returnTypeInferer;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     public function __construct(ReturnTypeInferer $returnTypeInferer, StaticTypeMapper $staticTypeMapper)
     {
         $this->returnTypeInferer = $returnTypeInferer;
         $this->staticTypeMapper = $staticTypeMapper;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add return type to closures based on known return values', [new CodeSample(<<<'CODE_SAMPLE'
 function () {
@@ -51,14 +49,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Closure::class];
     }
     /**
      * @param Closure $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         // type is already set
         if ($node->returnType instanceof Node) {
@@ -76,7 +74,7 @@ CODE_SAMPLE
         $node->returnType = $returnTypeNode;
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::SCALAR_TYPES;
     }

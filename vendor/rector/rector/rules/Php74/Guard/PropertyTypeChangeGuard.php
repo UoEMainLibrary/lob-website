@@ -13,24 +13,20 @@ final class PropertyTypeChangeGuard
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyAnalyzer
      */
-    private $propertyAnalyzer;
+    private PropertyAnalyzer $propertyAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyManipulator
      */
-    private $propertyManipulator;
+    private PropertyManipulator $propertyManipulator;
     /**
      * @readonly
-     * @var \Rector\Privatization\Guard\ParentPropertyLookupGuard
      */
-    private $parentPropertyLookupGuard;
+    private ParentPropertyLookupGuard $parentPropertyLookupGuard;
     public function __construct(NodeNameResolver $nodeNameResolver, PropertyAnalyzer $propertyAnalyzer, PropertyManipulator $propertyManipulator, ParentPropertyLookupGuard $parentPropertyLookupGuard)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -38,9 +34,9 @@ final class PropertyTypeChangeGuard
         $this->propertyManipulator = $propertyManipulator;
         $this->parentPropertyLookupGuard = $parentPropertyLookupGuard;
     }
-    public function isLegal(Property $property, ClassReflection $classReflection, bool $inlinePublic = \true, bool $isConstructorPromotion = \false) : bool
+    public function isLegal(Property $property, ClassReflection $classReflection, bool $inlinePublic = \true, bool $isConstructorPromotion = \false): bool
     {
-        if (\count($property->props) > 1) {
+        if (count($property->props) > 1) {
             return \false;
         }
         /**
@@ -51,7 +47,7 @@ final class PropertyTypeChangeGuard
             return \false;
         }
         $propertyName = $this->nodeNameResolver->getName($property);
-        if ($this->propertyManipulator->isUsedByTrait($classReflection, $propertyName)) {
+        if ($this->propertyManipulator->hasTraitWithSamePropertyOrWritten($classReflection, $propertyName)) {
             return \false;
         }
         if ($this->propertyAnalyzer->hasForbiddenType($property)) {
@@ -68,7 +64,7 @@ final class PropertyTypeChangeGuard
         }
         return $this->isSafeProtectedProperty($classReflection, $property);
     }
-    private function isSafeProtectedProperty(ClassReflection $classReflection, Property $property) : bool
+    private function isSafeProtectedProperty(ClassReflection $classReflection, Property $property): bool
     {
         if (!$property->isProtected()) {
             return \false;

@@ -19,9 +19,8 @@ final class CallAnalyzer
 {
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     /**
      * @var array<class-string<Expr>>
      */
@@ -30,7 +29,7 @@ final class CallAnalyzer
     {
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function isObjectCall(Expr $expr) : bool
+    public function isObjectCall(Expr $expr): bool
     {
         if ($expr instanceof BooleanNot) {
             $expr = $expr->expr;
@@ -50,7 +49,7 @@ final class CallAnalyzer
     /**
      * @param If_[] $ifs
      */
-    public function doesIfHasObjectCall(array $ifs) : bool
+    public function doesIfHasObjectCall(array $ifs): bool
     {
         foreach ($ifs as $if) {
             if ($this->isObjectCall($if->cond)) {
@@ -59,7 +58,7 @@ final class CallAnalyzer
         }
         return \false;
     }
-    public function isNewInstance(Variable $variable) : bool
+    public function isNewInstance(Variable $variable): bool
     {
         $scope = $variable->getAttribute(AttributeKey::SCOPE);
         if (!$scope instanceof Scope) {

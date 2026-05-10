@@ -9,15 +9,12 @@ use Rector\ValueObject\Application\File;
  */
 final class CurrentFileProvider
 {
-    /**
-     * @var \Rector\ValueObject\Application\File|null
-     */
-    private $file;
-    public function setFile(File $file) : void
+    private ?File $file = null;
+    public function setFile(File $file): void
     {
         $this->file = $file;
     }
-    public function getFile() : ?File
+    public function getFile(): ?File
     {
         return $this->file;
     }

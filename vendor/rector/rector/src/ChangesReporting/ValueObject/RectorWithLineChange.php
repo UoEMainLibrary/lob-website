@@ -4,15 +4,20 @@ declare (strict_types=1);
 namespace Rector\ChangesReporting\ValueObject;
 
 use Rector\Contract\Rector\RectorInterface;
-use RectorPrefix202411\Symplify\EasyParallel\Contract\SerializableInterface;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use Rector\PostRector\Contract\Rector\PostRectorInterface;
+use RectorPrefix202604\Symplify\EasyParallel\Contract\SerializableInterface;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 final class RectorWithLineChange implements SerializableInterface
 {
     /**
+     * @var class-string<RectorInterface|PostRectorInterface>
      * @readonly
-     * @var int
      */
-    private $line;
+    private string $rectorClass;
+    /**
+     * @readonly
+     */
+    private int $line;
     /**
      * @var string
      */
@@ -22,33 +27,24 @@ final class RectorWithLineChange implements SerializableInterface
      */
     private const KEY_LINE = 'line';
     /**
-     * @var class-string<RectorInterface>
-     * @readonly
+     * @param class-string<RectorInterface|PostRectorInterface> $rectorClass
      */
-    private $rectorClass;
-    /**
-     * @param class-string<RectorInterface>|RectorInterface $rectorClass
-     */
-    public function __construct($rectorClass, int $line)
+    public function __construct(string $rectorClass, int $line)
     {
-        $this->line = $line;
-        if ($rectorClass instanceof RectorInterface) {
-            $rectorClass = \get_class($rectorClass);
-        }
         $this->rectorClass = $rectorClass;
+        $this->line = $line;
     }
     /**
-     * @return class-string<RectorInterface>
+     * @return class-string<RectorInterface|PostRectorInterface>
      */
-    public function getRectorClass() : string
+    public function getRectorClass(): string
     {
         return $this->rectorClass;
     }
     /**
      * @param array<string, mixed> $json
-     * @return $this
      */
-    public static function decode(array $json) : \RectorPrefix202411\Symplify\EasyParallel\Contract\SerializableInterface
+    public static function decode(array $json): self
     {
         /** @var class-string<RectorInterface> $rectorClass */
         $rectorClass = $json[self::KEY_RECTOR_CLASS];
@@ -58,9 +54,9 @@ final class RectorWithLineChange implements SerializableInterface
         return new self($rectorClass, $line);
     }
     /**
-     * @return array{rector_class: class-string<RectorInterface>, line: int}
+     * @return array{rector_class: class-string<RectorInterface|PostRectorInterface>, line: int}
      */
-    public function jsonSerialize() : array
+    public function jsonSerialize(): array
     {
         return [self::KEY_RECTOR_CLASS => $this->rectorClass, self::KEY_LINE => $this->line];
     }

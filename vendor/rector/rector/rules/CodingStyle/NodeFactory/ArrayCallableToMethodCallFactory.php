@@ -3,28 +3,27 @@
 declare (strict_types=1);
 namespace Rector\CodingStyle\NodeFactory;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar\String_;
-use PHPStan\Type\TypeWithClassName;
 use Rector\NodeTypeResolver\NodeTypeResolver;
+use Rector\StaticTypeMapper\Resolver\ClassNameFromObjectTypeResolver;
 final class ArrayCallableToMethodCallFactory
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
     }
-    public function create(Array_ $array) : ?MethodCall
+    public function create(Array_ $array): ?MethodCall
     {
-        if (\count($array->items) !== 2) {
+        if (count($array->items) !== 2) {
             return null;
         }
         $firstItem = $array->items[0];
@@ -42,7 +41,8 @@ final class ArrayCallableToMethodCallFactory
             return null;
         }
         $firstItemType = $this->nodeTypeResolver->getType($firstItem->value);
-        if (!$firstItemType instanceof TypeWithClassName) {
+        $className = ClassNameFromObjectTypeResolver::resolve($firstItemType);
+        if ($className === null) {
             return null;
         }
         $string = $secondItem->value;

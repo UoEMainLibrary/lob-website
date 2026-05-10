@@ -8,19 +8,31 @@ class ConstFetchNode implements \PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprNod
 {
     use NodeAttributes;
     /** @var string class name for class constants or empty string for non-class constants */
-    public $className;
-    /** @var string */
-    public $name;
+    public string $className;
+    public string $name;
     public function __construct(string $className, string $name)
     {
         $this->className = $className;
         $this->name = $name;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
         if ($this->className === '') {
             return $this->name;
         }
         return "{$this->className}::{$this->name}";
+    }
+    /**
+     * @param array<string, mixed> $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        $instance = new self($properties['className'], $properties['name']);
+        if (isset($properties['attributes'])) {
+            foreach ($properties['attributes'] as $key => $value) {
+                $instance->setAttribute($key, $value);
+            }
+        }
+        return $instance;
     }
 }

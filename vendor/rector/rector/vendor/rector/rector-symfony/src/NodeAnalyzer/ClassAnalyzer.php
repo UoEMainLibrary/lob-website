@@ -9,14 +9,13 @@ final class ClassAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
     }
-    public function hasImplements(Class_ $class, string $interfaceFQN) : bool
+    public function hasImplements(Class_ $class, string $interfaceFQN): bool
     {
         foreach ($class->implements as $implement) {
             if ($this->nodeNameResolver->isName($implement, $interfaceFQN)) {

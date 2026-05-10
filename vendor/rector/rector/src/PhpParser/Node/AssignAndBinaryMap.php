@@ -46,9 +46,8 @@ final class AssignAndBinaryMap
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @var array<class-string<BinaryOp>, class-string<BinaryOp>>
      */
@@ -60,20 +59,20 @@ final class AssignAndBinaryMap
     /**
      * @var array<class-string<BinaryOp>, class-string<AssignOp>>
      */
-    private $binaryOpToAssignClasses = [];
+    private array $binaryOpToAssignClasses = [];
     public function __construct(NodeTypeResolver $nodeTypeResolver)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
         /** @var array<class-string<BinaryOp>, class-string<AssignOp>> $binaryClassesToAssignOp */
-        $binaryClassesToAssignOp = \array_flip(self::ASSIGN_OP_TO_BINARY_OP_CLASSES);
+        $binaryClassesToAssignOp = array_flip(self::ASSIGN_OP_TO_BINARY_OP_CLASSES);
         $this->binaryOpToAssignClasses = $binaryClassesToAssignOp;
     }
     /**
      * @return class-string<BinaryOp|AssignOp>|null
      */
-    public function getAlternative(Node $node) : ?string
+    public function getAlternative(Node $node): ?string
     {
-        $nodeClass = \get_class($node);
+        $nodeClass = get_class($node);
         if ($node instanceof AssignOp) {
             return self::ASSIGN_OP_TO_BINARY_OP_CLASSES[$nodeClass] ?? null;
         }
@@ -85,12 +84,12 @@ final class AssignAndBinaryMap
     /**
      * @return class-string<BinaryOp>|null
      */
-    public function getInversed(BinaryOp $binaryOp) : ?string
+    public function getInversed(BinaryOp $binaryOp): ?string
     {
-        $nodeClass = \get_class($binaryOp);
+        $nodeClass = get_class($binaryOp);
         return self::BINARY_OP_TO_INVERSE_CLASSES[$nodeClass] ?? null;
     }
-    public function getTruthyExpr(Expr $expr) : Expr
+    public function getTruthyExpr(Expr $expr): Expr
     {
         if ($expr instanceof Bool_) {
             return $expr;

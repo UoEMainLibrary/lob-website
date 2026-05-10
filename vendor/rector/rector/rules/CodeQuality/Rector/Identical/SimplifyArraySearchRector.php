@@ -22,43 +22,39 @@ final class SimplifyArraySearchRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\BinaryOpManipulator
      */
-    private $binaryOpManipulator;
+    private BinaryOpManipulator $binaryOpManipulator;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(BinaryOpManipulator $binaryOpManipulator, ValueResolver $valueResolver)
     {
         $this->binaryOpManipulator = $binaryOpManipulator;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Simplify array_search to in_array', [new CodeSample('array_search("searching", $array) !== false;', 'in_array("searching", $array);'), new CodeSample('array_search("searching", $array, true) !== false;', 'in_array("searching", $array, true);')]);
     }
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Identical::class, NotIdentical::class];
     }
     /**
      * @param Identical|NotIdentical $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
-        $twoNodeMatch = $this->binaryOpManipulator->matchFirstAndSecondConditionNode($node, function (Node $node) : bool {
+        $twoNodeMatch = $this->binaryOpManipulator->matchFirstAndSecondConditionNode($node, function (Node $node): bool {
             if (!$node instanceof FuncCall) {
                 return \false;
             }
-            return $this->nodeNameResolver->isName($node, 'array_search');
-        }, function (Node $node) : bool {
-            return $node instanceof Expr && $this->valueResolver->isFalse($node);
-        });
+            return $this->isName($node, 'array_search');
+        }, fn(Node $node): bool => $node instanceof Expr && $this->valueResolver->isFalse($node));
         if (!$twoNodeMatch instanceof TwoNodeMatch) {
             return null;
         }

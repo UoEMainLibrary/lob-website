@@ -9,20 +9,30 @@ use function trim;
 class TypeAliasImportTagValueNode implements \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagValueNode
 {
     use NodeAttributes;
-    /** @var string */
-    public $importedAlias;
-    /** @var IdentifierTypeNode */
-    public $importedFrom;
-    /** @var string|null */
-    public $importedAs;
+    public string $importedAlias;
+    public IdentifierTypeNode $importedFrom;
+    public ?string $importedAs = null;
     public function __construct(string $importedAlias, IdentifierTypeNode $importedFrom, ?string $importedAs)
     {
         $this->importedAlias = $importedAlias;
         $this->importedFrom = $importedFrom;
         $this->importedAs = $importedAs;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
         return trim("{$this->importedAlias} from {$this->importedFrom}" . ($this->importedAs !== null ? " as {$this->importedAs}" : ''));
+    }
+    /**
+     * @param array<string, mixed> $properties
+     */
+    public static function __set_state(array $properties): self
+    {
+        $instance = new self($properties['importedAlias'], $properties['importedFrom'], $properties['importedAs']);
+        if (isset($properties['attributes'])) {
+            foreach ($properties['attributes'] as $key => $value) {
+                $instance->setAttribute($key, $value);
+            }
+        }
+        return $instance;
     }
 }

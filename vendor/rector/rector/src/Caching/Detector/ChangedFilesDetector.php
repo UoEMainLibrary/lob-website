@@ -16,44 +16,41 @@ final class ChangedFilesDetector
 {
     /**
      * @readonly
-     * @var \Rector\Caching\Config\FileHashComputer
      */
-    private $fileHashComputer;
+    private FileHashComputer $fileHashComputer;
     /**
      * @readonly
-     * @var \Rector\Caching\Cache
      */
-    private $cache;
+    private Cache $cache;
     /**
      * @readonly
-     * @var \Rector\Util\FileHasher
      */
-    private $fileHasher;
+    private FileHasher $fileHasher;
     /**
      * @var array<string, true>
      */
-    private $cachableFiles = [];
+    private array $cacheableFiles = [];
     public function __construct(FileHashComputer $fileHashComputer, Cache $cache, FileHasher $fileHasher)
     {
         $this->fileHashComputer = $fileHashComputer;
         $this->cache = $cache;
         $this->fileHasher = $fileHasher;
     }
-    public function cacheFile(string $filePath) : void
+    public function cacheFile(string $filePath): void
     {
         $filePathCacheKey = $this->getFilePathCacheKey($filePath);
-        if (!isset($this->cachableFiles[$filePathCacheKey])) {
+        if (!isset($this->cacheableFiles[$filePathCacheKey])) {
             return;
         }
         $hash = $this->hashFile($filePath);
         $this->cache->save($filePathCacheKey, CacheKey::FILE_HASH_KEY, $hash);
     }
-    public function addCachableFile(string $filePath) : void
+    public function addCacheableFile(string $filePath): void
     {
         $filePathCacheKey = $this->getFilePathCacheKey($filePath);
-        $this->cachableFiles[$filePathCacheKey] = \true;
+        $this->cacheableFiles[$filePathCacheKey] = \true;
     }
-    public function hasFileChanged(string $filePath) : bool
+    public function hasFileChanged(string $filePath): bool
     {
         $fileInfoCacheKey = $this->getFilePathCacheKey($filePath);
         $cachedValue = $this->cache->load($fileInfoCacheKey, CacheKey::FILE_HASH_KEY);
@@ -64,49 +61,48 @@ final class ChangedFilesDetector
         // we don't have a value to compare against. Be defensive and assume its changed
         return \true;
     }
-    public function invalidateFile(string $filePath) : void
+    public function invalidateFile(string $filePath): void
     {
         $fileInfoCacheKey = $this->getFilePathCacheKey($filePath);
         $this->cache->clean($fileInfoCacheKey);
-        unset($this->cachableFiles[$fileInfoCacheKey]);
+        unset($this->cacheableFiles[$fileInfoCacheKey]);
     }
-    public function clear() : void
+    public function clear(): void
     {
         $this->cache->clear();
     }
     /**
      * @api
      */
-    public function setFirstResolvedConfigFileInfo(string $filePath) : void
+    public function setFirstResolvedConfigFileInfo(string $filePath): void
     {
         // the first config is core to all → if it was changed, just invalidate it
         $configHash = $this->fileHashComputer->compute($filePath);
         $this->storeConfigurationDataHash($filePath, $configHash);
     }
-    private function resolvePath(string $filePath) : string
+    private function resolvePath(string $filePath): string
     {
-        /** @var string|false $realPath */
-        $realPath = \realpath($filePath);
+        $realPath = realpath($filePath);
         if ($realPath === \false) {
             return $filePath;
         }
         return $realPath;
     }
-    private function getFilePathCacheKey(string $filePath) : string
+    private function getFilePathCacheKey(string $filePath): string
     {
         return $this->fileHasher->hash($this->resolvePath($filePath));
     }
-    private function hashFile(string $filePath) : string
+    private function hashFile(string $filePath): string
     {
         return $this->fileHasher->hashFiles([$this->resolvePath($filePath)]);
     }
-    private function storeConfigurationDataHash(string $filePath, string $configurationHash) : void
+    private function storeConfigurationDataHash(string $filePath, string $configurationHash): void
     {
         $key = CacheKey::CONFIGURATION_HASH_KEY . '_' . $this->getFilePathCacheKey($filePath);
         $this->invalidateCacheIfConfigurationChanged($key, $configurationHash);
         $this->cache->save($key, CacheKey::CONFIGURATION_HASH_KEY, $configurationHash);
     }
-    private function invalidateCacheIfConfigurationChanged(string $key, string $configurationHash) : void
+    private function invalidateCacheIfConfigurationChanged(string $key, string $configurationHash): void
     {
         $oldCachedValue = $this->cache->load($key, CacheKey::CONFIGURATION_HASH_KEY);
         if ($oldCachedValue === null) {

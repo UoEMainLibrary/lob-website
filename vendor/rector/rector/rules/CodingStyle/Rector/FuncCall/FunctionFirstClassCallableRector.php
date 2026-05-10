@@ -9,8 +9,7 @@ use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\VariadicPlaceholder;
-use PHPStan\Analyser\Scope;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\Rector\AbstractRector;
 use Rector\ValueObject\PhpVersion;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
 use ReflectionException;
@@ -21,9 +20,9 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\CodingStyle\Rector\FuncCall\FunctionFirstClassCallableRector\FunctionFirstClassCallableRectorTest
  */
-final class FunctionFirstClassCallableRector extends AbstractScopeAwareRector implements MinPhpVersionInterface
+final class FunctionFirstClassCallableRector extends AbstractRector implements MinPhpVersionInterface
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         // see RFC https://wiki.php.net/rfc/first_class_callable_syntax
         return new RuleDefinition('Upgrade string callback functions to first class callable', [new CodeSample(<<<'CODE_SAMPLE'
@@ -49,15 +48,15 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
-    public function refactorWithScope(Node $node, Scope $scope) : ?FuncCall
+    /**
+     * @param FuncCall $node
+     */
+    public function refactor(Node $node): ?FuncCall
     {
-        if (!$node instanceof FuncCall) {
-            return null;
-        }
         if (!$node->name instanceof Name) {
             return null;
         }
@@ -78,7 +77,7 @@ CODE_SAMPLE
         }
         $hasChanged = \false;
         foreach ($node->getArgs() as $key => $arg) {
-            if (!\in_array($key, $callableArgs, \true)) {
+            if (!in_array($key, $callableArgs, \true)) {
                 continue;
             }
             if (!$arg->value instanceof String_) {
@@ -89,7 +88,7 @@ CODE_SAMPLE
         }
         return $hasChanged ? $node : null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersion::PHP_81;
     }

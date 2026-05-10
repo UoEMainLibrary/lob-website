@@ -21,24 +21,20 @@ final class IfManipulator
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\StmtsManipulator
      */
-    private $stmtsManipulator;
+    private \Rector\NodeManipulator\StmtsManipulator $stmtsManipulator;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Comparing\NodeComparator
      */
-    private $nodeComparator;
+    private NodeComparator $nodeComparator;
     public function __construct(BetterNodeFinder $betterNodeFinder, \Rector\NodeManipulator\StmtsManipulator $stmtsManipulator, ValueResolver $valueResolver, NodeComparator $nodeComparator)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -53,9 +49,9 @@ final class IfManipulator
      *     return $value;
      * }
      */
-    public function matchIfNotNullReturnValue(If_ $if) : ?Expr
+    public function matchIfNotNullReturnValue(If_ $if): ?Expr
     {
-        if (\count($if->stmts) !== 1) {
+        if (count($if->stmts) !== 1) {
             return null;
         }
         $insideIfNode = $if->stmts[0];
@@ -70,7 +66,7 @@ final class IfManipulator
     /**
      * @return If_[]
      */
-    public function collectNestedIfsWithOnlyReturn(If_ $if) : array
+    public function collectNestedIfsWithOnlyReturn(If_ $if): array
     {
         $ifs = [];
         $currentIf = $if;
@@ -89,7 +85,7 @@ final class IfManipulator
         $ifs[] = $currentIf;
         return $ifs;
     }
-    public function isIfAndElseWithSameVariableAssignAsLastStmts(If_ $if, Expr $desiredExpr) : bool
+    public function isIfAndElseWithSameVariableAssignAsLastStmts(If_ $if, Expr $desiredExpr): bool
     {
         if (!$if->else instanceof Else_) {
             return \false;
@@ -116,9 +112,9 @@ final class IfManipulator
     /**
      * @return If_[]
      */
-    public function collectNestedIfsWithNonBreaking(Foreach_ $foreach) : array
+    public function collectNestedIfsWithNonBreaking(Foreach_ $foreach): array
     {
-        if (\count($foreach->stmts) !== 1) {
+        if (count($foreach->stmts) !== 1) {
             return [];
         }
         $onlyForeachStmt = $foreach->stmts[0];
@@ -139,12 +135,7 @@ final class IfManipulator
         if (!$this->isIfWithoutElseAndElseIfs($currentIf)) {
             return [];
         }
-        $return = $this->betterNodeFinder->findFirstInstanceOf($currentIf->stmts, Return_::class);
-        if ($return instanceof Return_) {
-            return [];
-        }
-        $exit = $this->betterNodeFinder->findFirstInstanceOf($currentIf->stmts, Exit_::class);
-        if ($exit instanceof Exit_) {
+        if ($this->betterNodeFinder->hasInstancesOf($currentIf->stmts, [Return_::class, Exit_::class])) {
             return [];
         }
         // last if is with the expression
@@ -154,21 +145,21 @@ final class IfManipulator
     /**
      * @param class-string<Stmt> $stmtClass
      */
-    public function isIfWithOnly(If_ $if, string $stmtClass) : bool
+    public function isIfWithOnly(If_ $if, string $stmtClass): bool
     {
         if (!$this->isIfWithoutElseAndElseIfs($if)) {
             return \false;
         }
         return $this->hasOnlyStmtOfType($if, $stmtClass);
     }
-    public function isIfWithoutElseAndElseIfs(If_ $if) : bool
+    public function isIfWithoutElseAndElseIfs(If_ $if): bool
     {
         if ($if->else instanceof Else_) {
             return \false;
         }
         return $if->elseifs === [];
     }
-    private function matchComparedAndReturnedNode(NotIdentical $notIdentical, Return_ $return) : ?Expr
+    private function matchComparedAndReturnedNode(NotIdentical $notIdentical, Return_ $return): ?Expr
     {
         if ($this->nodeComparator->areNodesEqual($notIdentical->left, $return->expr) && $this->valueResolver->isNull($notIdentical->right)) {
             return $notIdentical->left;
@@ -181,7 +172,7 @@ final class IfManipulator
         }
         return null;
     }
-    private function isIfWithOnlyStmtIf(If_ $if) : bool
+    private function isIfWithOnlyStmtIf(If_ $if): bool
     {
         if (!$this->isIfWithoutElseAndElseIfs($if)) {
             return \false;
@@ -191,10 +182,10 @@ final class IfManipulator
     /**
      * @param class-string<Stmt> $stmtClass
      */
-    private function hasOnlyStmtOfType(If_ $if, string $stmtClass) : bool
+    private function hasOnlyStmtOfType(If_ $if, string $stmtClass): bool
     {
         $stmts = $if->stmts;
-        if (\count($stmts) !== 1) {
+        if (count($stmts) !== 1) {
             return \false;
         }
         return $stmts[0] instanceof $stmtClass;

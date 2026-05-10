@@ -17,9 +17,8 @@ final class DowngradeMixedTypeTypedPropertyRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\PropertyDecorator
      */
-    private $PropertyDecorator;
+    private PropertyDecorator $PropertyDecorator;
     public function __construct(PropertyDecorator $PropertyDecorator)
     {
         $this->PropertyDecorator = $PropertyDecorator;
@@ -27,11 +26,11 @@ final class DowngradeMixedTypeTypedPropertyRector extends AbstractRector
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Property::class];
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Removes mixed type property type definition, adding `@var` annotations instead.', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -53,7 +52,7 @@ CODE_SAMPLE
     /**
      * @param Property $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$node->type instanceof Identifier) {
             return null;

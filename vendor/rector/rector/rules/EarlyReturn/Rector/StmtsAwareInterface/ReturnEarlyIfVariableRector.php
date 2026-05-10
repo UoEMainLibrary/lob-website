@@ -14,8 +14,8 @@ use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\NodeAnalyzer\VariableAnalyzer;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -26,20 +26,18 @@ final class ReturnEarlyIfVariableRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\VariableAnalyzer
      */
-    private $variableAnalyzer;
+    private VariableAnalyzer $variableAnalyzer;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     public function __construct(VariableAnalyzer $variableAnalyzer, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->variableAnalyzer = $variableAnalyzer;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replace if conditioned variable override with direct return', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
@@ -72,14 +70,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $stmts = (array) $node->stmts;
         foreach ($stmts as $key => $stmt) {
@@ -90,7 +88,7 @@ CODE_SAMPLE
             if ($stmt instanceof If_ && !$stmt->else instanceof Else_ && $stmt->elseifs === []) {
                 // is single condition if
                 $if = $stmt;
-                if (\count($if->stmts) !== 1) {
+                if (count($if->stmts) !== 1) {
                     continue;
                 }
                 $onlyIfStmt = $if->stmts[0];
@@ -105,7 +103,7 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function matchOnlyIfStmtReturnExpr(Stmt $onlyIfStmt, Variable $returnVariable) : ?\PhpParser\Node\Expr
+    private function matchOnlyIfStmtReturnExpr(Stmt $onlyIfStmt, Variable $returnVariable): ?\PhpParser\Node\Expr
     {
         if (!$onlyIfStmt instanceof Expression) {
             return null;
@@ -134,7 +132,10 @@ CODE_SAMPLE
         // return directly
         return $assign->expr;
     }
-    private function matchNextStmtReturnVariable(StmtsAwareInterface $stmtsAware, int $key) : ?\PhpParser\Node\Expr\Variable
+    /**
+     * @param StmtsAware $stmtsAware
+     */
+    private function matchNextStmtReturnVariable(Node $stmtsAware, int $key): ?\PhpParser\Node\Expr\Variable
     {
         $nextStmt = $stmtsAware->stmts[$key + 1] ?? null;
         // last item → stop

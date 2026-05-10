@@ -13,19 +13,16 @@ final class StrictNativeFunctionReturnTypeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ReturnFilter\ExclusiveNativeCallLikeReturnMatcher
      */
-    private $exclusiveNativeCallLikeReturnMatcher;
+    private ExclusiveNativeCallLikeReturnMatcher $exclusiveNativeCallLikeReturnMatcher;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer
      */
-    private $returnAnalyzer;
+    private ReturnAnalyzer $returnAnalyzer;
     public function __construct(BetterNodeFinder $betterNodeFinder, ExclusiveNativeCallLikeReturnMatcher $exclusiveNativeCallLikeReturnMatcher, ReturnAnalyzer $returnAnalyzer)
     {
         $this->betterNodeFinder = $betterNodeFinder;
@@ -36,7 +33,7 @@ final class StrictNativeFunctionReturnTypeAnalyzer
      * @return CallLike[]|null
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    public function matchAlwaysReturnNativeCallLikes($functionLike) : ?array
+    public function matchAlwaysReturnNativeCallLikes($functionLike): ?array
     {
         if ($functionLike->stmts === null) {
             return null;

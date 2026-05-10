@@ -7,15 +7,19 @@ use function array_key_exists;
 trait NodeAttributes
 {
     /** @var array<string, mixed> */
-    private $attributes = [];
+    private array $attributes = [];
     /**
      * @param mixed $value
      */
-    public function setAttribute(string $key, $value) : void
+    public function setAttribute(string $key, $value): void
     {
+        if ($value === null) {
+            unset($this->attributes[$key]);
+            return;
+        }
         $this->attributes[$key] = $value;
     }
-    public function hasAttribute(string $key) : bool
+    public function hasAttribute(string $key): bool
     {
         return array_key_exists($key, $this->attributes);
     }

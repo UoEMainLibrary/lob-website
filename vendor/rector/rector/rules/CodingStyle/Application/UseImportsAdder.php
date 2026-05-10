@@ -3,7 +3,6 @@
 declare (strict_types=1);
 namespace Rector\CodingStyle\Application;
 
-use RectorPrefix202411\Nette\Utils\Strings;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Declare_;
@@ -11,25 +10,22 @@ use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Nop;
 use PhpParser\Node\Stmt\Use_;
-use PHPStan\Type\ObjectType;
 use Rector\CodingStyle\ClassNameImport\UsedImportsResolver;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\NodeTypeResolver\PHPStan\Type\TypeFactory;
-use Rector\PhpParser\Node\CustomNode\FileWithoutNamespace;
+use Rector\PhpParser\Node\FileNode;
 use Rector\StaticTypeMapper\ValueObject\Type\AliasedObjectType;
 use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
 final class UseImportsAdder
 {
     /**
      * @readonly
-     * @var \Rector\CodingStyle\ClassNameImport\UsedImportsResolver
      */
-    private $usedImportsResolver;
+    private UsedImportsResolver $usedImportsResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     public function __construct(UsedImportsResolver $usedImportsResolver, TypeFactory $typeFactory)
     {
         $this->usedImportsResolver = $usedImportsResolver;
@@ -40,9 +36,8 @@ final class UseImportsAdder
      * @param array<FullyQualifiedObjectType|AliasedObjectType> $useImportTypes
      * @param array<FullyQualifiedObjectType|AliasedObjectType> $constantUseImportTypes
      * @param array<FullyQualifiedObjectType|AliasedObjectType> $functionUseImportTypes
-     * @return Stmt[]
      */
-    public function addImportsToStmts(FileWithoutNamespace $fileWithoutNamespace, array $stmts, array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes) : array
+    public function addImportsToStmts(FileNode $fileNode, array $stmts, array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes): bool
     {
         $usedImports = $this->usedImportsResolver->resolveForStmts($stmts);
         $existingUseImportTypes = $usedImports->getUseImports();
@@ -53,8 +48,14 @@ final class UseImportsAdder
         $functionUseImportTypes = $this->diffFullyQualifiedObjectTypes($functionUseImportTypes, $existingFunctionUseImports);
         $newUses = $this->createUses($useImportTypes, $constantUseImportTypes, $functionUseImportTypes, null);
         if ($newUses === []) {
-            return [$fileWithoutNamespace];
+            return \false;
         }
+        $stmts = array_values(array_filter($stmts, static function (Stmt $stmt): bool {
+            if (!$stmt instanceof Use_) {
+                return \true;
+            }
+            return $stmt->uses !== [];
+        }));
         // place after declare strict_types
         foreach ($stmts as $key => $stmt) {
             // maybe just added a space
@@ -65,29 +66,29 @@ final class UseImportsAdder
             if (!$stmt instanceof Declare_) {
                 break;
             }
-            $nodesToAdd = \array_merge([new Nop()], $newUses);
+            $nodesToAdd = array_merge([new Nop()], $newUses);
             $this->mirrorUseComments($stmts, $newUses, $key + 1);
             // remove space before next use tweak
             if (isset($stmts[$key + 1]) && ($stmts[$key + 1] instanceof Use_ || $stmts[$key + 1] instanceof GroupUse)) {
                 $stmts[$key + 1]->setAttribute(AttributeKey::ORIGINAL_NODE, null);
             }
-            \array_splice($stmts, $key + 1, 0, $nodesToAdd);
-            $fileWithoutNamespace->stmts = $stmts;
-            $fileWithoutNamespace->stmts = \array_values($fileWithoutNamespace->stmts);
-            return [$fileWithoutNamespace];
+            array_splice($stmts, $key + 1, 0, $nodesToAdd);
+            $fileNode->stmts = $stmts;
+            $fileNode->stmts = array_values($fileNode->stmts);
+            return \true;
         }
         $this->mirrorUseComments($stmts, $newUses);
         // make use stmts first
-        $fileWithoutNamespace->stmts = \array_merge($newUses, $this->resolveInsertNop($fileWithoutNamespace), $stmts);
-        $fileWithoutNamespace->stmts = \array_values($fileWithoutNamespace->stmts);
-        return [$fileWithoutNamespace];
+        $fileNode->stmts = array_merge($newUses, $this->resolveInsertNop($fileNode), $stmts);
+        $fileNode->stmts = array_values($fileNode->stmts);
+        return \true;
     }
     /**
      * @param FullyQualifiedObjectType[] $useImportTypes
      * @param FullyQualifiedObjectType[] $constantUseImportTypes
      * @param FullyQualifiedObjectType[] $functionUseImportTypes
      */
-    public function addImportsToNamespace(Namespace_ $namespace, array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes) : void
+    public function addImportsToNamespace(Namespace_ $namespace, array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes): bool
     {
         $namespaceName = $this->getNamespaceName($namespace);
         $existingUsedImports = $this->usedImportsResolver->resolveForStmts($namespace->stmts);
@@ -100,17 +101,18 @@ final class UseImportsAdder
         $functionUseImportTypes = $this->diffFullyQualifiedObjectTypes($functionUseImportTypes, $existingFunctionUseImportTypes);
         $newUses = $this->createUses($useImportTypes, $constantUseImportTypes, $functionUseImportTypes, $namespaceName);
         if ($newUses === []) {
-            return;
+            return \false;
         }
         $this->mirrorUseComments($namespace->stmts, $newUses);
-        $namespace->stmts = \array_merge($newUses, $this->resolveInsertNop($namespace), $namespace->stmts);
-        $namespace->stmts = \array_values($namespace->stmts);
+        $namespace->stmts = array_merge($newUses, $this->resolveInsertNop($namespace), $namespace->stmts);
+        $namespace->stmts = array_values($namespace->stmts);
+        return \true;
     }
     /**
      * @return Nop[]
-     * @param \Rector\PhpParser\Node\CustomNode\FileWithoutNamespace|\PhpParser\Node\Stmt\Namespace_ $namespace
+     * @param \Rector\PhpParser\Node\FileNode|\PhpParser\Node\Stmt\Namespace_ $namespace
      */
-    private function resolveInsertNop($namespace) : array
+    private function resolveInsertNop($namespace): array
     {
         $currentStmt = $namespace->stmts[0] ?? null;
         if (!$currentStmt instanceof Stmt || $currentStmt instanceof Use_ || $currentStmt instanceof GroupUse) {
@@ -122,7 +124,7 @@ final class UseImportsAdder
      * @param Stmt[] $stmts
      * @param Use_[] $newUses
      */
-    private function mirrorUseComments(array $stmts, array $newUses, int $indexStmt = 0) : void
+    private function mirrorUseComments(array $stmts, array $newUses, int $indexStmt = 0): void
     {
         if ($stmts === []) {
             return;
@@ -140,7 +142,7 @@ final class UseImportsAdder
      * @param array<FullyQualifiedObjectType|AliasedObjectType> $typesToRemove
      * @return array<FullyQualifiedObjectType|AliasedObjectType>
      */
-    private function diffFullyQualifiedObjectTypes(array $mainTypes, array $typesToRemove) : array
+    private function diffFullyQualifiedObjectTypes(array $mainTypes, array $typesToRemove): array
     {
         foreach ($mainTypes as $key => $mainType) {
             foreach ($typesToRemove as $typeToRemove) {
@@ -149,7 +151,7 @@ final class UseImportsAdder
                 }
             }
         }
-        return \array_values($mainTypes);
+        return array_values($mainTypes);
     }
     /**
      * @param array<AliasedObjectType|FullyQualifiedObjectType> $useImportTypes
@@ -157,7 +159,7 @@ final class UseImportsAdder
      * @param array<FullyQualifiedObjectType|AliasedObjectType> $functionUseImportTypes
      * @return Use_[]
      */
-    private function createUses(array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes, ?string $namespaceName) : array
+    private function createUses(array $useImportTypes, array $constantUseImportTypes, array $functionUseImportTypes, ?string $namespaceName): array
     {
         $newUses = [];
         /** @var array<Use_::TYPE_*, array<AliasedObjectType|FullyQualifiedObjectType>> $importsMapping */
@@ -168,25 +170,31 @@ final class UseImportsAdder
                 if ($namespaceName !== null && $this->isCurrentNamespace($namespaceName, $importType)) {
                     continue;
                 }
+                if ($namespaceName === null && $importType instanceof FullyQualifiedObjectType && substr_count(ltrim($importType->getClassName(), '\\'), '\\') === 0) {
+                    continue;
+                }
                 // already imported in previous cycle
                 $newUses[] = $importType->getUseNode($type);
             }
         }
         return $newUses;
     }
-    private function getNamespaceName(Namespace_ $namespace) : ?string
+    private function getNamespaceName(Namespace_ $namespace): ?string
     {
         if (!$namespace->name instanceof Name) {
             return null;
         }
         return $namespace->name->toString();
     }
-    private function isCurrentNamespace(string $namespaceName, ObjectType $objectType) : bool
+    /**
+     * @param \Rector\StaticTypeMapper\ValueObject\Type\AliasedObjectType|\Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType $objectType
+     */
+    private function isCurrentNamespace(string $namespaceName, $objectType): bool
     {
-        $afterCurrentNamespace = Strings::after($objectType->getClassName(), $namespaceName . '\\');
-        if ($afterCurrentNamespace === null) {
+        $className = $objectType->getClassName();
+        if (strncmp($className, $namespaceName . '\\', strlen($namespaceName . '\\')) !== 0) {
             return \false;
         }
-        return \strpos($afterCurrentNamespace, '\\') === \false;
+        return $namespaceName . '\\' . $objectType->getShortName() === $className;
     }
 }

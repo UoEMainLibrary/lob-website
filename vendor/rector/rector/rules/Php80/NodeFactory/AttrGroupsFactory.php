@@ -11,9 +11,8 @@ final class AttrGroupsFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\NodeFactory\PhpAttributeGroupFactory
      */
-    private $phpAttributeGroupFactory;
+    private PhpAttributeGroupFactory $phpAttributeGroupFactory;
     public function __construct(PhpAttributeGroupFactory $phpAttributeGroupFactory)
     {
         $this->phpAttributeGroupFactory = $phpAttributeGroupFactory;
@@ -23,7 +22,7 @@ final class AttrGroupsFactory
      * @param Use_[] $uses
      * @return AttributeGroup[]
      */
-    public function create(array $doctrineTagAndAnnotationToAttributes, array $uses) : array
+    public function create(array $doctrineTagAndAnnotationToAttributes, array $uses): array
     {
         $attributeGroups = [];
         foreach ($doctrineTagAndAnnotationToAttributes as $doctrineTagAndAnnotationToAttribute) {

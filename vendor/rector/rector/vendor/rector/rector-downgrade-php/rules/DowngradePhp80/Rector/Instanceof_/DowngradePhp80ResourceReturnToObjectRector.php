@@ -19,9 +19,8 @@ final class DowngradePhp80ResourceReturnToObjectRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\DowngradePhp81\NodeManipulator\ObjectToResourceReturn
      */
-    private $objectToResourceReturn;
+    private ObjectToResourceReturn $objectToResourceReturn;
     /**
      * @var string[]
      */
@@ -58,7 +57,7 @@ final class DowngradePhp80ResourceReturnToObjectRector extends AbstractRector
     {
         $this->objectToResourceReturn = $objectToResourceReturn;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('change instanceof Object to is_resource', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -83,14 +82,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [BinaryOp::class, Instanceof_::class];
     }
     /**
      * @param BinaryOp|Instanceof_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         return $this->objectToResourceReturn->refactor($node, self::COLLECTION_OBJECT_TO_RESOURCE);
     }

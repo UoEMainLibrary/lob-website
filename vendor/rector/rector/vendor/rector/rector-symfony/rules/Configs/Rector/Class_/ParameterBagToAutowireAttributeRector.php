@@ -10,9 +10,12 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
+use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\ObjectType;
 use Rector\Rector\AbstractRector;
 use Rector\Symfony\Configs\NodeFactory\AutowiredParamFactory;
+use Rector\Symfony\Enum\SymfonyAttribute;
+use Rector\Symfony\Enum\SymfonyClass;
 use Rector\ValueObject\MethodName;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\VersionBonding\Contract\MinPhpVersionInterface;
@@ -28,18 +31,18 @@ final class ParameterBagToAutowireAttributeRector extends AbstractRector impleme
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\Configs\NodeFactory\AutowiredParamFactory
      */
-    private $autowiredParamFactory;
+    private AutowiredParamFactory $autowiredParamFactory;
     /**
-     * @var string
+     * @readonly
      */
-    private const PARAMETER_BAG_CLASS = 'Symfony\\Component\\DependencyInjection\\ParameterBag\\ParameterBagInterface';
-    public function __construct(AutowiredParamFactory $autowiredParamFactory)
+    private ReflectionProvider $reflectionProvider;
+    public function __construct(AutowiredParamFactory $autowiredParamFactory, ReflectionProvider $reflectionProvider)
     {
         $this->autowiredParamFactory = $autowiredParamFactory;
+        $this->reflectionProvider = $reflectionProvider;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change explicit configuration parameter pass into #[Autowire] attributes', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -72,15 +75,18 @@ final class CertificateFactory
 CODE_SAMPLE
 )]);
     }
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Class_
+    public function refactor(Node $node): ?Class_
     {
+        if (!$this->reflectionProvider->hasClass(SymfonyAttribute::AUTOWIRE)) {
+            return null;
+        }
         if ($node->isAnonymous()) {
             return null;
         }
@@ -95,11 +101,11 @@ CODE_SAMPLE
         $extraParams = [];
         $parameterBagCallCount = 0;
         // replace all parameter bag interface "->get(...)" with #[Autowire] attributes
-        $this->traverseNodesWithCallable((array) $constructClassMethod->stmts, function (Node $node) use(&$extraParams, &$parameterBagCallCount) : ?Variable {
+        $this->traverseNodesWithCallable((array) $constructClassMethod->stmts, function (Node $node) use (&$extraParams, &$parameterBagCallCount): ?Variable {
             if (!$node instanceof MethodCall) {
                 return null;
             }
-            if (!$this->isObjectType($node->var, new ObjectType(self::PARAMETER_BAG_CLASS))) {
+            if (!$this->isObjectType($node->var, new ObjectType(SymfonyClass::PARAMETER_BAG_INTERFACE))) {
                 return null;
             }
             ++$parameterBagCallCount;
@@ -112,7 +118,7 @@ CODE_SAMPLE
                 return null;
             }
             // from underscore to camelcase
-            $variableName = \lcfirst(\str_replace('_', '', \ucwords($argValue->value, '_')));
+            $variableName = lcfirst(str_replace('_', '', ucwords($argValue->value, '_')));
             $extraParams[] = $this->autowiredParamFactory->create($variableName, $argValue);
             return new Variable($variableName);
         });
@@ -120,14 +126,14 @@ CODE_SAMPLE
             return null;
         }
         $this->removeParameterBagParamIfNotUsed($constructClassMethod, $extraParams, $parameterBagCallCount);
-        $constructClassMethod->params = \array_merge($constructClassMethod->params, $extraParams);
+        $constructClassMethod->params = array_merge($constructClassMethod->params, $extraParams);
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::ATTRIBUTES;
     }
-    private function hasParameterBagInterfaceDependency(ClassMethod $classMethod) : bool
+    private function hasParameterBagInterfaceDependency(ClassMethod $classMethod): bool
     {
         foreach ($classMethod->getParams() as $param) {
             if ($this->isParameterBagParam($param)) {
@@ -139,10 +145,10 @@ CODE_SAMPLE
     /**
      * @param Param[] $extraParams
      */
-    private function removeParameterBagParamIfNotUsed(ClassMethod $constructClassMethod, array $extraParams, int $parameterBagCallCount) : void
+    private function removeParameterBagParamIfNotUsed(ClassMethod $constructClassMethod, array $extraParams, int $parameterBagCallCount): void
     {
         // all usages of ParameterBagInterface were replaced
-        if (\count($extraParams) !== $parameterBagCallCount) {
+        if (count($extraParams) !== $parameterBagCallCount) {
             return;
         }
         foreach ($constructClassMethod->params as $key => $param) {
@@ -152,11 +158,11 @@ CODE_SAMPLE
             unset($constructClassMethod->params[$key]);
         }
     }
-    private function isParameterBagParam(Param $param) : bool
+    private function isParameterBagParam(Param $param): bool
     {
         if (!$param->type instanceof Node) {
             return \false;
         }
-        return $this->isName($param->type, self::PARAMETER_BAG_CLASS);
+        return $this->isName($param->type, SymfonyClass::PARAMETER_BAG_INTERFACE);
     }
 }

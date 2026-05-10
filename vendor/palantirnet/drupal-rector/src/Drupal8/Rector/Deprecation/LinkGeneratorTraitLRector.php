@@ -46,8 +46,7 @@ final class LinkGeneratorTraitLRector extends AbstractRector
             new CodeSample(
                 <<<'CODE_BEFORE'
 $this->l($text, $url);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal\Core\Link::fromTextAndUrl($text, $url);
 CODE_AFTER
@@ -72,7 +71,7 @@ CODE_AFTER
     {
         assert($node instanceof Node\Stmt\Expression);
 
-        if (!($node->expr instanceof Node\Expr\MethodCall)) {
+        if (!$node->expr instanceof Node\Expr\MethodCall) {
             return null;
         }
 

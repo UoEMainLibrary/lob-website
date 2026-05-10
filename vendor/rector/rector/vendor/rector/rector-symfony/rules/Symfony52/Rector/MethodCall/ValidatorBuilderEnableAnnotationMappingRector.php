@@ -19,14 +19,13 @@ final class ValidatorBuilderEnableAnnotationMappingRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Migrates from deprecated ValidatorBuilder->enableAnnotationMapping($reader) to ValidatorBuilder->enableAnnotationMapping(true)->setDoctrineAnnotationReader($reader)', [new CodeSample(<<<'CODE_SAMPLE'
 use Doctrine\Common\Annotations\Reader;
@@ -57,19 +56,19 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node->name, 'enableAnnotationMapping')) {
             return null;
         }
-        if (!$this->isObjectType($node->var, new ObjectType('Symfony\\Component\\Validator\\ValidatorBuilder'))) {
+        if (!$this->isObjectType($node->var, new ObjectType('Symfony\Component\Validator\ValidatorBuilder'))) {
             return null;
         }
         $firstArg = $node->args[0];
@@ -79,7 +78,7 @@ CODE_SAMPLE
         if ($this->valueResolver->isTrueOrFalse($firstArg->value)) {
             return null;
         }
-        if (!$this->isObjectType($firstArg->value, new ObjectType('Doctrine\\Common\\Annotations\\Reader'))) {
+        if (!$this->isObjectType($firstArg->value, new ObjectType('Doctrine\Common\Annotations\Reader'))) {
             return null;
         }
         $readerType = $firstArg->value;

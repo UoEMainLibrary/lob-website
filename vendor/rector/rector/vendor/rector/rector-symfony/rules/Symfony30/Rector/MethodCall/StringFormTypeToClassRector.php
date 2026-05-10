@@ -21,14 +21,12 @@ final class StringFormTypeToClassRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormAddMethodCallAnalyzer
      */
-    private $formAddMethodCallAnalyzer;
+    private FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\FormHelper\FormTypeStringToTypeProvider
      */
-    private $formTypeStringToTypeProvider;
+    private FormTypeStringToTypeProvider $formTypeStringToTypeProvider;
     /**
      * @var string
      */
@@ -38,7 +36,7 @@ final class StringFormTypeToClassRector extends AbstractRector
         $this->formAddMethodCallAnalyzer = $formAddMethodCallAnalyzer;
         $this->formTypeStringToTypeProvider = $formTypeStringToTypeProvider;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition(self::DESCRIPTION, [new CodeSample(<<<'CODE_SAMPLE'
 $formBuilder = new Symfony\Component\Form\FormBuilder;
@@ -53,14 +51,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->formAddMethodCallAnalyzer->isMatching($node)) {
             return null;
@@ -73,7 +71,6 @@ CODE_SAMPLE
         if (!$firstArg->value instanceof String_) {
             return null;
         }
-        /** @var String_ $stringNode */
         $stringNode = $firstArg->value;
         // not a form type string
         $formClass = $this->formTypeStringToTypeProvider->matchClassForNameWithPrefix($stringNode->value);

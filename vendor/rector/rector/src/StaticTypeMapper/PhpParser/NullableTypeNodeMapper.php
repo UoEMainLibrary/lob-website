@@ -18,24 +18,20 @@ final class NullableTypeNodeMapper implements PhpParserNodeMapperInterface
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper
      */
-    private $fullyQualifiedNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper $fullyQualifiedNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\NameNodeMapper
      */
-    private $nameNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\NameNodeMapper $nameNodeMapper;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper
      */
-    private $identifierNodeMapper;
+    private \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper $identifierNodeMapper;
     public function __construct(TypeFactory $typeFactory, \Rector\StaticTypeMapper\PhpParser\FullyQualifiedNodeMapper $fullyQualifiedNodeMapper, \Rector\StaticTypeMapper\PhpParser\NameNodeMapper $nameNodeMapper, \Rector\StaticTypeMapper\PhpParser\IdentifierNodeMapper $identifierNodeMapper)
     {
         $this->typeFactory = $typeFactory;
@@ -43,14 +39,14 @@ final class NullableTypeNodeMapper implements PhpParserNodeMapperInterface
         $this->nameNodeMapper = $nameNodeMapper;
         $this->identifierNodeMapper = $identifierNodeMapper;
     }
-    public function getNodeType() : string
+    public function getNodeType(): string
     {
         return NullableType::class;
     }
     /**
      * @param NullableType $node
      */
-    public function mapToPHPStan(Node $node) : Type
+    public function mapToPHPStan(Node $node): Type
     {
         if ($node->type instanceof FullyQualified) {
             $type = $this->fullyQualifiedNodeMapper->mapToPHPStan($node->type);

@@ -11,9 +11,8 @@ final class PropertyAssignMatcher
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\PropertyFetchAnalyzer
      */
-    private $propertyFetchAnalyzer;
+    private PropertyFetchAnalyzer $propertyFetchAnalyzer;
     public function __construct(PropertyFetchAnalyzer $propertyFetchAnalyzer)
     {
         $this->propertyFetchAnalyzer = $propertyFetchAnalyzer;
@@ -23,7 +22,7 @@ final class PropertyAssignMatcher
      * - $this->propertyName = $expr;
      * - $this->propertyName[] = $expr;
      */
-    public function matchPropertyAssignExpr(Assign $assign, string $propertyName) : ?Expr
+    public function matchPropertyAssignExpr(Assign $assign, string $propertyName): ?Expr
     {
         $assignVar = $assign->var;
         if ($this->propertyFetchAnalyzer->isLocalPropertyFetchName($assignVar, $propertyName)) {

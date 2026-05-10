@@ -24,34 +24,28 @@ final class ReturnedNodesReturnTypeInfererTypeInferer
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SilentVoidResolver
      */
-    private $silentVoidResolver;
+    private SilentVoidResolver $silentVoidResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\TypeFactory
      */
-    private $typeFactory;
+    private TypeFactory $typeFactory;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeInferer\SplArrayFixedTypeNarrower
      */
-    private $splArrayFixedTypeNarrower;
+    private SplArrayFixedTypeNarrower $splArrayFixedTypeNarrower;
     /**
      * @readonly
-     * @var \Rector\Reflection\ReflectionResolver
      */
-    private $reflectionResolver;
+    private ReflectionResolver $reflectionResolver;
     public function __construct(SilentVoidResolver $silentVoidResolver, BetterNodeFinder $betterNodeFinder, NodeTypeResolver $nodeTypeResolver, TypeFactory $typeFactory, SplArrayFixedTypeNarrower $splArrayFixedTypeNarrower, ReflectionResolver $reflectionResolver)
     {
         $this->silentVoidResolver = $silentVoidResolver;
@@ -64,7 +58,7 @@ final class ReturnedNodesReturnTypeInfererTypeInferer
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_|\PhpParser\Node\Expr\Closure $functionLike
      */
-    public function inferFunctionLike($functionLike) : Type
+    public function inferFunctionLike($functionLike): Type
     {
         $classReflection = $this->reflectionResolver->resolveClassReflection($functionLike);
         if ($functionLike instanceof ClassMethod && (!$classReflection instanceof ClassReflection || $classReflection->isInterface())) {

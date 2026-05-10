@@ -10,7 +10,7 @@ use Rector\Rector\AbstractRector;
 use Rector\Transform\ValueObject\NewToStaticCall;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use RectorPrefix202411\Webmozart\Assert\Assert;
+use RectorPrefix202604\Webmozart\Assert\Assert;
 /**
  * @see \Rector\Tests\Transform\Rector\New_\NewToStaticCallRector\NewToStaticCallRectorTest
  */
@@ -19,8 +19,8 @@ final class NewToStaticCallRector extends AbstractRector implements Configurable
     /**
      * @var NewToStaticCall[]
      */
-    private $typeToStaticCalls = [];
-    public function getRuleDefinition() : RuleDefinition
+    private array $typeToStaticCalls = [];
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change new Object to static call', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -45,14 +45,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [New_::class];
     }
     /**
      * @param New_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         foreach ($this->typeToStaticCalls as $typeToStaticCall) {
             if (!$this->isObjectType($node->class, $typeToStaticCall->getObjectType())) {
@@ -65,7 +65,7 @@ CODE_SAMPLE
     /**
      * @param mixed[] $configuration
      */
-    public function configure(array $configuration) : void
+    public function configure(array $configuration): void
     {
         Assert::allIsAOf($configuration, NewToStaticCall::class);
         $this->typeToStaticCalls = $configuration;

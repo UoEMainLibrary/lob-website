@@ -30,20 +30,18 @@ final class DowngradeArbitraryExpressionsSupportRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeFactory\NamedVariableFactory
      */
-    private $namedVariableFactory;
+    private NamedVariableFactory $namedVariableFactory;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     public function __construct(NamedVariableFactory $namedVariableFactory, BetterNodeFinder $betterNodeFinder)
     {
         $this->namedVariableFactory = $namedVariableFactory;
         $this->betterNodeFinder = $betterNodeFinder;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replace arbitrary expressions used with new or instanceof', [new CodeSample(<<<'CODE_SAMPLE'
 function getObjectClassName() {
@@ -65,15 +63,15 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Expression::class];
     }
     /**
      * @param Expression $node
-     * @return Node\Stmt[]|null|Expression
+     * @return Expression[]|null
      */
-    public function refactor(Node $node)
+    public function refactor(Node $node): ?array
     {
         /** @var Assign[] $assigns */
         $assigns = $this->betterNodeFinder->findInstancesOf($node, [Assign::class]);
@@ -87,35 +85,35 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function isAllowed(Expr $expr) : bool
+    private function isAllowed(Expr $expr): bool
     {
         return $expr instanceof Variable || $expr instanceof ArrayDimFetch || $expr instanceof PropertyFetch || $expr instanceof StaticPropertyFetch;
     }
-    private function isAssign(Expr $expr) : bool
+    private function isAssign(Expr $expr): bool
     {
         return $expr instanceof Assign || $expr instanceof AssignRef || $expr instanceof AssignOp;
     }
-    private function isBetweenParentheses(Node $node) : bool
+    private function isBetweenParentheses(Node $node): bool
     {
         $oldTokens = $this->file->getOldTokens();
         $previousTokenPos = $node->getStartTokenPos() - 1;
         while ($previousTokenPos >= 0) {
             $token = $oldTokens[$previousTokenPos] ?? null;
             --$previousTokenPos;
-            if (!isset($token[0])) {
-                return $token === '(';
+            if ((string) $token === '(') {
+                return \true;
             }
-            if (!\in_array($token[0], [\T_COMMENT, \T_WHITESPACE], \true)) {
-                return $token === '(';
+            if (!in_array((string) $token, [\T_COMMENT, \T_WHITESPACE], \true)) {
+                continue;
             }
         }
         return \false;
     }
     /**
      * @param Assign[] $assigns
-     * @return Node\Stmt[]|null
+     * @return Expression[]|null
      */
-    private function refactorAssign(array $assigns, Expression $expression) : ?array
+    private function refactorAssign(array $assigns, Expression $expression): ?array
     {
         foreach ($assigns as $assign) {
             if (!$assign->expr instanceof New_ && !$assign->expr instanceof Instanceof_) {
@@ -148,9 +146,9 @@ CODE_SAMPLE
         return null;
     }
     /**
-     * @return Node\Stmt[]|null
+     * @return Expression[]|null
      */
-    private function refactorInstanceof(Instanceof_ $instanceof, Expression $expression) : ?array
+    private function refactorInstanceof(Instanceof_ $instanceof, Expression $expression): ?array
     {
         if (!$instanceof->class instanceof Expr) {
             return null;

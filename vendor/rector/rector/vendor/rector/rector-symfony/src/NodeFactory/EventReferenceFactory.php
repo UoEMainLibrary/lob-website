@@ -13,14 +13,12 @@ final class EventReferenceFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(NodeFactory $nodeFactory, ReflectionProvider $reflectionProvider)
     {
         $this->nodeFactory = $nodeFactory;
@@ -30,7 +28,7 @@ final class EventReferenceFactory
      * @param EventNameToClassAndConstant[] $eventNamesToClassConstants
      * @return String_|ClassConstFetch
      */
-    public function createEventName(string $eventName, array $eventNamesToClassConstants) : Node
+    public function createEventName(string $eventName, array $eventNamesToClassConstants): Node
     {
         if ($this->reflectionProvider->hasClass($eventName)) {
             return $this->nodeFactory->createClassConstReference($eventName);

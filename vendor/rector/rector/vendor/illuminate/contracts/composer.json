@@ -20,12 +20,12 @@
     },
     "autoload": {
         "psr-4": {
-            "RectorPrefix202411\\Illuminate\\Contracts\\": ""
+            "RectorPrefix202604\\Illuminate\\Contracts\\": ""
         }
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "11.x-dev"
+            "dev-master": "12.x-dev"
         }
     },
     "config": {

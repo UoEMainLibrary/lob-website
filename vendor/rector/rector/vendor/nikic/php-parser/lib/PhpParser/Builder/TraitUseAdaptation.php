@@ -5,36 +5,37 @@ namespace PhpParser\Builder;
 
 use PhpParser\Builder;
 use PhpParser\BuilderHelpers;
+use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\Node\Stmt;
 class TraitUseAdaptation implements Builder
 {
-    const TYPE_UNDEFINED = 0;
-    const TYPE_ALIAS = 1;
-    const TYPE_PRECEDENCE = 2;
-    /** @var int Type of building adaptation */
-    protected $type;
-    protected $trait;
-    protected $method;
-    protected $modifier = null;
-    protected $alias = null;
-    protected $insteadof = [];
+    private const TYPE_UNDEFINED = 0;
+    private const TYPE_ALIAS = 1;
+    private const TYPE_PRECEDENCE = 2;
+    protected int $type;
+    protected ?Node\Name $trait;
+    protected Node\Identifier $method;
+    protected ?int $modifier = null;
+    protected ?Node\Identifier $alias = null;
+    /** @var Node\Name[] */
+    protected array $insteadof = [];
     /**
      * Creates a trait use adaptation builder.
      *
-     * @param Node\Name|string|null  $trait  Name of adaptated trait
-     * @param Node\Identifier|string $method Name of adaptated method
+     * @param Node\Name|string|null $trait Name of adapted trait
+     * @param Node\Identifier|string $method Name of adapted method
      */
     public function __construct($trait, $method)
     {
         $this->type = self::TYPE_UNDEFINED;
-        $this->trait = \is_null($trait) ? null : BuilderHelpers::normalizeName($trait);
+        $this->trait = is_null($trait) ? null : BuilderHelpers::normalizeName($trait);
         $this->method = BuilderHelpers::normalizeIdentifier($method);
     }
     /**
      * Sets alias of method.
      *
-     * @param Node\Identifier|string $alias Alias for adaptated method
+     * @param Node\Identifier|string $alias Alias for adapted method
      *
      * @return $this The builder instance (for fluid interface)
      */
@@ -46,37 +47,37 @@ class TraitUseAdaptation implements Builder
         if ($this->type !== self::TYPE_ALIAS) {
             throw new \LogicException('Cannot set alias for not alias adaptation buider');
         }
-        $this->alias = $alias;
+        $this->alias = BuilderHelpers::normalizeIdentifier($alias);
         return $this;
     }
     /**
-     * Sets adaptated method public.
+     * Sets adapted method public.
      *
      * @return $this The builder instance (for fluid interface)
      */
     public function makePublic()
     {
-        $this->setModifier(Stmt\Class_::MODIFIER_PUBLIC);
+        $this->setModifier(Modifiers::PUBLIC);
         return $this;
     }
     /**
-     * Sets adaptated method protected.
+     * Sets adapted method protected.
      *
      * @return $this The builder instance (for fluid interface)
      */
     public function makeProtected()
     {
-        $this->setModifier(Stmt\Class_::MODIFIER_PROTECTED);
+        $this->setModifier(Modifiers::PROTECTED);
         return $this;
     }
     /**
-     * Sets adaptated method private.
+     * Sets adapted method private.
      *
      * @return $this The builder instance (for fluid interface)
      */
     public function makePrivate()
     {
-        $this->setModifier(Stmt\Class_::MODIFIER_PRIVATE);
+        $this->setModifier(Modifiers::PRIVATE);
         return $this;
     }
     /**
@@ -89,7 +90,7 @@ class TraitUseAdaptation implements Builder
     public function insteadof(...$traits)
     {
         if ($this->type === self::TYPE_UNDEFINED) {
-            if (\is_null($this->trait)) {
+            if (is_null($this->trait)) {
                 throw new \LogicException('Precedence adaptation must have trait');
             }
             $this->type = self::TYPE_PRECEDENCE;
@@ -102,7 +103,7 @@ class TraitUseAdaptation implements Builder
         }
         return $this;
     }
-    protected function setModifier(int $modifier)
+    protected function setModifier(int $modifier): void
     {
         if ($this->type === self::TYPE_UNDEFINED) {
             $this->type = self::TYPE_ALIAS;
@@ -110,7 +111,7 @@ class TraitUseAdaptation implements Builder
         if ($this->type !== self::TYPE_ALIAS) {
             throw new \LogicException('Cannot set access modifier for not alias adaptation buider');
         }
-        if (\is_null($this->modifier)) {
+        if (is_null($this->modifier)) {
             $this->modifier = $modifier;
         } else {
             throw new \LogicException('Multiple access type modifiers are not allowed');
@@ -121,7 +122,7 @@ class TraitUseAdaptation implements Builder
      *
      * @return Node The built node
      */
-    public function getNode() : Node
+    public function getNode(): Node
     {
         switch ($this->type) {
             case self::TYPE_ALIAS:

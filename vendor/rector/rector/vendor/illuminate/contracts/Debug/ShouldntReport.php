@@ -1,6 +1,6 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Contracts\Debug;
+namespace RectorPrefix202604\Illuminate\Contracts\Debug;
 
 interface ShouldntReport
 {

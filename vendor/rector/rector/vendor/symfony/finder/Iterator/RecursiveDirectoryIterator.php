@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Finder\Iterator;
+namespace RectorPrefix202604\Symfony\Component\Finder\Iterator;
 
-use RectorPrefix202411\Symfony\Component\Finder\Exception\AccessDeniedException;
-use RectorPrefix202411\Symfony\Component\Finder\SplFileInfo;
+use RectorPrefix202604\Symfony\Component\Finder\Exception\AccessDeniedException;
+use RectorPrefix202604\Symfony\Component\Finder\SplFileInfo;
 /**
  * Extends the \RecursiveDirectoryIterator to support relative paths.
  *
@@ -21,27 +21,12 @@ use RectorPrefix202411\Symfony\Component\Finder\SplFileInfo;
  */
 class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
 {
-    /**
-     * @var bool
-     */
-    private $ignoreUnreadableDirs;
-    /**
-     * @var bool
-     */
-    private $ignoreFirstRewind = \true;
+    private bool $ignoreUnreadableDirs;
+    private bool $ignoreFirstRewind = \true;
     // these 3 properties take part of the performance optimization to avoid redoing the same work in all iterations
-    /**
-     * @var string
-     */
-    private $rootPath;
-    /**
-     * @var string
-     */
-    private $subPath;
-    /**
-     * @var string
-     */
-    private $directorySeparator = '/';
+    private string $rootPath;
+    private string $subPath;
+    private string $directorySeparator = '/';
     /**
      * @throws \RuntimeException
      */
@@ -60,7 +45,7 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
     /**
      * Return an instance of SplFileInfo with support for relative paths.
      */
-    public function current() : SplFileInfo
+    public function current(): SplFileInfo
     {
         // the logic here avoids redoing the same work in all iterations
         if (!isset($this->subPath)) {
@@ -72,12 +57,12 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
         }
         $subPathname .= $this->getFilename();
         $basePath = $this->rootPath;
-        if ('/' !== $basePath && \substr_compare($basePath, $this->directorySeparator, -\strlen($this->directorySeparator)) !== 0 && \substr_compare($basePath, '/', -\strlen('/')) !== 0) {
+        if ('/' !== $basePath && substr_compare($basePath, $this->directorySeparator, -strlen($this->directorySeparator)) !== 0 && substr_compare($basePath, '/', -strlen('/')) !== 0) {
             $basePath .= $this->directorySeparator;
         }
         return new SplFileInfo($basePath . $subPathname, $this->subPath, $subPathname);
     }
-    public function hasChildren($allowLinks = \false) : bool
+    public function hasChildren($allowLinks = \false): bool
     {
         $hasChildren = parent::hasChildren($allowLinks);
         if (!$hasChildren || !$this->ignoreUnreadableDirs) {
@@ -94,7 +79,7 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
     /**
      * @throws AccessDeniedException
      */
-    public function getChildren() : \RecursiveDirectoryIterator
+    public function getChildren(): \RecursiveDirectoryIterator
     {
         try {
             $children = parent::getChildren();
@@ -109,12 +94,12 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
             throw new AccessDeniedException($e->getMessage(), $e->getCode(), $e);
         }
     }
-    public function next() : void
+    public function next(): void
     {
         $this->ignoreFirstRewind = \false;
         parent::next();
     }
-    public function rewind() : void
+    public function rewind(): void
     {
         // some streams like FTP are not rewindable, ignore the first rewind after creation,
         // as newly created DirectoryIterator does not need to be rewound

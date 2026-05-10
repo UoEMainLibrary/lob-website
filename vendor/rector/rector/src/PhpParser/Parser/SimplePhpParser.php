@@ -3,38 +3,35 @@
 declare (strict_types=1);
 namespace Rector\PhpParser\Parser;
 
-use RectorPrefix202411\Nette\Utils\FileSystem;
+use RectorPrefix202604\Nette\Utils\FileSystem;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\NodeTraverser;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
-use Rector\NodeTypeResolver\PHPStan\Scope\NodeVisitor\AssignedToNodeVisitor;
+use Rector\PhpParser\NodeVisitor\AssignedToNodeVisitor;
 use Throwable;
 final class SimplePhpParser
 {
     /**
      * @readonly
-     * @var \PhpParser\Parser
      */
-    private $phpParser;
+    private Parser $phpParser;
     /**
      * @readonly
-     * @var \PhpParser\NodeTraverser
      */
-    private $nodeTraverser;
+    private NodeTraverser $nodeTraverser;
     public function __construct()
     {
         $parserFactory = new ParserFactory();
-        $this->phpParser = $parserFactory->create(ParserFactory::ONLY_PHP7);
-        $this->nodeTraverser = new NodeTraverser();
-        $this->nodeTraverser->addVisitor(new AssignedToNodeVisitor());
+        $this->phpParser = $parserFactory->createForNewestSupportedVersion();
+        $this->nodeTraverser = new NodeTraverser(new AssignedToNodeVisitor());
     }
     /**
      * @api tests
      * @return Node[]
      */
-    public function parseFile(string $filePath) : array
+    public function parseFile(string $filePath): array
     {
         $fileContent = FileSystem::read($filePath);
         return $this->parseString($fileContent);
@@ -42,7 +39,7 @@ final class SimplePhpParser
     /**
      * @return Node[]
      */
-    public function parseString(string $fileContent) : array
+    public function parseString(string $fileContent): array
     {
         $fileContent = $this->ensureFileContentsHasOpeningTag($fileContent);
         $hasAddedSemicolon = \false;
@@ -60,9 +57,9 @@ final class SimplePhpParser
         $nodes = $this->restoreExpressionPreWrap($nodes, $hasAddedSemicolon);
         return $this->nodeTraverser->traverse($nodes);
     }
-    private function ensureFileContentsHasOpeningTag(string $fileContent) : string
+    private function ensureFileContentsHasOpeningTag(string $fileContent): string
     {
-        if (\strncmp(\trim($fileContent), '<?php', \strlen('<?php')) !== 0) {
+        if (strncmp(trim($fileContent), '<?php', strlen('<?php')) !== 0) {
             // prepend with PHP opening tag to make parse PHP code
             return '<?php ' . $fileContent;
         }
@@ -72,12 +69,12 @@ final class SimplePhpParser
      * @param Node[] $nodes
      * @return Node[]
      */
-    private function restoreExpressionPreWrap(array $nodes, bool $hasAddedSemicolon) : array
+    private function restoreExpressionPreWrap(array $nodes, bool $hasAddedSemicolon): array
     {
         if (!$hasAddedSemicolon) {
             return $nodes;
         }
-        if (\count($nodes) !== 1) {
+        if (count($nodes) !== 1) {
             return $nodes;
         }
         // remove added semicolon to be honest about Expression

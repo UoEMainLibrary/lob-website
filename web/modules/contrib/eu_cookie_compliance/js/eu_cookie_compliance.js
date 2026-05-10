@@ -681,6 +681,12 @@
       nextStatus = cookieValueAgreed;
     }
 
+    /* Necessary to keep the euCookieComplianceLoadScripts() load order consistent on page load. */
+    if (!euCookieComplianceHasLoadedScripts && typeof euCookieComplianceLoadScripts === "function") {
+      euCookieComplianceLoadScripts();
+    }
+    euCookieComplianceHasLoadedScripts = true;
+
     Drupal.eu_cookie_compliance.setAcceptedCategories(categories);
     // Load scripts for all categories. If no categories selected, none
     // will be loaded.
@@ -716,7 +722,6 @@
       }
       if (drupalSettings.eu_cookie_compliance.settings_tab_enabled) {
         popup.animate({top: Drupal.eu_cookie_compliance.getBannerTopHiddenPosition(height)}, drupalSettings.eu_cookie_compliance.popup_delay, null).trigger('eu_cookie_compliance_popup_close');
-        $('.eu-cookie-withdraw-tab').click(Drupal.eu_cookie_compliance.toggleWithdrawBanner);
       }
       else {
         popup.animate({top: Drupal.eu_cookie_compliance.getBannerTopHiddenPosition(height)}, drupalSettings.eu_cookie_compliance.popup_delay, null, function () {
@@ -730,7 +735,6 @@
     else {
       if (drupalSettings.eu_cookie_compliance.settings_tab_enabled) {
         popup.animate({ bottom: popup.outerHeight() * -1 }, drupalSettings.eu_cookie_compliance.popup_delay, null).trigger('eu_cookie_compliance_popup_close');
-        $('.eu-cookie-withdraw-tab').click(Drupal.eu_cookie_compliance.toggleWithdrawBanner);
       }
       else {
         popup.animate({ bottom: popup.outerHeight() * -1 }, drupalSettings.eu_cookie_compliance.popup_delay, null, function () {

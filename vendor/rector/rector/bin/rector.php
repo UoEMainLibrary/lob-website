@@ -1,9 +1,9 @@
 <?php
 
 declare (strict_types=1);
-namespace RectorPrefix202411;
+namespace RectorPrefix202604;
 
-use RectorPrefix202411\Nette\Utils\Json;
+use RectorPrefix202604\Nette\Utils\Json;
 use Rector\Bootstrap\RectorConfigsResolver;
 use Rector\ChangesReporting\Output\JsonOutputFormatter;
 use Rector\Configuration\Option;
@@ -11,9 +11,9 @@ use Rector\Console\Style\SymfonyStyleFactory;
 use Rector\DependencyInjection\LazyContainerFactory;
 use Rector\DependencyInjection\RectorContainerFactory;
 use Rector\Util\Reflection\PrivatesAccessor;
-use RectorPrefix202411\Symfony\Component\Console\Application;
-use RectorPrefix202411\Symfony\Component\Console\Command\Command;
-use RectorPrefix202411\Symfony\Component\Console\Input\ArgvInput;
+use RectorPrefix202604\Symfony\Component\Console\Application;
+use RectorPrefix202604\Symfony\Component\Console\Command\Command;
+use RectorPrefix202604\Symfony\Component\Console\Input\ArgvInput;
 // @ intentionally: continue anyway
 @\ini_set('memory_limit', '-1');
 // Performance boost
@@ -29,8 +29,8 @@ final class AutoloadIncluder
     /**
      * @var string[]
      */
-    private $alreadyLoadedAutoloadFiles = [];
-    public function includeDependencyOrRepositoryVendorAutoloadIfExists() : void
+    private array $alreadyLoadedAutoloadFiles = [];
+    public function includeDependencyOrRepositoryVendorAutoloadIfExists(): void
     {
         // Rector's vendor is already loaded
         if (\class_exists(LazyContainerFactory::class)) {
@@ -43,14 +43,14 @@ final class AutoloadIncluder
      * In case Rector is installed as vendor dependency,
      * this autoloads the project vendor/autoload.php, including Rector
      */
-    public function autoloadProjectAutoloaderFile() : void
+    public function autoloadProjectAutoloaderFile(): void
     {
         $this->loadIfExistsAndNotLoadedYet(__DIR__ . '/../../../autoload.php');
     }
     /**
      * In case Rector is installed as global dependency
      */
-    public function autoloadRectorInstalledAsGlobalDependency() : void
+    public function autoloadRectorInstalledAsGlobalDependency(): void
     {
         if (\dirname(__DIR__) === \dirname(\getcwd(), 2)) {
             return;
@@ -60,7 +60,7 @@ final class AutoloadIncluder
         }
         $this->loadIfExistsAndNotLoadedYet('vendor/autoload.php');
     }
-    public function autoloadFromCommandLine() : void
+    public function autoloadFromCommandLine(): void
     {
         $cliArgs = $_SERVER['argv'];
         $aOptionPosition = \array_search('-a', $cliArgs, \true);
@@ -79,7 +79,7 @@ final class AutoloadIncluder
         }
         $this->loadIfExistsAndNotLoadedYet($fileToAutoload);
     }
-    public function loadIfExistsAndNotLoadedYet(string $filePath) : void
+    public function loadIfExistsAndNotLoadedYet(string $filePath): void
     {
         if (!\file_exists($filePath)) {
             return;
@@ -87,13 +87,13 @@ final class AutoloadIncluder
         if (\in_array($filePath, $this->alreadyLoadedAutoloadFiles, \true)) {
             return;
         }
-        /** @var string $realPath always string after file_exists() check */
+        /** @var non-empty-string $realPath always string after file_exists() check */
         $realPath = \realpath($filePath);
         $this->alreadyLoadedAutoloadFiles[] = $realPath;
         require_once $filePath;
     }
 }
-\class_alias('RectorPrefix202411\\AutoloadIncluder', 'AutoloadIncluder', \false);
+\class_alias('RectorPrefix202604\AutoloadIncluder', 'AutoloadIncluder', \false);
 if (\file_exists(__DIR__ . '/../preload.php') && \is_dir(__DIR__ . '/../vendor')) {
     require_once __DIR__ . '/../preload.php';
 }
@@ -121,7 +121,7 @@ try {
         // report fatal errors in console format
         $symfonyStyleFactory = new SymfonyStyleFactory(new PrivatesAccessor());
         $symfonyStyle = $symfonyStyleFactory->create();
-        $symfonyStyle->error($throwable->getMessage());
+        $symfonyStyle->error(\str_replace("\r\n", "\n", $throwable->getMessage()));
     }
     exit(Command::FAILURE);
 }

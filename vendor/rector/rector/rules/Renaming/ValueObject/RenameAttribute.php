@@ -10,24 +10,22 @@ final class RenameAttribute
 {
     /**
      * @readonly
-     * @var string
      */
-    private $oldAttribute;
+    private string $oldAttribute;
     /**
      * @readonly
-     * @var string
      */
-    private $newAttribute;
+    private string $newAttribute;
     public function __construct(string $oldAttribute, string $newAttribute)
     {
         $this->oldAttribute = $oldAttribute;
         $this->newAttribute = $newAttribute;
     }
-    public function getOldAttribute() : string
+    public function getOldAttribute(): string
     {
         return $this->oldAttribute;
     }
-    public function getNewAttribute() : string
+    public function getNewAttribute(): string
     {
         return $this->newAttribute;
     }

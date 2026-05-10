@@ -17,23 +17,16 @@ final class NullabilityColumnPropertyTypeResolver
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeAnalyzer\AttributeFinder
      */
-    private $attributeFinder;
+    private AttributeFinder $attributeFinder;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
-    /**
-     * @var string
-     */
-    private const COLUMN_CLASS = 'Doctrine\\ORM\\Mapping\\Column';
+    private ValueResolver $valueResolver;
     /**
      * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/basic-mapping.html#doctrine-mapping-types
      */
@@ -43,7 +36,7 @@ final class NullabilityColumnPropertyTypeResolver
         $this->attributeFinder = $attributeFinder;
         $this->valueResolver = $valueResolver;
     }
-    public function isNullable(Property $property) : bool
+    public function isNullable(Property $property): bool
     {
         $nullableExpr = $this->attributeFinder->findAttributeByClassArgByName($property, MappingClass::COLUMN, 'nullable');
         if ($nullableExpr instanceof Expr) {
@@ -52,9 +45,9 @@ final class NullabilityColumnPropertyTypeResolver
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($property);
         return $this->isNullableColumn($phpDocInfo);
     }
-    private function isNullableColumn(PhpDocInfo $phpDocInfo) : bool
+    private function isNullableColumn(PhpDocInfo $phpDocInfo): bool
     {
-        $doctrineAnnotationTagValueNode = $phpDocInfo->findOneByAnnotationClass(self::COLUMN_CLASS);
+        $doctrineAnnotationTagValueNode = $phpDocInfo->findOneByAnnotationClass(MappingClass::COLUMN);
         if (!$doctrineAnnotationTagValueNode instanceof DoctrineAnnotationTagValueNode) {
             return \true;
         }

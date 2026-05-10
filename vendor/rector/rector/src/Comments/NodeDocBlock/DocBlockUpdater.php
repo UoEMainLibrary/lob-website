@@ -13,14 +13,13 @@ final class DocBlockUpdater
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\Printer\PhpDocInfoPrinter
      */
-    private $phpDocInfoPrinter;
+    private PhpDocInfoPrinter $phpDocInfoPrinter;
     public function __construct(PhpDocInfoPrinter $phpDocInfoPrinter)
     {
         $this->phpDocInfoPrinter = $phpDocInfoPrinter;
     }
-    public function updateRefactoredNodeWithPhpDocInfo(Node $node) : void
+    public function updateRefactoredNodeWithPhpDocInfo(Node $node): void
     {
         // nothing to change? don't save it
         $phpDocInfo = $node->getAttribute(AttributeKey::PHP_DOC_INFO);
@@ -34,15 +33,33 @@ final class DocBlockUpdater
         }
         $printedPhpDoc = $this->printPhpDocInfoToString($phpDocInfo);
         $node->setDocComment(new Doc($printedPhpDoc));
+        if ($printedPhpDoc === '') {
+            $this->clearEmptyDoc($node);
+        }
     }
-    private function setCommentsAttribute(Node $node) : void
+    private function setCommentsAttribute(Node $node): void
     {
-        $comments = \array_filter($node->getComments(), static function (Comment $comment) : bool {
-            return !$comment instanceof Doc;
+        $docComment = $node->getDocComment();
+        $docCommentText = $docComment instanceof Doc ? $docComment->getText() : null;
+        $comments = array_filter($node->getComments(), static function (Comment $comment) use ($docCommentText): bool {
+            if (!$comment instanceof Doc) {
+                return \true;
+            }
+            // remove only the docblock that belongs to the node itself;
+            // keep other preceding docblocks (possible with multiple @var docblocks before a statement)
+            if ($docCommentText !== null && $comment->getText() === $docCommentText) {
+                return \false;
+            }
+            return \true;
         });
-        $node->setAttribute(AttributeKey::COMMENTS, $comments);
+        $node->setAttribute(AttributeKey::COMMENTS, array_values($comments));
     }
-    private function printPhpDocInfoToString(PhpDocInfo $phpDocInfo) : string
+    private function clearEmptyDoc(Node $node): void
+    {
+        $comments = array_filter($node->getComments(), static fn(Comment $comment): bool => !$comment instanceof Doc || $comment->getText() !== '');
+        $node->setAttribute(AttributeKey::COMMENTS, array_values($comments));
+    }
+    private function printPhpDocInfoToString(PhpDocInfo $phpDocInfo): string
     {
         if ($phpDocInfo->isNewNode()) {
             return $this->phpDocInfoPrinter->printNew($phpDocInfo);

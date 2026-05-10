@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Process;
+namespace RectorPrefix202604\Symfony\Component\Process;
 
-use RectorPrefix202411\Symfony\Component\Process\Exception\LogicException;
-use RectorPrefix202411\Symfony\Component\Process\Exception\RuntimeException;
+use RectorPrefix202604\Symfony\Component\Process\Exception\LogicException;
+use RectorPrefix202604\Symfony\Component\Process\Exception\RuntimeException;
 /**
  * PhpProcess runs a PHP script in an independent process.
  *
@@ -35,12 +35,12 @@ class PhpProcess extends Process
         if (null === $php) {
             $executableFinder = new PhpExecutableFinder();
             $php = $executableFinder->find(\false);
-            $php = \false === $php ? null : \array_merge([$php], $executableFinder->findArguments());
+            $php = \false === $php ? null : array_merge([$php], $executableFinder->findArguments());
         }
         if ('phpdbg' === \PHP_SAPI) {
-            $file = \tempnam(\sys_get_temp_dir(), 'dbg');
-            \file_put_contents($file, $script);
-            \register_shutdown_function('unlink', $file);
+            $file = tempnam(sys_get_temp_dir(), 'dbg');
+            file_put_contents($file, $script);
+            register_shutdown_function('unlink', $file);
             $php[] = $file;
             $script = null;
         }
@@ -55,9 +55,9 @@ class PhpProcess extends Process
         throw new LogicException(\sprintf('The "%s()" method cannot be called when using "%s".', __METHOD__, self::class));
     }
     /**
-     * @return void
+     * @param (callable('out'|'err', string):void)|null $callback
      */
-    public function start(?callable $callback = null, array $env = [])
+    public function start(?callable $callback = null, array $env = []): void
     {
         if (null === $this->getCommandLine()) {
             throw new RuntimeException('Unable to find the PHP executable.');

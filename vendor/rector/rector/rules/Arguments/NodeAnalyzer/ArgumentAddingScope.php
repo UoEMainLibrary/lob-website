@@ -14,9 +14,8 @@ final class ArgumentAddingScope
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @api
      * @var string
@@ -40,7 +39,7 @@ final class ArgumentAddingScope
      * @param \PhpParser\Node\Expr\MethodCall|\PhpParser\Node\Expr\StaticCall $expr
      * @param \Rector\Arguments\ValueObject\ArgumentAdder|\Rector\Arguments\ValueObject\ArgumentAdderWithoutDefaultValue $argumentAdder
      */
-    public function isInCorrectScope($expr, $argumentAdder) : bool
+    public function isInCorrectScope($expr, $argumentAdder): bool
     {
         if ($argumentAdder->getScope() === null) {
             return \true;

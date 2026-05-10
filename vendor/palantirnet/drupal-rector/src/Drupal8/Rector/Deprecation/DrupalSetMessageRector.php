@@ -54,8 +54,7 @@ final class DrupalSetMessageRector extends AbstractRector
             new CodeSample(
                 <<<'CODE_BEFORE'
 drupal_set_message('example status', 'status');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 \Drupal::messenger()->addStatus('example status');
 CODE_AFTER
@@ -79,12 +78,11 @@ CODE_AFTER
     public function refactor(Node $node): ?Node
     {
         assert($node instanceof Node\Stmt\Expression);
-        if (!($node->expr instanceof Node\Expr\FuncCall)) {
+        if (!$node->expr instanceof Node\Expr\FuncCall) {
             return null;
         }
 
         $expression = $node->expr;
-        assert($expression instanceof Node\Expr\FuncCall);
 
         if ($this->getName($expression->name) === 'drupal_set_message') {
             $scope = $node->getAttribute(AttributeKey::SCOPE);

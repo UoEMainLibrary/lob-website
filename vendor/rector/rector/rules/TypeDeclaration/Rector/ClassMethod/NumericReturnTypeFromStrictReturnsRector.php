@@ -7,14 +7,15 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\UnaryMinus;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Scalar\DNumber;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Float_;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Return_;
 use PHPStan\Analyser\Scope;
 use Rector\PhpParser\Node\BetterNodeFinder;
-use Rector\Rector\AbstractScopeAwareRector;
+use Rector\PHPStan\ScopeFetcher;
+use Rector\Rector\AbstractRector;
 use Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer;
 use Rector\ValueObject\PhpVersionFeature;
 use Rector\VendorLocker\NodeVendorLocker\ClassMethodReturnTypeOverrideGuard;
@@ -24,30 +25,27 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * @see \Rector\Tests\TypeDeclaration\Rector\ClassMethod\NumericReturnTypeFromStrictReturnsRector\NumericReturnTypeFromStrictReturnsRectorTest
  */
-final class NumericReturnTypeFromStrictReturnsRector extends AbstractScopeAwareRector implements MinPhpVersionInterface
+final class NumericReturnTypeFromStrictReturnsRector extends AbstractRector implements MinPhpVersionInterface
 {
     /**
      * @readonly
-     * @var \Rector\VendorLocker\NodeVendorLocker\ClassMethodReturnTypeOverrideGuard
      */
-    private $classMethodReturnTypeOverrideGuard;
+    private ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ReturnAnalyzer
      */
-    private $returnAnalyzer;
+    private ReturnAnalyzer $returnAnalyzer;
     public function __construct(ClassMethodReturnTypeOverrideGuard $classMethodReturnTypeOverrideGuard, BetterNodeFinder $betterNodeFinder, ReturnAnalyzer $returnAnalyzer)
     {
         $this->classMethodReturnTypeOverrideGuard = $classMethodReturnTypeOverrideGuard;
         $this->betterNodeFinder = $betterNodeFinder;
         $this->returnAnalyzer = $returnAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Add int/float return type based on strict typed returns', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -72,15 +70,16 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Function_::class];
     }
     /**
      * @param ClassMethod|Function_ $node
      */
-    public function refactorWithScope(Node $node, Scope $scope) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        $scope = ScopeFetcher::fetch($node);
         if ($this->shouldSkip($node, $scope)) {
             return null;
         }
@@ -116,14 +115,14 @@ CODE_SAMPLE
         }
         return null;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::SCALAR_TYPES;
     }
     /**
      * @param \PhpParser\Node\Stmt\ClassMethod|\PhpParser\Node\Stmt\Function_ $functionLike
      */
-    private function shouldSkip($functionLike, Scope $scope) : bool
+    private function shouldSkip($functionLike, Scope $scope): bool
     {
         // type is already known, skip
         if ($functionLike->returnType instanceof Node) {
@@ -141,19 +140,19 @@ CODE_SAMPLE
     /**
      * @param Return_[] $returns
      */
-    private function isAlwaysNumeric(array $returns) : bool
+    private function isAlwaysNumeric(array $returns): bool
     {
         $isAlwaysFloat = \true;
         $isAlwaysInt = \true;
         foreach ($returns as $return) {
-            $epxr = $return->expr;
-            if ($epxr instanceof UnaryMinus) {
-                $epxr = $epxr->expr;
+            $expr = $return->expr;
+            if ($expr instanceof UnaryMinus) {
+                $expr = $expr->expr;
             }
-            if (!$epxr instanceof DNumber) {
+            if (!$expr instanceof Float_) {
                 $isAlwaysFloat = \false;
             }
-            if (!$epxr instanceof LNumber) {
+            if (!$expr instanceof Int_) {
                 $isAlwaysInt = \false;
             }
         }

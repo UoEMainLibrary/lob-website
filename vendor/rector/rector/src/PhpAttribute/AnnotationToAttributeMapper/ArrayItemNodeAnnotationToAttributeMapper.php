@@ -3,8 +3,8 @@
 declare (strict_types=1);
 namespace Rector\PhpAttribute\AnnotationToAttributeMapper;
 
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Scalar\String_;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use Rector\BetterPhpDocParser\PhpDoc\ArrayItemNode;
@@ -14,38 +14,35 @@ use Rector\PhpAttribute\AnnotationToAttributeMapper;
 use Rector\PhpAttribute\Contract\AnnotationToAttributeMapperInterface;
 use Rector\PhpAttribute\Enum\DocTagNodeState;
 use Rector\Validation\RectorAssert;
-use RectorPrefix202411\Webmozart\Assert\InvalidArgumentException;
+use RectorPrefix202604\Webmozart\Assert\InvalidArgumentException;
 /**
  * @implements AnnotationToAttributeMapperInterface<ArrayItemNode>
  */
 final class ArrayItemNodeAnnotationToAttributeMapper implements AnnotationToAttributeMapperInterface
 {
-    /**
-     * @var \Rector\PhpAttribute\AnnotationToAttributeMapper
-     */
-    private $annotationToAttributeMapper;
+    private AnnotationToAttributeMapper $annotationToAttributeMapper;
     /**
      * Avoid circular reference
      */
-    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper) : void
+    public function autowire(AnnotationToAttributeMapper $annotationToAttributeMapper): void
     {
         $this->annotationToAttributeMapper = $annotationToAttributeMapper;
     }
     /**
      * @param mixed $value
      */
-    public function isCandidate($value) : bool
+    public function isCandidate($value): bool
     {
         return $value instanceof ArrayItemNode;
     }
     /**
      * @param ArrayItemNode $arrayItemNode
      */
-    public function map($arrayItemNode) : Expr
+    public function map($arrayItemNode): ArrayItem
     {
         $valueExpr = $this->annotationToAttributeMapper->map($arrayItemNode->value);
         if ($valueExpr === DocTagNodeState::REMOVE_ARRAY) {
-            return new ArrayItem(new String_($valueExpr), null);
+            return new ArrayItem(new String_($valueExpr));
         }
         if ($arrayItemNode->key !== null) {
             /** @var Expr $keyExpr */
@@ -53,7 +50,7 @@ final class ArrayItemNodeAnnotationToAttributeMapper implements AnnotationToAttr
         } else {
             if ($this->hasNoParenthesesAnnotation($arrayItemNode)) {
                 try {
-                    RectorAssert::className(\ltrim((string) $arrayItemNode->value, '@'));
+                    RectorAssert::className(ltrim((string) $arrayItemNode->value, '@'));
                     $identifierTypeNode = new IdentifierTypeNode($arrayItemNode->value);
                     $arrayItemNode->value = new DoctrineAnnotationTagValueNode($identifierTypeNode);
                     return $this->map($arrayItemNode);
@@ -65,17 +62,17 @@ final class ArrayItemNodeAnnotationToAttributeMapper implements AnnotationToAttr
         // @todo how to skip natural integer keys?
         return new ArrayItem($valueExpr, $keyExpr);
     }
-    private function hasNoParenthesesAnnotation(ArrayItemNode $arrayItemNode) : bool
+    private function hasNoParenthesesAnnotation(ArrayItemNode $arrayItemNode): bool
     {
         if ($arrayItemNode->value instanceof StringNode) {
             return \false;
         }
-        if (!\is_string($arrayItemNode->value)) {
+        if (!is_string($arrayItemNode->value)) {
             return \false;
         }
-        if (\strncmp($arrayItemNode->value, '@', \strlen('@')) !== 0) {
+        if (strncmp($arrayItemNode->value, '@', strlen('@')) !== 0) {
             return \false;
         }
-        return \substr_compare($arrayItemNode->value, ')', -\strlen(')')) !== 0;
+        return substr_compare($arrayItemNode->value, ')', -strlen(')')) !== 0;
     }
 }

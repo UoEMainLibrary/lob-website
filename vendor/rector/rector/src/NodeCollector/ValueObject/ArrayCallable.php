@@ -9,19 +9,16 @@ final class ArrayCallable
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $callerExpr;
+    private Expr $callerExpr;
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     public function __construct(Expr $callerExpr, string $class, string $method)
     {
         $this->callerExpr = $callerExpr;
@@ -29,15 +26,15 @@ final class ArrayCallable
         $this->method = $method;
         RectorAssert::className($class);
     }
-    public function getClass() : string
+    public function getClass(): string
     {
         return $this->class;
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getCallerExpr() : Expr
+    public function getCallerExpr(): Expr
     {
         return $this->callerExpr;
     }

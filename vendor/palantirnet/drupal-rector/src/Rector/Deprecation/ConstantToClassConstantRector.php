@@ -27,7 +27,7 @@ class ConstantToClassConstantRector extends AbstractRector implements Configurab
     public function configure(array $configuration): void
     {
         foreach ($configuration as $value) {
-            if (!($value instanceof ConstantToClassConfiguration)) {
+            if (!$value instanceof ConstantToClassConfiguration) {
                 throw new \InvalidArgumentException(sprintf('Each configuration item must be an instance of "%s"', ConstantToClassConfiguration::class));
             }
         }
@@ -44,12 +44,10 @@ class ConstantToClassConstantRector extends AbstractRector implements Configurab
             new ConfiguredCodeSample(
                 <<<'CODE_BEFORE'
 $result = file_unmanaged_copy($source, $destination, DEPRECATED_CONSTANT);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 $result = file_unmanaged_copy($source, $destination, \Drupal\MyClass::CONSTANT);
-CODE_AFTER
-                ,
+CODE_AFTER,
                 [
                     new ConstantToClassConfiguration(
                         'DEPRECATED_CONSTANT',

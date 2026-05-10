@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DrupalRector\Drupal9\Rector\Deprecation;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\MethodCall;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -20,8 +21,7 @@ final class AssertFieldByIdRector extends AbstractRector
     $this->assertFieldById('edit-name', 'Test name');
     $this->assertFieldById('edit-description', NULL);
     $this->assertFieldById('edit-description');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
     $this->assertSession()->fieldExists('edit-name');
     $this->assertSession()->fieldValueEquals('edit-name', 'Test name');
@@ -35,13 +35,13 @@ CODE_AFTER
     public function getNodeTypes(): array
     {
         return [
-            Node\Expr\MethodCall::class,
+            MethodCall::class,
         ];
     }
 
-    public function refactor(Node $node)
+    public function refactor(Node $node): ?MethodCall
     {
-        assert($node instanceof Node\Expr\MethodCall);
+        assert($node instanceof MethodCall);
         if ($this->getName($node->name) !== 'assertFieldById') {
             return null;
         }

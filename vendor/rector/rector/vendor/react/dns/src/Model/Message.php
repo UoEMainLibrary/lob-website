@@ -1,8 +1,8 @@
 <?php
 
-namespace RectorPrefix202411\React\Dns\Model;
+namespace RectorPrefix202604\React\Dns\Model;
 
-use RectorPrefix202411\React\Dns\Query\Query;
+use RectorPrefix202604\React\Dns\Query\Query;
 /**
  * This class represents an outgoing query message or an incoming response message
  *
@@ -124,10 +124,10 @@ final class Message
      */
     private static function generateId()
     {
-        if (\function_exists('random_int')) {
-            return \random_int(0, 0xffff);
+        if (function_exists('random_int')) {
+            return random_int(0, 0xffff);
         }
-        return \mt_rand(0, 0xffff);
+        return mt_rand(0, 0xffff);
     }
     /**
      * The 16 bit message ID

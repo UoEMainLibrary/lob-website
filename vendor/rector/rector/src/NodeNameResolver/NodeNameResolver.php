@@ -13,12 +13,12 @@ use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Param;
+use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Const_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\Node\Stmt\PropertyProperty;
 use PhpParser\Node\Stmt\Trait_;
 use PHPStan\Analyser\Scope;
 use Rector\CodingStyle\Naming\ClassNaming;
@@ -31,27 +31,26 @@ final class NodeNameResolver
 {
     /**
      * @readonly
-     * @var \Rector\CodingStyle\Naming\ClassNaming
      */
-    private $classNaming;
+    private ClassNaming $classNaming;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\CallAnalyzer
      */
-    private $callAnalyzer;
+    private CallAnalyzer $callAnalyzer;
     /**
      * @var NodeNameResolverInterface[]
      * @readonly
      */
-    private $nodeNameResolvers = [];
+    private iterable $nodeNameResolvers = [];
     /**
      * Used to check if a string might contain a regex or fnmatch pattern
+     * @var mixed[]
      */
     private const REGEX_WILDCARD_CHARS = ['*', '#', '~', '/'];
     /**
      * @var array<string, NodeNameResolverInterface|null>
      */
-    private $nodeNameResolversByClass = [];
+    private array $nodeNameResolversByClass = [];
     /**
      * @param NodeNameResolverInterface[] $nodeNameResolvers
      */
@@ -64,7 +63,7 @@ final class NodeNameResolver
     /**
      * @param string[] $names
      */
-    public function isNames(Node $node, array $names) : bool
+    public function isNames(Node $node, array $names): bool
     {
         $nodeName = $this->getName($node);
         if ($nodeName === null) {
@@ -81,9 +80,9 @@ final class NodeNameResolver
      * @param Node|Node[] $node
      * @param MethodName::*|string $name
      */
-    public function isName($node, string $name) : bool
+    public function isName($node, string $name): bool
     {
-        $nodes = \is_array($node) ? $node : [$node];
+        $nodes = is_array($node) ? $node : [$node];
         foreach ($nodes as $node) {
             if ($this->isSingleName($node, $name)) {
                 return \true;
@@ -98,7 +97,7 @@ final class NodeNameResolver
      * @return ($node is Param ? string :
      *  ($node is ClassMethod ? string :
      *  ($node is Property ? string :
-     *  ($node is PropertyProperty ? string :
+     *  ($node is PropertyItem ? string :
      *  ($node is Trait_ ? string :
      *  ($node is Interface_ ? string :
      *  ($node is Const_ ? string :
@@ -107,14 +106,14 @@ final class NodeNameResolver
      *      string|null )))))))))
      * @param \PhpParser\Node|string $node
      */
-    public function getName($node) : ?string
+    public function getName($node): ?string
     {
-        if (\is_string($node)) {
+        if (is_string($node)) {
             return $node;
         }
         // useful for looped imported names
         $namespacedName = $node->getAttribute(AttributeKey::NAMESPACED_NAME);
-        if (\is_string($namespacedName)) {
+        if (is_string($namespacedName)) {
             return $namespacedName;
         }
         if (($node instanceof MethodCall || $node instanceof StaticCall || $node instanceof NullsafeMethodCall) && $this->isCallOrIdentifier($node->name)) {
@@ -126,7 +125,7 @@ final class NodeNameResolver
             return $resolvedName;
         }
         // more complex
-        if (!\property_exists($node, 'name')) {
+        if (!property_exists($node, 'name')) {
             return null;
         }
         // unable to resolve
@@ -138,7 +137,7 @@ final class NodeNameResolver
     /**
      * @api
      */
-    public function areNamesEqual(Node $firstNode, Node $secondNode) : bool
+    public function areNamesEqual(Node $firstNode, Node $secondNode): bool
     {
         $secondResolvedName = $this->getName($secondNode);
         if ($secondResolvedName === null) {
@@ -152,12 +151,12 @@ final class NodeNameResolver
      * @param Name[]|Node[] $nodes
      * @return string[]
      */
-    public function getNames(array $nodes) : array
+    public function getNames(array $nodes): array
     {
         $names = [];
         foreach ($nodes as $node) {
             $name = $this->getName($node);
-            if (!\is_string($name)) {
+            if (!is_string($name)) {
                 throw new ShouldNotHappenException();
             }
             $names[] = $name;
@@ -167,11 +166,11 @@ final class NodeNameResolver
     /**
      * @param string|\PhpParser\Node\Name|\PhpParser\Node\Identifier|\PhpParser\Node\Stmt\ClassLike $name
      */
-    public function getShortName($name) : string
+    public function getShortName($name): string
     {
         return $this->classNaming->getShortName($name);
     }
-    public function isStringName(string $resolvedName, string $desiredName) : bool
+    public function isStringName(string $resolvedName, string $desiredName): bool
     {
         if ($desiredName === '') {
             return \false;
@@ -180,11 +179,11 @@ final class NodeNameResolver
         if ($desiredName === 'Object') {
             return $desiredName === $resolvedName;
         }
-        if (\strcasecmp($resolvedName, $desiredName) === 0) {
+        if (strcasecmp($resolvedName, $desiredName) === 0) {
             return \true;
         }
         foreach (self::REGEX_WILDCARD_CHARS as $char) {
-            if (\strpos($desiredName, $char) !== \false) {
+            if (strpos($desiredName, $char) !== \false) {
                 throw new ShouldNotHappenException('Matching of regular expressions is no longer supported. Use $this->getName() and compare with e.g. str_ends_with() or str_starts_with() instead.');
             }
         }
@@ -193,14 +192,14 @@ final class NodeNameResolver
     /**
      * @param \PhpParser\Node\Expr|\PhpParser\Node\Identifier $node
      */
-    private function isCallOrIdentifier($node) : bool
+    private function isCallOrIdentifier($node): bool
     {
         if ($node instanceof Expr) {
             return $this->callAnalyzer->isObjectCall($node);
         }
         return \true;
     }
-    private function isSingleName(Node $node, string $desiredName) : bool
+    private function isSingleName(Node $node, string $desiredName): bool
     {
         if ($node instanceof CallLike && !$node instanceof FuncCall) {
             // method call cannot have a name, only the variable or method name
@@ -212,10 +211,10 @@ final class NodeNameResolver
         }
         return $this->isStringName($resolvedName, $desiredName);
     }
-    private function resolveNodeName(Node $node, ?Scope $scope) : ?string
+    private function resolveNodeName(Node $node, ?Scope $scope): ?string
     {
-        $nodeClass = \get_class($node);
-        if (\array_key_exists($nodeClass, $this->nodeNameResolversByClass)) {
+        $nodeClass = get_class($node);
+        if (array_key_exists($nodeClass, $this->nodeNameResolversByClass)) {
             $resolver = $this->nodeNameResolversByClass[$nodeClass];
             if ($resolver instanceof NodeNameResolverInterface) {
                 return $resolver->resolve($node, $scope);

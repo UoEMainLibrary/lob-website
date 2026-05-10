@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 declare (strict_types=1);
-namespace RectorPrefix202411\Fidry\CpuCoreCounter\Finder;
+namespace RectorPrefix202604\Fidry\CpuCoreCounter\Finder;
 
 /**
  * Find the number of physical CPU cores for Linux, BSD and OSX.
@@ -19,11 +19,11 @@ namespace RectorPrefix202411\Fidry\CpuCoreCounter\Finder;
  */
 final class HwPhysicalFinder extends ProcOpenBasedFinder
 {
-    protected function getCommand() : string
+    protected function getCommand(): string
     {
         return 'sysctl -n hw.physicalcpu';
     }
-    public function toString() : string
+    public function toString(): string
     {
         return 'HwPhysicalFinder';
     }

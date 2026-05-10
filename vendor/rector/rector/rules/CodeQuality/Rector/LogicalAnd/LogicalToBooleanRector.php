@@ -4,6 +4,7 @@ declare (strict_types=1);
 namespace Rector\CodeQuality\Rector\LogicalAnd;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
 use PhpParser\Node\Expr\BinaryOp\LogicalAnd;
@@ -16,7 +17,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class LogicalToBooleanRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change OR, AND to ||, && with more common understanding', [new CodeSample(<<<'CODE_SAMPLE'
 if ($f = false or true) {
@@ -33,15 +34,20 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [LogicalOr::class, LogicalAnd::class];
     }
     /**
      * @param LogicalOr|LogicalAnd $node
+     * @return \PhpParser\Node\Expr\BinaryOp\BooleanAnd|\PhpParser\Node\Expr\BinaryOp\BooleanOr|null
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node)
     {
+        $type = $this->nodeTypeResolver->getNativeType($node->left);
+        if ($node->left instanceof Assign && !$type->isBoolean()->yes()) {
+            return null;
+        }
         return $this->refactorLogicalToBoolean($node);
     }
     /**

@@ -13,14 +13,13 @@ use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
-use PHPStan\Type\NullType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 use PHPStan\Type\UnionType;
 use Rector\CodeQuality\TypeResolver\AssignVariableTypeResolver;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\DeadCode\PhpDoc\TagRemover\VarTagRemover;
 use Rector\NodeManipulator\IfManipulator;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
 use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
@@ -33,24 +32,20 @@ final class SimplifyIfNullableReturnRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\IfManipulator
      */
-    private $ifManipulator;
+    private IfManipulator $ifManipulator;
     /**
      * @readonly
-     * @var \Rector\CodeQuality\TypeResolver\AssignVariableTypeResolver
      */
-    private $assignVariableTypeResolver;
+    private AssignVariableTypeResolver $assignVariableTypeResolver;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\TagRemover\VarTagRemover
      */
-    private $varTagRemover;
+    private VarTagRemover $varTagRemover;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(IfManipulator $ifManipulator, AssignVariableTypeResolver $assignVariableTypeResolver, VarTagRemover $varTagRemover, ValueResolver $valueResolver)
     {
         $this->ifManipulator = $ifManipulator;
@@ -58,7 +53,7 @@ final class SimplifyIfNullableReturnRector extends AbstractRector
         $this->varTagRemover = $varTagRemover;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Direct return on if nullable check before return', [new CodeSample(<<<'CODE_SAMPLE'
 class SomeClass
@@ -94,14 +89,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($node->stmts === null) {
             return null;
@@ -169,7 +164,7 @@ CODE_SAMPLE
     /**
      * @param \PhpParser\Node\Expr\BooleanNot|\PhpParser\Node\Expr\Instanceof_ $expr
      */
-    private function isIfStmtReturnIncorrect($expr, Expr $variable, Return_ $return) : bool
+    private function isIfStmtReturnIncorrect($expr, Expr $variable, Return_ $return): bool
     {
         if (!$return->expr instanceof Expr) {
             return \true;
@@ -182,7 +177,7 @@ CODE_SAMPLE
     /**
      * @param \PhpParser\Node\Expr\BooleanNot|\PhpParser\Node\Expr\Instanceof_ $expr
      */
-    private function isNextReturnIncorrect($expr, Expr $variable, Return_ $return) : bool
+    private function isNextReturnIncorrect($expr, Expr $variable, Return_ $return): bool
     {
         if (!$return->expr instanceof Expr) {
             return \true;
@@ -195,15 +190,15 @@ CODE_SAMPLE
     /**
      * @param Type[] $types
      */
-    private function processSimplifyNullableReturn(UnionType $unionType, array $types, string $className, Expression $expression, Expr $expr) : ?Return_
+    private function processSimplifyNullableReturn(UnionType $unionType, array $types, string $className, Expression $expression, Expr $expr): ?Return_
     {
-        if (\count($types) > 2) {
+        if (count($types) > 2) {
             return null;
         }
-        if ($types[0] instanceof FullyQualifiedObjectType && $types[1] instanceof NullType && $className === $types[0]->getClassName()) {
+        if ($types[0] instanceof FullyQualifiedObjectType && $types[1]->isNull()->yes() && $className === $types[0]->getClassName()) {
             return $this->createDirectReturn($expression, $expr, $unionType);
         }
-        if ($types[0] instanceof NullType && $types[1] instanceof FullyQualifiedObjectType && $className === $types[1]->getClassName()) {
+        if ($types[0]->isNull()->yes() && $types[1] instanceof FullyQualifiedObjectType && $className === $types[1]->getClassName()) {
             return $this->createDirectReturn($expression, $expr, $unionType);
         }
         if ($this->isNotTypedNullable($types, $className)) {
@@ -214,24 +209,24 @@ CODE_SAMPLE
     /**
      * @param Type[] $types
      */
-    private function isNotTypedNullable(array $types, string $className) : bool
+    private function isNotTypedNullable(array $types, string $className): bool
     {
         if (!$types[0] instanceof ObjectType) {
             return \true;
         }
-        if (!$types[1] instanceof NullType) {
+        if (!$types[1]->isNull()->yes()) {
             return \true;
         }
         return $className !== $types[0]->getClassName();
     }
-    private function createDirectReturn(Expression $expression, Expr $expr, UnionType $unionType) : Return_
+    private function createDirectReturn(Expression $expression, Expr $expr, UnionType $unionType): Return_
     {
         $exprReturn = new Return_($expr);
         $this->varTagRemover->removeVarPhpTagValueNodeIfNotComment($expression, $unionType);
         $this->mirrorComments($exprReturn, $expression);
         return $exprReturn;
     }
-    private function shouldSkip(If_ $if, Stmt $stmt) : bool
+    private function shouldSkip(If_ $if, Stmt $stmt): bool
     {
         if (!$this->ifManipulator->isIfWithOnly($if, Return_::class)) {
             return \true;

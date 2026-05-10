@@ -5,15 +5,15 @@ namespace Rector\PHPUnit\PHPUnit100\NodeFactory;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Arg;
+use PhpParser\Node\ClosureUse;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\BinaryOp\Minus;
 use PhpParser\Node\Expr\Closure;
-use PhpParser\Node\Expr\ClosureUse;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use Rector\PHPUnit\Enum\ConsecutiveVariable;
@@ -24,24 +24,20 @@ final class WillReturnCallbackFactory
 {
     /**
      * @readonly
-     * @var \PhpParser\BuilderFactory
      */
-    private $builderFactory;
+    private BuilderFactory $builderFactory;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeFactory\UsedVariablesResolver
      */
-    private $usedVariablesResolver;
+    private UsedVariablesResolver $usedVariablesResolver;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeFactory\MatcherInvocationCountMethodCallNodeFactory
      */
-    private $matcherInvocationCountMethodCallNodeFactory;
+    private MatcherInvocationCountMethodCallNodeFactory $matcherInvocationCountMethodCallNodeFactory;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeFactory\ConsecutiveIfsFactory
      */
-    private $consecutiveIfsFactory;
+    private ConsecutiveIfsFactory $consecutiveIfsFactory;
     public function __construct(BuilderFactory $builderFactory, UsedVariablesResolver $usedVariablesResolver, MatcherInvocationCountMethodCallNodeFactory $matcherInvocationCountMethodCallNodeFactory, ConsecutiveIfsFactory $consecutiveIfsFactory)
     {
         $this->builderFactory = $builderFactory;
@@ -52,7 +48,7 @@ final class WillReturnCallbackFactory
     /**
      * @param \PhpParser\Node\Expr\Variable|\PhpParser\Node\Expr|null $referenceVariable
      */
-    public function createClosure(MethodCall $withConsecutiveMethodCall, ?Stmt $returnStmt, $referenceVariable) : Closure
+    public function createClosure(MethodCall $withConsecutiveMethodCall, ?Stmt $returnStmt, $referenceVariable): Closure
     {
         $matcherVariable = new Variable(ConsecutiveVariable::MATCHER);
         $usedVariables = $this->usedVariablesResolver->resolveUsedVariables($withConsecutiveMethodCall, $returnStmt);
@@ -67,7 +63,7 @@ final class WillReturnCallbackFactory
     /**
      * @return Stmt[]
      */
-    public function createParametersMatch(MethodCall $withConsecutiveMethodCall) : array
+    public function createParametersMatch(MethodCall $withConsecutiveMethodCall): array
     {
         $parametersVariable = new Variable(ConsecutiveVariable::PARAMETERS);
         $firstArg = $withConsecutiveMethodCall->getArgs()[0] ?? null;
@@ -78,17 +74,17 @@ final class WillReturnCallbackFactory
         $numberOfInvocationsMethodCall = $this->matcherInvocationCountMethodCallNodeFactory->create();
         return $this->consecutiveIfsFactory->createIfs($withConsecutiveMethodCall, $numberOfInvocationsMethodCall);
     }
-    private function createAssertSameDimFetch(Arg $firstArg, Variable $variable) : MethodCall
+    private function createAssertSameDimFetch(Arg $firstArg, Variable $variable): MethodCall
     {
         $matcherCountMethodCall = $this->matcherInvocationCountMethodCallNodeFactory->create();
-        $currentValueArrayDimFetch = new ArrayDimFetch($firstArg->value, new Minus($matcherCountMethodCall, new LNumber(1)));
+        $currentValueArrayDimFetch = new ArrayDimFetch($firstArg->value, new Minus($matcherCountMethodCall, new Int_(1)));
         $compareArgs = [new Arg($currentValueArrayDimFetch), new Arg($variable)];
         return $this->builderFactory->methodCall(new Variable('this'), 'assertSame', $compareArgs);
     }
     /**
      * @param \PhpParser\Node\Expr|\PhpParser\Node\Expr\Variable|null $referenceVariable
      */
-    private function isByRef($referenceVariable) : bool
+    private function isByRef($referenceVariable): bool
     {
         return $referenceVariable instanceof Variable;
     }
@@ -96,7 +92,7 @@ final class WillReturnCallbackFactory
      * @param Variable[] $usedVariables
      * @return ClosureUse[]
      */
-    private function createClosureUses(Variable $matcherVariable, array $usedVariables) : array
+    private function createClosureUses(Variable $matcherVariable, array $usedVariables): array
     {
         $uses = [new ClosureUse($matcherVariable)];
         foreach ($usedVariables as $usedVariable) {

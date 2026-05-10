@@ -11,24 +11,22 @@ final class MatchAndReturnMatch
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\Match_
      */
-    private $consecutiveMatch;
+    private Match_ $consecutiveMatch;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\Match_|null
      */
-    private $willReturnMatch;
+    private ?Match_ $willReturnMatch;
     public function __construct(Match_ $consecutiveMatch, ?Match_ $willReturnMatch)
     {
         $this->consecutiveMatch = $consecutiveMatch;
         $this->willReturnMatch = $willReturnMatch;
     }
-    public function getConsecutiveMatch() : Match_
+    public function getConsecutiveMatch(): Match_
     {
         return $this->consecutiveMatch;
     }
-    public function getConsecutiveMatchExpr() : Expr
+    public function getConsecutiveMatchExpr(): Expr
     {
         $soleArm = $this->consecutiveMatch->arms[0];
         if ($soleArm->body instanceof CallLike) {
@@ -38,11 +36,11 @@ final class MatchAndReturnMatch
         }
         throw new ShouldNotHappenException();
     }
-    public function getWillReturnMatch() : ?Match_
+    public function getWillReturnMatch(): ?Match_
     {
         return $this->willReturnMatch;
     }
-    public function getWillReturnMatchExpr() : Expr
+    public function getWillReturnMatchExpr(): Expr
     {
         if (!$this->willReturnMatch instanceof Match_) {
             throw new ShouldNotHappenException();

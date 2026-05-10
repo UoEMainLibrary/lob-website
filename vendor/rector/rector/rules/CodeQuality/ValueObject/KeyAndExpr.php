@@ -9,19 +9,17 @@ final class KeyAndExpr
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr|null
      */
-    private $keyExpr;
+    private ?Expr $keyExpr;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $expr;
+    private Expr $expr;
     /**
      * @var Comment[]
      * @readonly
      */
-    private $comments;
+    private array $comments;
     /**
      * @param Comment[] $comments
      */
@@ -31,18 +29,18 @@ final class KeyAndExpr
         $this->expr = $expr;
         $this->comments = $comments;
     }
-    public function getKeyExpr() : ?Expr
+    public function getKeyExpr(): ?Expr
     {
         return $this->keyExpr;
     }
-    public function getExpr() : Expr
+    public function getExpr(): Expr
     {
         return $this->expr;
     }
     /**
      * @return Comment[]
      */
-    public function getComments() : array
+    public function getComments(): array
     {
         return $this->comments;
     }

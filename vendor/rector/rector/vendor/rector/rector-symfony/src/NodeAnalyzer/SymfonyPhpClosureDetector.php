@@ -7,53 +7,51 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use Rector\NodeNameResolver\NodeNameResolver;
 use Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser;
 use Rector\PhpParser\Node\BetterNodeFinder;
+use Rector\Symfony\Enum\SymfonyClass;
 final class SymfonyPhpClosureDetector
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\BetterNodeFinder
      */
-    private $betterNodeFinder;
+    private BetterNodeFinder $betterNodeFinder;
     /**
      * @readonly
-     * @var \Rector\PhpDocParser\NodeTraverser\SimpleCallableNodeTraverser
      */
-    private $simpleCallableNodeTraverser;
+    private SimpleCallableNodeTraverser $simpleCallableNodeTraverser;
     public function __construct(NodeNameResolver $nodeNameResolver, BetterNodeFinder $betterNodeFinder, SimpleCallableNodeTraverser $simpleCallableNodeTraverser)
     {
         $this->nodeNameResolver = $nodeNameResolver;
         $this->betterNodeFinder = $betterNodeFinder;
         $this->simpleCallableNodeTraverser = $simpleCallableNodeTraverser;
     }
-    public function detect(Closure $closure) : bool
+    public function detect(Closure $closure): bool
     {
-        if (\count($closure->params) !== 1) {
+        if (count($closure->params) !== 1) {
             return \false;
         }
         $firstParam = $closure->params[0];
         if (!$firstParam->type instanceof FullyQualified) {
             return \false;
         }
-        return $this->nodeNameResolver->isName($firstParam->type, 'Symfony\\Component\\DependencyInjection\\Loader\\Configurator\\ContainerConfigurator');
+        return $this->nodeNameResolver->isName($firstParam->type, SymfonyClass::CONTAINER_CONFIGURATOR);
     }
-    public function hasDefaultsAutoconfigure(Closure $closure) : bool
+    public function hasDefaultsConfigured(Closure $closure, string $desiredMethodName): bool
     {
         $hasDefaultsAutoconfigure = \false;
         // has defaults autoconfigure?
-        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($closure, function (Node $node) use(&$hasDefaultsAutoconfigure) : ?int {
+        $this->simpleCallableNodeTraverser->traverseNodesWithCallable($closure, function (Node $node) use (&$hasDefaultsAutoconfigure, $desiredMethodName): ?int {
             if (!$node instanceof MethodCall) {
                 return null;
             }
-            if (!$this->nodeNameResolver->isName($node->name, 'autoconfigure')) {
+            if (!$this->nodeNameResolver->isName($node->name, $desiredMethodName)) {
                 return null;
             }
             /** @var MethodCall[] $methodCalls */
@@ -63,7 +61,7 @@ final class SymfonyPhpClosureDetector
                     continue;
                 }
                 $hasDefaultsAutoconfigure = \true;
-                return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
+                return NodeVisitor::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
             }
             return null;
         });

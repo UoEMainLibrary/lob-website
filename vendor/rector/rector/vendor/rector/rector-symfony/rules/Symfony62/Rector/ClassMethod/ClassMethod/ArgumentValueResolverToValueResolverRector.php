@@ -16,8 +16,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Return_;
 use Rector\Rector\AbstractRector;
-use RectorPrefix202411\Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
-use RectorPrefix202411\Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
+use Rector\Symfony\Enum\SymfonyClass;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
@@ -25,14 +24,14 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class ArgumentValueResolverToValueResolverRector extends AbstractRector
 {
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->shouldRefactorClass($node)) {
             return null;
@@ -47,9 +46,9 @@ final class ArgumentValueResolverToValueResolverRector extends AbstractRector
         }
         return $node;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Replaces ArgumentValueResolverInterface by ValueResolverInterface', [new CodeSample(<<<'CODE_SAMPLE'
+        return new RuleDefinition('Replaces ArgumentValueResolverInterface by ValueResolverInterface with supports logic moved to resolve() method', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
 
 final class EntityValueResolver implements ArgumentValueResolverInterface
@@ -75,12 +74,12 @@ final class EntityValueResolver implements ValueResolverInterface
 CODE_SAMPLE
 )]);
     }
-    private function shouldRefactorClass(Class_ $class) : bool
+    private function shouldRefactorClass(Class_ $class): bool
     {
         // Check if the class implements ArgumentValueResolverInterface
         foreach ($class->implements as $key => $interface) {
-            if ($interface->toString() === ArgumentValueResolverInterface::class) {
-                $class->implements[$key] = new FullyQualified(ValueResolverInterface::class);
+            if ($interface->toString() === SymfonyClass::ARGUMENT_RESOLVER_INTERFACE) {
+                $class->implements[$key] = new FullyQualified(SymfonyClass::VALUE_RESOLVER_INTERFACE);
                 return \true;
             }
         }
@@ -90,10 +89,11 @@ CODE_SAMPLE
     /**
      * @return array{bool, Expr|null, Expr|null}
      */
-    private function extractSupportsArguments(Class_ $class, int $key, ClassMethod $classMethod) : array
+    private function extractSupportsArguments(Class_ $class, int $key, ClassMethod $classMethod): array
     {
         $isIdentical = \true;
-        $supportFirstArg = $supportSecondArg = null;
+        $supportFirstArg = null;
+        $supportSecondArg = null;
         if ($classMethod->getStmts() === null) {
             return [$isIdentical, $supportFirstArg, $supportSecondArg];
         }
@@ -116,9 +116,9 @@ CODE_SAMPLE
         }
         return [$isIdentical, $supportFirstArg, $supportSecondArg];
     }
-    private function processResolveMethod(ClassMethod $classMethod, bool $isIdentical, Expr $supportFirstArg, Expr $supportSecondArg) : void
+    private function processResolveMethod(ClassMethod $classMethod, bool $isIdentical, Expr $supportFirstArg, Expr $supportSecondArg): void
     {
         $ifCondition = $isIdentical ? new NotIdentical($supportFirstArg, $supportSecondArg) : new Identical($supportFirstArg, $supportSecondArg);
-        $classMethod->stmts = \array_merge([new If_($ifCondition, ['stmts' => [new Return_(new ConstFetch(new Name('[]')))]])], (array) $classMethod->stmts);
+        $classMethod->stmts = array_merge([new If_($ifCondition, ['stmts' => [new Return_(new ConstFetch(new Name('[]')))]])], (array) $classMethod->stmts);
     }
 }

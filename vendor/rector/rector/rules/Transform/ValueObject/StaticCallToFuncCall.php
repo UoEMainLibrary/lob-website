@@ -9,19 +9,16 @@ final class StaticCallToFuncCall
 {
     /**
      * @readonly
-     * @var string
      */
-    private $class;
+    private string $class;
     /**
      * @readonly
-     * @var string
      */
-    private $method;
+    private string $method;
     /**
      * @readonly
-     * @var string
      */
-    private $function;
+    private string $function;
     public function __construct(string $class, string $method, string $function)
     {
         $this->class = $class;
@@ -31,15 +28,15 @@ final class StaticCallToFuncCall
         RectorAssert::methodName($method);
         RectorAssert::functionName($function);
     }
-    public function getObjectType() : ObjectType
+    public function getObjectType(): ObjectType
     {
         return new ObjectType($this->class);
     }
-    public function getMethod() : string
+    public function getMethod(): string
     {
         return $this->method;
     }
-    public function getFunction() : string
+    public function getFunction(): string
     {
         return $this->function;
     }

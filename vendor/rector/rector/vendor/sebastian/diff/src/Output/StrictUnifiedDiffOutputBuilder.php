@@ -9,24 +9,26 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\SebastianBergmann\Diff\Output;
+namespace RectorPrefix202604\SebastianBergmann\Diff\Output;
 
 use function array_merge;
 use function array_splice;
+use function assert;
 use function count;
 use function fclose;
 use function fopen;
 use function fwrite;
 use function is_bool;
 use function is_int;
+use function is_resource;
 use function is_string;
 use function max;
 use function min;
 use function sprintf;
 use function stream_get_contents;
 use function substr;
-use RectorPrefix202411\SebastianBergmann\Diff\ConfigurationException;
-use RectorPrefix202411\SebastianBergmann\Diff\Differ;
+use RectorPrefix202604\SebastianBergmann\Diff\ConfigurationException;
+use RectorPrefix202604\SebastianBergmann\Diff\Differ;
 /**
  * Strict Unified diff output builder.
  *
@@ -34,10 +36,7 @@ use RectorPrefix202411\SebastianBergmann\Diff\Differ;
  */
 final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
 {
-    /**
-     * @var mixed[]
-     */
-    private static $default = [
+    private static array $default = [
         'collapseRanges' => \true,
         // ranges of length one are rendered with the trailing `,1`
         'commonLineThreshold' => 6,
@@ -49,28 +48,17 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         'toFile' => null,
         'toFileDate' => null,
     ];
+    private bool $changed;
+    private bool $collapseRanges;
     /**
-     * @var bool
+     * @var positive-int
      */
-    private $changed;
+    private int $commonLineThreshold;
+    private string $header;
     /**
-     * @var bool
+     * @var positive-int
      */
-    private $collapseRanges;
-    /**
-     * @psalm-var positive-int
-     * @var int
-     */
-    private $commonLineThreshold;
-    /**
-     * @var string
-     */
-    private $header;
-    /**
-     * @psalm-var positive-int
-     * @var int
-     */
-    private $contextLines;
+    private int $contextLines;
     public function __construct(array $options = [])
     {
         $options = array_merge(self::$default, $options);
@@ -92,13 +80,14 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $this->commonLineThreshold = $options['commonLineThreshold'];
         $this->contextLines = $options['contextLines'];
     }
-    public function getDiff(array $diff) : string
+    public function getDiff(array $diff): string
     {
         if (0 === count($diff)) {
             return '';
         }
         $this->changed = \false;
         $buffer = fopen('php://memory', 'r+b');
+        assert(is_resource($buffer));
         fwrite($buffer, $this->header);
         $this->writeDiffHunks($buffer, $diff);
         if (!$this->changed) {
@@ -112,7 +101,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $last = substr($diff, -1);
         return "\n" !== $last && "\r" !== $last ? $diff . "\n" : $diff;
     }
-    private function writeDiffHunks($output, array $diff) : void
+    private function writeDiffHunks($output, array $diff): void
     {
         // detect "No newline at end of file" and insert into `$diff` if needed
         $upperLimit = count($diff);
@@ -206,7 +195,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $toRange -= $sameCount;
         $this->writeHunk($diff, $hunkCapture - $contextStartOffset, $i - $sameCount + $contextEndOffset + 1, $fromStart - $contextStartOffset, $fromRange + $contextStartOffset + $contextEndOffset, $toStart - $contextStartOffset, $toRange + $contextStartOffset + $contextEndOffset, $output);
     }
-    private function writeHunk(array $diff, int $diffStartIndex, int $diffEndIndex, int $fromStart, int $fromRange, int $toStart, int $toRange, $output) : void
+    private function writeHunk(array $diff, int $diffStartIndex, int $diffEndIndex, int $fromStart, int $fromRange, int $toStart, int $toRange, $output): void
     {
         fwrite($output, '@@ -' . $fromStart);
         if (!$this->collapseRanges || 1 !== $fromRange) {
@@ -237,13 +226,13 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             // }
         }
     }
-    private function assertString(array $options, string $option) : void
+    private function assertString(array $options, string $option): void
     {
         if (!is_string($options[$option])) {
             throw new ConfigurationException($option, 'a string', $options[$option]);
         }
     }
-    private function assertStringOrNull(array $options, string $option) : void
+    private function assertStringOrNull(array $options, string $option): void
     {
         if (null !== $options[$option] && !is_string($options[$option])) {
             throw new ConfigurationException($option, 'a string or <null>', $options[$option]);

@@ -9,24 +9,20 @@ final class RenameStaticMethod
 {
     /**
      * @readonly
-     * @var string
      */
-    private $oldClass;
+    private string $oldClass;
     /**
      * @readonly
-     * @var string
      */
-    private $oldMethod;
+    private string $oldMethod;
     /**
      * @readonly
-     * @var string
      */
-    private $newClass;
+    private string $newClass;
     /**
      * @readonly
-     * @var string
      */
-    private $newMethod;
+    private string $newMethod;
     public function __construct(string $oldClass, string $oldMethod, string $newClass, string $newMethod)
     {
         $this->oldClass = $oldClass;
@@ -38,23 +34,23 @@ final class RenameStaticMethod
         RectorAssert::className($newClass);
         RectorAssert::methodName($newMethod);
     }
-    public function getOldObjectType() : ObjectType
+    public function getOldObjectType(): ObjectType
     {
         return new ObjectType($this->oldClass);
     }
-    public function getOldMethod() : string
+    public function getOldMethod(): string
     {
         return $this->oldMethod;
     }
-    public function getNewClass() : string
+    public function getNewClass(): string
     {
         return $this->newClass;
     }
-    public function getNewMethod() : string
+    public function getNewMethod(): string
     {
         return $this->newMethod;
     }
-    public function hasClassChanged() : bool
+    public function hasClassChanged(): bool
     {
         return $this->oldClass !== $this->newClass;
     }

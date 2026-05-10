@@ -28,33 +28,28 @@ final class ReplaceSensioRouteAnnotationWithSymfonyRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\PhpDocNode\SymfonyRouteTagValueNodeFactory
      */
-    private $symfonyRouteTagValueNodeFactory;
+    private SymfonyRouteTagValueNodeFactory $symfonyRouteTagValueNodeFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\Configuration\RenamedClassesDataCollector
      */
-    private $renamedClassesDataCollector;
+    private RenamedClassesDataCollector $renamedClassesDataCollector;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @var string
      */
-    private const SENSIO_ROUTE_NAME = 'Sensio\\Bundle\\FrameworkExtraBundle\\Configuration\\Route';
+    private const SENSIO_ROUTE_NAME = 'Sensio\Bundle\FrameworkExtraBundle\Configuration\Route';
     public function __construct(SymfonyRouteTagValueNodeFactory $symfonyRouteTagValueNodeFactory, PhpDocTagRemover $phpDocTagRemover, RenamedClassesDataCollector $renamedClassesDataCollector, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->symfonyRouteTagValueNodeFactory = $symfonyRouteTagValueNodeFactory;
@@ -63,7 +58,7 @@ final class ReplaceSensioRouteAnnotationWithSymfonyRector extends AbstractRector
         $this->docBlockUpdater = $docBlockUpdater;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replace Sensio @Route annotation with Symfony one', [new CodeSample(<<<'CODE_SAMPLE'
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -96,14 +91,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [ClassMethod::class, Class_::class];
     }
     /**
      * @param ClassMethod|Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         // early return in case of non public method
         if ($node instanceof ClassMethod && !$node->isPublic()) {
@@ -135,14 +130,14 @@ CODE_SAMPLE
         return $node;
     }
     /**
-     * @param mixed[] $values
+     * @param ArrayItemNode[] $values
      */
-    private function isEmptySensioRoute(array $values) : bool
+    private function isEmptySensioRoute(array $values): bool
     {
         if ($values === []) {
             return \true;
         }
-        if (\count($values) !== 1) {
+        if (count($values) !== 1) {
             return \false;
         }
         $singleValue = $values[0];

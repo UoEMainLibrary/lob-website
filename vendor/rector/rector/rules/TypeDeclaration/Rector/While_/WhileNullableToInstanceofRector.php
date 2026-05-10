@@ -5,6 +5,7 @@ namespace Rector\TypeDeclaration\Rector\While_;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp\NotIdentical;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Name\FullyQualified;
@@ -24,20 +25,18 @@ final class WhileNullableToInstanceofRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\TypeAnalyzer\NullableTypeAnalyzer
      */
-    private $nullableTypeAnalyzer;
+    private NullableTypeAnalyzer $nullableTypeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(NullableTypeAnalyzer $nullableTypeAnalyzer, ValueResolver $valueResolver)
     {
         $this->nullableTypeAnalyzer = $nullableTypeAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change while null compare to strict instanceof check', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeClass
@@ -66,15 +65,18 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [While_::class, Do_::class];
     }
     /**
      * @param While_|Do_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
+        if ($node->cond instanceof Assign) {
+            return null;
+        }
         if ($node->cond instanceof NotIdentical) {
             return $this->refactorNotIdentical($node, $node->cond);
         }
@@ -85,7 +87,7 @@ CODE_SAMPLE
         $node->cond = $this->createInstanceof($node->cond, $condNullableObjectType);
         return $node;
     }
-    private function createInstanceof(Expr $expr, ObjectType $objectType) : Instanceof_
+    private function createInstanceof(Expr $expr, ObjectType $objectType): Instanceof_
     {
         $fullyQualified = new FullyQualified($objectType->getClassName());
         return new Instanceof_($expr, $fullyQualified);

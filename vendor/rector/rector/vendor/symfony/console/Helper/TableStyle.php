@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Helper;
+namespace RectorPrefix202604\Symfony\Component\Console\Helper;
 
-use RectorPrefix202411\Symfony\Component\Console\Exception\InvalidArgumentException;
-use RectorPrefix202411\Symfony\Component\Console\Exception\LogicException;
+use RectorPrefix202604\Symfony\Component\Console\Exception\InvalidArgumentException;
+use RectorPrefix202604\Symfony\Component\Console\Exception\LogicException;
 /**
  * Defines the styles for a Table.
  *
@@ -21,102 +21,30 @@ use RectorPrefix202411\Symfony\Component\Console\Exception\LogicException;
  */
 class TableStyle
 {
-    /**
-     * @var string
-     */
-    private $paddingChar = ' ';
-    /**
-     * @var string
-     */
-    private $horizontalOutsideBorderChar = '-';
-    /**
-     * @var string
-     */
-    private $horizontalInsideBorderChar = '-';
-    /**
-     * @var string
-     */
-    private $verticalOutsideBorderChar = '|';
-    /**
-     * @var string
-     */
-    private $verticalInsideBorderChar = '|';
-    /**
-     * @var string
-     */
-    private $crossingChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopRightChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopMidChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopLeftChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingMidRightChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingBottomRightChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingBottomMidChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingBottomLeftChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingMidLeftChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopLeftBottomChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopMidBottomChar = '+';
-    /**
-     * @var string
-     */
-    private $crossingTopRightBottomChar = '+';
-    /**
-     * @var string
-     */
-    private $headerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
-    /**
-     * @var string
-     */
-    private $footerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
-    /**
-     * @var string
-     */
-    private $cellHeaderFormat = '<info>%s</info>';
-    /**
-     * @var string
-     */
-    private $cellRowFormat = '%s';
-    /**
-     * @var string
-     */
-    private $cellRowContentFormat = ' %s ';
-    /**
-     * @var string
-     */
-    private $borderFormat = '%s';
-    /**
-     * @var int
-     */
-    private $padType = \STR_PAD_RIGHT;
+    private string $paddingChar = ' ';
+    private string $horizontalOutsideBorderChar = '-';
+    private string $horizontalInsideBorderChar = '-';
+    private string $verticalOutsideBorderChar = '|';
+    private string $verticalInsideBorderChar = '|';
+    private string $crossingChar = '+';
+    private string $crossingTopRightChar = '+';
+    private string $crossingTopMidChar = '+';
+    private string $crossingTopLeftChar = '+';
+    private string $crossingMidRightChar = '+';
+    private string $crossingBottomRightChar = '+';
+    private string $crossingBottomMidChar = '+';
+    private string $crossingBottomLeftChar = '+';
+    private string $crossingMidLeftChar = '+';
+    private string $crossingTopLeftBottomChar = '+';
+    private string $crossingTopMidBottomChar = '+';
+    private string $crossingTopRightBottomChar = '+';
+    private string $headerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
+    private string $footerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
+    private string $cellHeaderFormat = '<info>%s</info>';
+    private string $cellRowFormat = '%s';
+    private string $cellRowContentFormat = ' %s ';
+    private string $borderFormat = '%s';
+    private int $padType = \STR_PAD_RIGHT;
     /**
      * Sets padding character, used for cell padding.
      *
@@ -133,7 +61,7 @@ class TableStyle
     /**
      * Gets padding character, used for cell padding.
      */
-    public function getPaddingChar() : string
+    public function getPaddingChar(): string
     {
         return $this->paddingChar;
     }
@@ -142,10 +70,11 @@ class TableStyle
      *
      * <code>
      * ╔═══════════════╤══════════════════════════╤══════════════════╗
-     * 1 ISBN          2 Title                    │ Author           ║
-     * ╠═══════════════╪══════════════════════════╪══════════════════╣
+     * ║ ISBN          │ Title                    │ Author           ║
+     * ╠═══════1═══════╪══════════════════════════╪══════════════════╣
      * ║ 99921-58-10-7 │ Divine Comedy            │ Dante Alighieri  ║
      * ║ 9971-5-0210-0 │ A Tale of Two Cities     │ Charles Dickens  ║
+     * ╟───────2───────┼──────────────────────────┼──────────────────╢
      * ║ 960-425-059-0 │ The Lord of the Rings    │ J. R. R. Tolkien ║
      * ║ 80-902734-1-6 │ And Then There Were None │ Agatha Christie  ║
      * ╚═══════════════╧══════════════════════════╧══════════════════╝
@@ -164,11 +93,10 @@ class TableStyle
      *
      * <code>
      * ╔═══════════════╤══════════════════════════╤══════════════════╗
-     * ║ ISBN          │ Title                    │ Author           ║
-     * ╠═══════1═══════╪══════════════════════════╪══════════════════╣
+     * 1 ISBN          2 Title                    │ Author           ║
+     * ╠═══════════════╪══════════════════════════╪══════════════════╣
      * ║ 99921-58-10-7 │ Divine Comedy            │ Dante Alighieri  ║
      * ║ 9971-5-0210-0 │ A Tale of Two Cities     │ Charles Dickens  ║
-     * ╟───────2───────┼──────────────────────────┼──────────────────╢
      * ║ 960-425-059-0 │ The Lord of the Rings    │ J. R. R. Tolkien ║
      * ║ 80-902734-1-6 │ And Then There Were None │ Agatha Christie  ║
      * ╚═══════════════╧══════════════════════════╧══════════════════╝
@@ -187,7 +115,7 @@ class TableStyle
      *
      * @internal
      */
-    public function getBorderChars() : array
+    public function getBorderChars(): array
     {
         return [$this->horizontalOutsideBorderChar, $this->verticalOutsideBorderChar, $this->horizontalInsideBorderChar, $this->verticalInsideBorderChar];
     }
@@ -243,14 +171,14 @@ class TableStyle
      *
      * @see {@link setCrossingChars()} for setting each crossing individually.
      */
-    public function setDefaultCrossingChar(string $char) : self
+    public function setDefaultCrossingChar(string $char): self
     {
         return $this->setCrossingChars($char, $char, $char, $char, $char, $char, $char, $char, $char);
     }
     /**
      * Gets crossing character.
      */
-    public function getCrossingChar() : string
+    public function getCrossingChar(): string
     {
         return $this->crossingChar;
     }
@@ -259,7 +187,7 @@ class TableStyle
      *
      * @internal
      */
-    public function getCrossingChars() : array
+    public function getCrossingChars(): array
     {
         return [$this->crossingChar, $this->crossingTopLeftChar, $this->crossingTopMidChar, $this->crossingTopRightChar, $this->crossingMidRightChar, $this->crossingBottomRightChar, $this->crossingBottomMidChar, $this->crossingBottomLeftChar, $this->crossingMidLeftChar, $this->crossingTopLeftBottomChar, $this->crossingTopMidBottomChar, $this->crossingTopRightBottomChar];
     }
@@ -276,7 +204,7 @@ class TableStyle
     /**
      * Gets header cell format.
      */
-    public function getCellHeaderFormat() : string
+    public function getCellHeaderFormat(): string
     {
         return $this->cellHeaderFormat;
     }
@@ -293,7 +221,7 @@ class TableStyle
     /**
      * Gets row cell format.
      */
-    public function getCellRowFormat() : string
+    public function getCellRowFormat(): string
     {
         return $this->cellRowFormat;
     }
@@ -310,7 +238,7 @@ class TableStyle
     /**
      * Gets row cell content format.
      */
-    public function getCellRowContentFormat() : string
+    public function getCellRowContentFormat(): string
     {
         return $this->cellRowContentFormat;
     }
@@ -327,7 +255,7 @@ class TableStyle
     /**
      * Gets table border format.
      */
-    public function getBorderFormat() : string
+    public function getBorderFormat(): string
     {
         return $this->borderFormat;
     }
@@ -347,11 +275,11 @@ class TableStyle
     /**
      * Gets cell padding type.
      */
-    public function getPadType() : int
+    public function getPadType(): int
     {
         return $this->padType;
     }
-    public function getHeaderTitleFormat() : string
+    public function getHeaderTitleFormat(): string
     {
         return $this->headerTitleFormat;
     }
@@ -363,7 +291,7 @@ class TableStyle
         $this->headerTitleFormat = $format;
         return $this;
     }
-    public function getFooterTitleFormat() : string
+    public function getFooterTitleFormat(): string
     {
         return $this->footerTitleFormat;
     }

@@ -7,28 +7,26 @@ final class ExpectedName
 {
     /**
      * @readonly
-     * @var string
      */
-    private $name;
+    private string $name;
     /**
      * @readonly
-     * @var string
      */
-    private $singularized;
+    private string $singularized;
     public function __construct(string $name, string $singularized)
     {
         $this->name = $name;
         $this->singularized = $singularized;
     }
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
-    public function getSingularized() : string
+    public function getSingularized(): string
     {
         return $this->singularized;
     }
-    public function isSingular() : bool
+    public function isSingular(): bool
     {
         return $this->name === $this->singularized;
     }

@@ -12,26 +12,23 @@ final class MatchTypePropertyRenamer
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Guard\PropertyConflictingNameGuard\MatchPropertyTypeConflictingNameGuard
      */
-    private $matchPropertyTypeConflictingNameGuard;
+    private MatchPropertyTypeConflictingNameGuard $matchPropertyTypeConflictingNameGuard;
     /**
      * @readonly
-     * @var \Rector\Naming\RenameGuard\PropertyRenameGuard
      */
-    private $propertyRenameGuard;
+    private PropertyRenameGuard $propertyRenameGuard;
     /**
      * @readonly
-     * @var \Rector\Naming\PropertyRenamer\PropertyFetchRenamer
      */
-    private $propertyFetchRenamer;
+    private \Rector\Naming\PropertyRenamer\PropertyFetchRenamer $propertyFetchRenamer;
     public function __construct(MatchPropertyTypeConflictingNameGuard $matchPropertyTypeConflictingNameGuard, PropertyRenameGuard $propertyRenameGuard, \Rector\Naming\PropertyRenamer\PropertyFetchRenamer $propertyFetchRenamer)
     {
         $this->matchPropertyTypeConflictingNameGuard = $matchPropertyTypeConflictingNameGuard;
         $this->propertyRenameGuard = $propertyRenameGuard;
         $this->propertyFetchRenamer = $propertyFetchRenamer;
     }
-    public function rename(PropertyRename $propertyRename) : ?Property
+    public function rename(PropertyRename $propertyRename): ?Property
     {
         if ($this->matchPropertyTypeConflictingNameGuard->isConflicting($propertyRename)) {
             return null;
@@ -42,12 +39,12 @@ final class MatchTypePropertyRenamer
         if ($this->propertyRenameGuard->shouldSkip($propertyRename)) {
             return null;
         }
-        $onlyPropertyProperty = $propertyRename->getPropertyProperty();
-        $onlyPropertyProperty->name = new VarLikeIdentifier($propertyRename->getExpectedName());
+        $propertyItem = $propertyRename->getPropertyProperty();
+        $propertyItem->name = new VarLikeIdentifier($propertyRename->getExpectedName());
         $this->renamePropertyFetchesInClass($propertyRename);
         return $propertyRename->getProperty();
     }
-    private function renamePropertyFetchesInClass(PropertyRename $propertyRename) : void
+    private function renamePropertyFetchesInClass(PropertyRename $propertyRename): void
     {
         $this->propertyFetchRenamer->renamePropertyFetchesInClass($propertyRename->getClassLike(), $propertyRename->getCurrentName(), $propertyRename->getExpectedName());
     }

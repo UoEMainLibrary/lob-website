@@ -14,9 +14,8 @@ final class AttributeNameFactory
 {
     /**
      * @readonly
-     * @var \Rector\PhpAttribute\UseAliasNameMatcher
      */
-    private $useAliasNameMatcher;
+    private UseAliasNameMatcher $useAliasNameMatcher;
     public function __construct(UseAliasNameMatcher $useAliasNameMatcher)
     {
         $this->useAliasNameMatcher = $useAliasNameMatcher;
@@ -31,9 +30,9 @@ final class AttributeNameFactory
         // except start with \
         if ($annotationToAttribute->getAttributeClass() === $annotationToAttribute->getTag()) {
             $attributeName = $doctrineAnnotationTagValueNode->identifierTypeNode->name;
-            $attributeName = \ltrim($attributeName, '@');
-            if (\strncmp($attributeName, '\\', \strlen('\\')) === 0) {
-                return new FullyQualified(\ltrim($attributeName, '\\'));
+            $attributeName = ltrim($attributeName, '@');
+            if (strncmp($attributeName, '\\', strlen('\\')) === 0) {
+                return new FullyQualified(ltrim($attributeName, '\\'));
             }
             return new Name($attributeName);
         }

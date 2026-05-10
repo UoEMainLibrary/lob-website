@@ -12,14 +12,13 @@ final class ConditionInverter
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\BinaryOpManipulator
      */
-    private $binaryOpManipulator;
+    private BinaryOpManipulator $binaryOpManipulator;
     public function __construct(BinaryOpManipulator $binaryOpManipulator)
     {
         $this->binaryOpManipulator = $binaryOpManipulator;
     }
-    public function createInvertedCondition(Expr $expr) : Expr
+    public function createInvertedCondition(Expr $expr): Expr
     {
         // inverse condition
         if ($expr instanceof BinaryOp) {

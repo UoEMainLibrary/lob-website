@@ -17,26 +17,23 @@ final class IsArrayAndDualCheckToAble
 {
     /**
      * @readonly
-     * @var \Rector\NodeManipulator\BinaryOpManipulator
      */
-    private $binaryOpManipulator;
+    private BinaryOpManipulator $binaryOpManipulator;
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Comparing\NodeComparator
      */
-    private $nodeComparator;
+    private NodeComparator $nodeComparator;
     public function __construct(BinaryOpManipulator $binaryOpManipulator, NodeNameResolver $nodeNameResolver, NodeComparator $nodeComparator)
     {
         $this->binaryOpManipulator = $binaryOpManipulator;
         $this->nodeNameResolver = $nodeNameResolver;
         $this->nodeComparator = $nodeComparator;
     }
-    public function processBooleanOr(BooleanOr $booleanOr, string $type, string $newMethodName) : ?FuncCall
+    public function processBooleanOr(BooleanOr $booleanOr, string $type, string $newMethodName): ?FuncCall
     {
         $twoNodeMatch = $this->binaryOpManipulator->matchFirstAndSecondConditionNode($booleanOr, Instanceof_::class, FuncCall::class);
         if (!$twoNodeMatch instanceof TwoNodeMatch) {

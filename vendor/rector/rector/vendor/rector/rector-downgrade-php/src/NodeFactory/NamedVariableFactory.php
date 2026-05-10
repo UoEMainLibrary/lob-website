@@ -3,6 +3,7 @@
 declare (strict_types=1);
 namespace Rector\NodeFactory;
 
+use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\Expression;
 use Rector\Naming\Naming\VariableNaming;
@@ -11,14 +12,16 @@ final class NamedVariableFactory
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\VariableNaming
      */
-    private $variableNaming;
+    private VariableNaming $variableNaming;
     public function __construct(VariableNaming $variableNaming)
     {
         $this->variableNaming = $variableNaming;
     }
-    public function createVariable(string $variableName, Expression $expression) : Variable
+    /**
+     * @param \PhpParser\Node\Stmt\Expression|\PhpParser\Node\Expr\Ternary $expression
+     */
+    public function createVariable(string $variableName, $expression): Variable
     {
         $scope = $expression->getAttribute(AttributeKey::SCOPE);
         $variableName = $this->variableNaming->createCountedValueName($variableName, $scope);

@@ -5,9 +5,9 @@ namespace Rector\DowngradePhp81\Rector\FuncCall;
 
 use PhpParser\Node;
 use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
@@ -26,7 +26,7 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class DowngradeFirstClassCallableSyntaxRector extends AbstractRector
 {
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Replace variadic placeholders usage by Closure::fromCallable()', [new CodeSample(<<<'CODE_SAMPLE'
 $cb = strlen(...);
@@ -39,14 +39,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class, MethodCall::class, StaticCall::class];
     }
     /**
      * @param FuncCall|MethodCall|StaticCall $node
      */
-    public function refactor(Node $node) : ?StaticCall
+    public function refactor(Node $node): ?StaticCall
     {
         if (!$node->isFirstClassCallable()) {
             return null;
@@ -76,7 +76,7 @@ CODE_SAMPLE
     /**
      * @param \PhpParser\Node\Scalar\String_|\PhpParser\Node\Expr\Array_|\PhpParser\Node\Expr $expr
      */
-    private function createClosureFromCallableCall($expr) : StaticCall
+    private function createClosureFromCallableCall($expr): StaticCall
     {
         return new StaticCall(new FullyQualified('Closure'), 'fromCallable', [new Arg($expr)]);
     }

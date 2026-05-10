@@ -7,24 +7,25 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Reflection\ReflectionProvider;
 use Rector\NodeAnalyzer\DoctrineEntityAnalyzer;
+/**
+ * @api Part of external API
+ */
 final class DoctrineEntityDetector
 {
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\DoctrineEntityAnalyzer
      */
-    private $doctrineEntityAnalyzer;
+    private DoctrineEntityAnalyzer $doctrineEntityAnalyzer;
     /**
      * @readonly
-     * @var \PHPStan\Reflection\ReflectionProvider
      */
-    private $reflectionProvider;
+    private ReflectionProvider $reflectionProvider;
     public function __construct(DoctrineEntityAnalyzer $doctrineEntityAnalyzer, ReflectionProvider $reflectionProvider)
     {
         $this->doctrineEntityAnalyzer = $doctrineEntityAnalyzer;
         $this->reflectionProvider = $reflectionProvider;
     }
-    public function detect(Class_ $class) : bool
+    public function detect(Class_ $class): bool
     {
         // A. check annotations
         if ($this->doctrineEntityAnalyzer->hasClassAnnotation($class)) {

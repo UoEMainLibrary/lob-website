@@ -3,10 +3,12 @@
 declare (strict_types=1);
 namespace Rector\DeadCode\PhpDoc;
 
+use PhpParser\Node;
 use PhpParser\Node\FunctionLike;
 use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode;
+use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger;
 use Rector\BetterPhpDocParser\ValueObject\Type\BracketsAwareUnionTypeNode;
@@ -22,49 +24,40 @@ final class DeadParamTagValueNodeAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\TypeComparator\TypeComparator
      */
-    private $typeComparator;
+    private TypeComparator $typeComparator;
     /**
      * @readonly
-     * @var \Rector\DeadCode\TypeNodeAnalyzer\GenericTypeNodeAnalyzer
      */
-    private $genericTypeNodeAnalyzer;
+    private GenericTypeNodeAnalyzer $genericTypeNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\DeadCode\TypeNodeAnalyzer\MixedArrayTypeNodeAnalyzer
      */
-    private $mixedArrayTypeNodeAnalyzer;
+    private MixedArrayTypeNodeAnalyzer $mixedArrayTypeNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\TypeDeclaration\NodeAnalyzer\ParamAnalyzer
      */
-    private $paramAnalyzer;
+    private ParamAnalyzer $paramAnalyzer;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTypeChanger
      */
-    private $phpDocTypeChanger;
+    private PhpDocTypeChanger $phpDocTypeChanger;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\Guard\StandaloneTypeRemovalGuard
      */
-    private $standaloneTypeRemovalGuard;
+    private StandaloneTypeRemovalGuard $standaloneTypeRemovalGuard;
     /**
      * @readonly
-     * @var \Rector\StaticTypeMapper\StaticTypeMapper
      */
-    private $staticTypeMapper;
+    private StaticTypeMapper $staticTypeMapper;
     /**
      * @readonly
-     * @var \Rector\DeadCode\PhpDoc\Guard\TemplateTypeRemovalGuard
      */
-    private $templateTypeRemovalGuard;
+    private TemplateTypeRemovalGuard $templateTypeRemovalGuard;
     public function __construct(NodeNameResolver $nodeNameResolver, TypeComparator $typeComparator, GenericTypeNodeAnalyzer $genericTypeNodeAnalyzer, MixedArrayTypeNodeAnalyzer $mixedArrayTypeNodeAnalyzer, ParamAnalyzer $paramAnalyzer, PhpDocTypeChanger $phpDocTypeChanger, StandaloneTypeRemovalGuard $standaloneTypeRemovalGuard, StaticTypeMapper $staticTypeMapper, TemplateTypeRemovalGuard $templateTypeRemovalGuard)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -77,16 +70,19 @@ final class DeadParamTagValueNodeAnalyzer
         $this->staticTypeMapper = $staticTypeMapper;
         $this->templateTypeRemovalGuard = $templateTypeRemovalGuard;
     }
-    public function isDead(ParamTagValueNode $paramTagValueNode, FunctionLike $functionLike) : bool
+    public function isDead(ParamTagValueNode $paramTagValueNode, FunctionLike $functionLike): bool
     {
         $param = $this->paramAnalyzer->getParamByName($paramTagValueNode->parameterName, $functionLike);
         if (!$param instanceof Param) {
             return \false;
         }
-        if ($param->type === null) {
+        if (!$param->type instanceof Node) {
             return \false;
         }
         if ($paramTagValueNode->description !== '') {
+            return \false;
+        }
+        if ($paramTagValueNode->type instanceof GenericTypeNode) {
             return \false;
         }
         $docType = $this->staticTypeMapper->mapPHPStanPhpDocTypeNodeToPHPStanType($paramTagValueNode->type, $functionLike);
@@ -107,7 +103,7 @@ final class DeadParamTagValueNodeAnalyzer
         }
         return $this->isAllowedBracketAwareUnion($paramTagValueNode->type);
     }
-    private function isAllowedBracketAwareUnion(BracketsAwareUnionTypeNode $bracketsAwareUnionTypeNode) : bool
+    private function isAllowedBracketAwareUnion(BracketsAwareUnionTypeNode $bracketsAwareUnionTypeNode): bool
     {
         if ($this->mixedArrayTypeNodeAnalyzer->hasMixedArrayType($bracketsAwareUnionTypeNode)) {
             return \false;

@@ -16,9 +16,8 @@ final class ClassFromEnumFactory
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     public function __construct(NodeNameResolver $nodeNameResolver)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -26,7 +25,7 @@ final class ClassFromEnumFactory
     /**
      * @api downgrade
      */
-    public function createFromEnum(Enum_ $enum) : Class_
+    public function createFromEnum(Enum_ $enum): Class_
     {
         $shortClassName = $this->nodeNameResolver->getShortName($enum);
         $classStmts = [];
@@ -42,7 +41,7 @@ final class ClassFromEnumFactory
         $class->namespacedName = $enum->namespacedName;
         return $class;
     }
-    private function createConstValue(EnumCase $enumCase) : Expr
+    private function createConstValue(EnumCase $enumCase): Expr
     {
         if ($enumCase->expr instanceof Expr) {
             return $enumCase->expr;
@@ -50,7 +49,7 @@ final class ClassFromEnumFactory
         /** @var string $enumName */
         $enumName = $this->nodeNameResolver->getName($enumCase);
         // minimal convention
-        $lowercasedEnumValue = \strtolower($enumName);
+        $lowercasedEnumValue = strtolower($enumName);
         return new String_($lowercasedEnumValue);
     }
 }

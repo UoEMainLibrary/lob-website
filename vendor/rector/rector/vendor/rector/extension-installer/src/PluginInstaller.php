@@ -3,40 +3,22 @@
 declare (strict_types=1);
 namespace Rector\RectorInstaller;
 
-use RectorPrefix202411\Composer\Installer\InstallationManager;
-use RectorPrefix202411\Composer\IO\IOInterface;
-use RectorPrefix202411\Composer\Package\PackageInterface;
-use RectorPrefix202411\Composer\Repository\InstalledRepositoryInterface;
-use RectorPrefix202411\Composer\Util\Filesystem as ComposerFilesystem;
+use RectorPrefix202604\Composer\Installer\InstallationManager;
+use RectorPrefix202604\Composer\IO\IOInterface;
+use RectorPrefix202604\Composer\Package\PackageInterface;
+use RectorPrefix202604\Composer\Repository\InstalledRepositoryInterface;
+use RectorPrefix202604\Composer\Util\Filesystem as ComposerFilesystem;
 /**
  * @see \Rector\RectorInstaller\Tests\PluginInstallerTest
  */
 final class PluginInstaller
 {
-    /**
-     * @var \Rector\RectorInstaller\Filesystem
-     */
-    private $filesystem;
-    /**
-     * @var \Composer\Repository\InstalledRepositoryInterface
-     */
-    private $localRepository;
-    /**
-     * @var \Composer\IO\IOInterface
-     */
-    private $io;
-    /**
-     * @var \Composer\Installer\InstallationManager
-     */
-    private $installationManager;
-    /**
-     * @var ComposerFilesystem
-     */
-    private $composerFilesystem;
-    /**
-     * @var string
-     */
-    private $configurationFile;
+    private \Rector\RectorInstaller\Filesystem $filesystem;
+    private InstalledRepositoryInterface $localRepository;
+    private IOInterface $io;
+    private InstallationManager $installationManager;
+    private ComposerFilesystem $composerFilesystem;
+    private string $configurationFile;
     /**
      * @var string
      */
@@ -45,10 +27,7 @@ final class PluginInstaller
      * @var string
      */
     public const RECTOR_EXTRA_KEY = 'rector';
-    /**
-     * @var string
-     */
-    private static $generatedFileTemplate = <<<'CODE_SAMPLE'
+    private static string $generatedFileTemplate = <<<'CODE_SAMPLE'
 <?php
 
 declare(strict_types = 1);
@@ -78,7 +57,7 @@ CODE_SAMPLE;
         $this->composerFilesystem = $composerFilesystem;
         $this->configurationFile = $configurationFile;
     }
-    public function install() : void
+    public function install(): void
     {
         $oldGeneratedConfigFileHash = null;
         if ($this->filesystem->isFile($this->configurationFile)) {
@@ -91,22 +70,22 @@ CODE_SAMPLE;
                 continue;
             }
             $absoluteInstallPath = $this->installationManager->getInstallPath($package);
-            $data[$package->getName()] = ['install_path' => $absoluteInstallPath, 'relative_install_path' => $this->composerFilesystem->findShortestPath(\dirname($this->configurationFile), $absoluteInstallPath, \true), 'extra' => $package->getExtra()[self::RECTOR_EXTRA_KEY] ?? null, 'version' => $package->getFullPrettyVersion()];
+            $data[$package->getName()] = ['install_path' => $absoluteInstallPath, 'relative_install_path' => $this->composerFilesystem->findShortestPath(dirname($this->configurationFile), $absoluteInstallPath, \true), 'extra' => $package->getExtra()[self::RECTOR_EXTRA_KEY] ?? null, 'version' => $package->getFullPrettyVersion()];
             $installedPackages[$package->getName()] = \true;
         }
-        \ksort($data);
-        \ksort($installedPackages);
-        $generatedConfigFileContents = \sprintf(self::$generatedFileTemplate, \var_export($data, \true), \true);
+        ksort($data);
+        ksort($installedPackages);
+        $generatedConfigFileContents = sprintf(self::$generatedFileTemplate, var_export($data, \true), \true);
         if ($this->filesystem->hashEquals((string) $oldGeneratedConfigFileHash, $generatedConfigFileContents)) {
             return;
         }
         $this->filesystem->writeFile($this->configurationFile, $generatedConfigFileContents);
         $this->io->write('<info>rector/rector-installer:</info> Extensions installed');
-        foreach (\array_keys($installedPackages) as $name) {
-            $this->io->write(\sprintf('> <info>%s:</info> installed', $name));
+        foreach (array_keys($installedPackages) as $name) {
+            $this->io->write(sprintf('> <info>%s:</info> installed', $name));
         }
     }
-    private function shouldSkip(PackageInterface $package) : bool
+    private function shouldSkip(PackageInterface $package): bool
     {
         if ($package->getType() === self::RECTOR_EXTENSION_TYPE) {
             return \false;

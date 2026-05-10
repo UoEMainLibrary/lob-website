@@ -20,22 +20,15 @@ final class PlainValueParser
 {
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocParser\ClassAnnotationMatcher
      */
-    private $classAnnotationMatcher;
-    /**
-     * @var \Rector\BetterPhpDocParser\PhpDocParser\StaticDoctrineAnnotationParser
-     */
-    private $staticDoctrineAnnotationParser;
-    /**
-     * @var \Rector\BetterPhpDocParser\PhpDocParser\StaticDoctrineAnnotationParser\ArrayParser
-     */
-    private $arrayParser;
+    private ClassAnnotationMatcher $classAnnotationMatcher;
+    private StaticDoctrineAnnotationParser $staticDoctrineAnnotationParser;
+    private \Rector\BetterPhpDocParser\PhpDocParser\StaticDoctrineAnnotationParser\ArrayParser $arrayParser;
     public function __construct(ClassAnnotationMatcher $classAnnotationMatcher)
     {
         $this->classAnnotationMatcher = $classAnnotationMatcher;
     }
-    public function autowire(StaticDoctrineAnnotationParser $staticDoctrineAnnotationParser, \Rector\BetterPhpDocParser\PhpDocParser\StaticDoctrineAnnotationParser\ArrayParser $arrayParser) : void
+    public function autowire(StaticDoctrineAnnotationParser $staticDoctrineAnnotationParser, \Rector\BetterPhpDocParser\PhpDocParser\StaticDoctrineAnnotationParser\ArrayParser $arrayParser): void
     {
         $this->staticDoctrineAnnotationParser = $staticDoctrineAnnotationParser;
         $this->arrayParser = $arrayParser;
@@ -71,7 +64,7 @@ final class PlainValueParser
         if ($currentTokenValue === '"') {
             do {
                 $tokenIterator->next();
-            } while (\strpos($tokenIterator->currentTokenValue(), '"') === \false);
+            } while (strpos($tokenIterator->currentTokenValue(), '"') === \false);
         }
         $end = $tokenIterator->currentPosition();
         if ($start + 1 < $end) {
@@ -79,9 +72,9 @@ final class PlainValueParser
         }
         return $currentTokenValue;
     }
-    private function parseStringValue(BetterTokenIterator $tokenIterator, string $currentTokenValue) : string
+    private function parseStringValue(BetterTokenIterator $tokenIterator, string $currentTokenValue): string
     {
-        if (\strncmp($currentTokenValue, '"', \strlen('"')) === 0 && \substr_compare($currentTokenValue, '"', -\strlen('"')) !== 0) {
+        if (strncmp($currentTokenValue, '"', strlen('"')) === 0 && substr_compare($currentTokenValue, '"', -strlen('"')) !== 0) {
             $currentTokenValue = $this->parseMultilineOrWhiteSpacedString($tokenIterator, $currentTokenValue);
         } else {
             while ($tokenIterator->isCurrentTokenType(Lexer::TOKEN_DOUBLE_COLON) || $tokenIterator->isCurrentTokenType(Lexer::TOKEN_IDENTIFIER)) {
@@ -91,27 +84,27 @@ final class PlainValueParser
         }
         return $currentTokenValue;
     }
-    private function parseMultilineOrWhiteSpacedString(BetterTokenIterator $tokenIterator, string $currentTokenValue) : string
+    private function parseMultilineOrWhiteSpacedString(BetterTokenIterator $tokenIterator, string $currentTokenValue): string
     {
-        while (\strncmp($currentTokenValue, '"', \strlen('"')) === 0 && \substr_compare($currentTokenValue, '"', -\strlen('"')) !== 0) {
+        while (strncmp($currentTokenValue, '"', strlen('"')) === 0 && substr_compare($currentTokenValue, '"', -strlen('"')) !== 0) {
             if (!$tokenIterator->isCurrentTokenType(Lexer::TOKEN_PHPDOC_EOL)) {
                 $currentTokenValue .= ' ';
             }
-            if (\strncmp($currentTokenValue, '"', \strlen('"')) === 0 && \strpos($tokenIterator->currentTokenValue(), '"') !== \false && $currentTokenValue !== $tokenIterator->currentTokenValue()) {
+            if (strncmp($currentTokenValue, '"', strlen('"')) === 0 && strpos($tokenIterator->currentTokenValue(), '"') !== \false && $currentTokenValue !== $tokenIterator->currentTokenValue()) {
                 //starts with '"' and current token contains '"', should be the end
-                $currentTokenValue .= \substr($tokenIterator->currentTokenValue(), 0, (int) \strpos($tokenIterator->currentTokenValue(), '"') + 1);
+                $currentTokenValue .= substr($tokenIterator->currentTokenValue(), 0, (int) strpos($tokenIterator->currentTokenValue(), '"') + 1);
                 $tokenIterator->next();
                 break;
             }
             $currentTokenValue .= $tokenIterator->currentTokenValue();
             $tokenIterator->next();
         }
-        if (\strncmp($currentTokenValue, '"', \strlen('"')) === 0 && \substr_compare($currentTokenValue, '"', -\strlen('"')) === 0) {
-            return \trim(\str_replace('"', '', $currentTokenValue));
+        if (strncmp($currentTokenValue, '"', strlen('"')) === 0 && substr_compare($currentTokenValue, '"', -strlen('"')) === 0) {
+            return trim(str_replace('"', '', $currentTokenValue));
         }
         return $currentTokenValue;
     }
-    private function parseNestedDoctrineAnnotationTagValueNode(string $currentTokenValue, BetterTokenIterator $tokenIterator, Node $currentPhpNode) : DoctrineAnnotationTagValueNode
+    private function parseNestedDoctrineAnnotationTagValueNode(string $currentTokenValue, BetterTokenIterator $tokenIterator, Node $currentPhpNode): DoctrineAnnotationTagValueNode
     {
         // @todo
         $annotationShortName = $currentTokenValue;
@@ -127,15 +120,15 @@ final class PlainValueParser
         $identifierTypeNode->setAttribute(PhpDocAttributeKey::RESOLVED_CLASS, $fullyQualifiedAnnotationClass);
         return new DoctrineAnnotationTagValueNode($identifierTypeNode, $annotationShortName, $values);
     }
-    private function matchConstantValue(string $currentTokenValue) : ?\PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprNode
+    private function matchConstantValue(string $currentTokenValue): ?\PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprNode
     {
-        if (\strtolower($currentTokenValue) === 'false') {
+        if (strtolower($currentTokenValue) === 'false') {
             return new ConstExprFalseNode();
         }
-        if (\strtolower($currentTokenValue) === 'true') {
+        if (strtolower($currentTokenValue) === 'true') {
             return new ConstExprTrueNode();
         }
-        if (!\is_numeric($currentTokenValue)) {
+        if (!is_numeric($currentTokenValue)) {
             return null;
         }
         if ((string) (int) $currentTokenValue !== $currentTokenValue) {

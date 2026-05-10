@@ -19,24 +19,20 @@ final class ExprBoolCaster
 {
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\NodeTypeResolver
      */
-    private $nodeTypeResolver;
+    private NodeTypeResolver $nodeTypeResolver;
     /**
      * @readonly
-     * @var \Rector\PHPStanStaticTypeMapper\Utils\TypeUnwrapper
      */
-    private $typeUnwrapper;
+    private TypeUnwrapper $typeUnwrapper;
     /**
      * @readonly
-     * @var \Rector\NodeTypeResolver\PHPStan\Type\StaticTypeAnalyzer
      */
-    private $staticTypeAnalyzer;
+    private StaticTypeAnalyzer $staticTypeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\NodeFactory
      */
-    private $nodeFactory;
+    private NodeFactory $nodeFactory;
     public function __construct(NodeTypeResolver $nodeTypeResolver, TypeUnwrapper $typeUnwrapper, StaticTypeAnalyzer $staticTypeAnalyzer, NodeFactory $nodeFactory)
     {
         $this->nodeTypeResolver = $nodeTypeResolver;
@@ -44,7 +40,7 @@ final class ExprBoolCaster
         $this->staticTypeAnalyzer = $staticTypeAnalyzer;
         $this->nodeFactory = $nodeFactory;
     }
-    public function boolCastOrNullCompareIfNeeded(Expr $expr) : Expr
+    public function boolCastOrNullCompareIfNeeded(Expr $expr): Expr
     {
         $exprStaticType = $this->nodeTypeResolver->getType($expr);
         if (!TypeCombinator::containsNull($exprStaticType)) {
@@ -67,7 +63,7 @@ final class ExprBoolCaster
         }
         return new Bool_($expr);
     }
-    private function isBoolCastNeeded(Expr $expr, Type $exprType) : bool
+    private function isBoolCastNeeded(Expr $expr, Type $exprType): bool
     {
         if ($expr instanceof BooleanNot) {
             return \false;

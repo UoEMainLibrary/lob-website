@@ -21,16 +21,17 @@ final class PropertyAccessorCreationBooleanToFlagsRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(ValueResolver $valueResolver)
     {
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Changes first argument of PropertyAccessor::__construct() to flags from boolean', [new CodeSample(<<<'CODE_SAMPLE'
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+
 class SomeClass
 {
     public function run()
@@ -40,6 +41,8 @@ class SomeClass
 }
 CODE_SAMPLE
 , <<<'CODE_SAMPLE'
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+
 class SomeClass
 {
     public function run()
@@ -53,14 +56,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [New_::class];
     }
     /**
      * @param New_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->shouldSkip($node)) {
             return null;
@@ -74,12 +77,12 @@ CODE_SAMPLE
         $node->args[0] = $this->nodeFactory->createArg($bitwiseOr);
         return $node;
     }
-    private function shouldSkip(New_ $new) : bool
+    private function shouldSkip(New_ $new): bool
     {
         if (!$new->class instanceof Name) {
             return \true;
         }
-        if (!$this->isName($new->class, 'Symfony\\Component\\PropertyAccess\\PropertyAccessor')) {
+        if (!$this->isName($new->class, 'Symfony\Component\PropertyAccess\PropertyAccessor')) {
             return \true;
         }
         if (!isset($new->args[0])) {
@@ -91,14 +94,14 @@ CODE_SAMPLE
         }
         return !$this->valueResolver->isTrueOrFalse($firstArg->value);
     }
-    private function prepareFlags(bool $currentValue) : BitwiseOr
+    private function prepareFlags(bool $currentValue): BitwiseOr
     {
-        $magicGetClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\\Component\\PropertyAccess\\PropertyAccessor', 'MAGIC_GET');
-        $magicSetClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\\Component\\PropertyAccess\\PropertyAccessor', 'MAGIC_SET');
+        $magicGetClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\Component\PropertyAccess\PropertyAccessor', 'MAGIC_GET');
+        $magicSetClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\Component\PropertyAccess\PropertyAccessor', 'MAGIC_SET');
         if (!$currentValue) {
             return new BitwiseOr($magicGetClassConstFetch, $magicSetClassConstFetch);
         }
-        $magicCallClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\\Component\\PropertyAccess\\PropertyAccessor', 'MAGIC_CALL');
+        $magicCallClassConstFetch = $this->nodeFactory->createClassConstFetch('Symfony\Component\PropertyAccess\PropertyAccessor', 'MAGIC_CALL');
         return new BitwiseOr(new BitwiseOr($magicCallClassConstFetch, $magicGetClassConstFetch), $magicSetClassConstFetch);
     }
 }

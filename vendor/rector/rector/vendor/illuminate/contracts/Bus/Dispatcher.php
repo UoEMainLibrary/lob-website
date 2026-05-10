@@ -1,6 +1,6 @@
 <?php
 
-namespace RectorPrefix202411\Illuminate\Contracts\Bus;
+namespace RectorPrefix202604\Illuminate\Contracts\Bus;
 
 interface Dispatcher
 {
@@ -40,7 +40,7 @@ interface Dispatcher
      * Retrieve the handler for a command.
      *
      * @param  mixed  $command
-     * @return bool|mixed
+     * @return mixed
      */
     public function getCommandHandler($command);
     /**

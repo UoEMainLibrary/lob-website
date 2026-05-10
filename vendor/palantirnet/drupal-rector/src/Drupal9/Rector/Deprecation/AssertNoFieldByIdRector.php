@@ -19,8 +19,7 @@ final class AssertNoFieldByIdRector extends AbstractRector
     $this->assertNoFieldById('name');
     $this->assertNoFieldById('name', 'not the value');
     $this->assertNoFieldById('notexisting', NULL);
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
     $this->assertSession()->assertNoFieldById('name');
     $this->assertSession()->fieldValueNotEquals('name', 'not the value');
@@ -37,6 +36,9 @@ CODE_AFTER
         ];
     }
 
+    /**
+     * @return Node|null
+     */
     public function refactor(Node $node)
     {
         assert($node instanceof Node\Expr\MethodCall);

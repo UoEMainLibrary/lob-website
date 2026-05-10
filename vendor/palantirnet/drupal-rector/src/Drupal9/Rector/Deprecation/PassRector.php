@@ -7,6 +7,7 @@ namespace DrupalRector\Drupal9\Rector\Deprecation;
 use DrupalRector\Utility\GetDeclaringSourceTrait;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -22,8 +23,7 @@ final class PassRector extends AbstractRector
                 <<<'CODE_BEFORE'
 // Check for pass
 $this->pass('The whole transaction is rolled back when a duplicate key insert occurs.');
-CODE_BEFORE
-                ,
+CODE_BEFORE,
                 <<<'CODE_AFTER'
 // Check for pass
 CODE_AFTER
@@ -38,11 +38,16 @@ CODE_AFTER
         ];
     }
 
+    /**
+     * @param Node $node
+     *
+     * @return Node|NodeTraverser::REMOVE_NODE|NodeVisitor::REMOVE_NODE|null
+     */
     public function refactor(Node $node)
     {
         assert($node instanceof Node\Stmt\Expression);
 
-        if (!($node->expr instanceof Node\Expr\MethodCall)) {
+        if (!$node->expr instanceof Node\Expr\MethodCall) {
             return null;
         }
 
@@ -51,6 +56,11 @@ CODE_AFTER
         }
 
         if ($this->getDeclaringSource($node->expr) === 'Drupal\KernelTests\AssertLegacyTrait') {
+            if (defined('\PhpParser\NodeVisitor::REMOVE_NODE')) {
+                return NodeVisitor::REMOVE_NODE;
+            }
+
+            /* @phpstan-ignore-next-line */
             return NodeTraverser::REMOVE_NODE;
         }
 

@@ -7,17 +7,18 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\AssignOp;
+use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Return_;
 use PHPStan\Type\MixedType;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
-use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\Contract\Rector\ConfigurableRectorInterface;
 use Rector\NodeAnalyzer\CallAnalyzer;
 use Rector\NodeAnalyzer\VariableAnalyzer;
 use Rector\NodeTypeResolver\Node\AttributeKey;
+use Rector\PhpParser\Enum\NodeGroup;
 use Rector\PhpParser\Node\AssignAndBinaryMap;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
@@ -29,33 +30,26 @@ final class SimplifyUselessVariableRector extends AbstractRector implements Conf
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\AssignAndBinaryMap
      */
-    private $assignAndBinaryMap;
+    private AssignAndBinaryMap $assignAndBinaryMap;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\VariableAnalyzer
      */
-    private $variableAnalyzer;
+    private VariableAnalyzer $variableAnalyzer;
     /**
      * @readonly
-     * @var \Rector\NodeAnalyzer\CallAnalyzer
      */
-    private $callAnalyzer;
+    private CallAnalyzer $callAnalyzer;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @api
      * @var string
      */
     public const ONLY_DIRECT_ASSIGN = 'only_direct_assign';
-    /**
-     * @var bool
-     */
-    private $onlyDirectAssign = \false;
+    private bool $onlyDirectAssign = \false;
     public function __construct(AssignAndBinaryMap $assignAndBinaryMap, VariableAnalyzer $variableAnalyzer, CallAnalyzer $callAnalyzer, PhpDocInfoFactory $phpDocInfoFactory)
     {
         $this->assignAndBinaryMap = $assignAndBinaryMap;
@@ -63,13 +57,16 @@ final class SimplifyUselessVariableRector extends AbstractRector implements Conf
         $this->callAnalyzer = $callAnalyzer;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
     }
-    public function configure(array $configuration) : void
+    /**
+     * @param array<string, mixed> $configuration
+     */
+    public function configure(array $configuration): void
     {
         $this->onlyDirectAssign = $configuration[self::ONLY_DIRECT_ASSIGN] ?? \false;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
-        return new RuleDefinition('Removes useless variable assigns', [new ConfiguredCodeSample(
+        return new RuleDefinition('Remove useless variable assigns', [new ConfiguredCodeSample(
             <<<'CODE_SAMPLE'
 function () {
     $a = true;
@@ -105,14 +102,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
-        return [StmtsAwareInterface::class];
+        return NodeGroup::STMTS_AWARE;
     }
     /**
-     * @param StmtsAwareInterface $node
+     * @param StmtsAware $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $stmts = $node->stmts;
         if ($stmts === null) {
@@ -143,9 +140,11 @@ CODE_SAMPLE
         return null;
     }
     /**
+     * @param StmtsAware $stmtsAware
+     * @return StmtsAware|null
      * @param \PhpParser\Node\Expr\Assign|\PhpParser\Node\Expr\AssignOp $assign
      */
-    private function processSimplifyUselessVariable(StmtsAwareInterface $stmtsAware, Return_ $return, $assign, int $key) : ?StmtsAwareInterface
+    private function processSimplifyUselessVariable(Node $stmtsAware, Return_ $return, $assign, int $key): ?Node
     {
         if (!$assign instanceof Assign) {
             $binaryClass = $this->assignAndBinaryMap->getAlternative($assign);
@@ -159,7 +158,7 @@ CODE_SAMPLE
         unset($stmtsAware->stmts[$key - 1]);
         return $stmtsAware;
     }
-    private function shouldSkipStmt(Return_ $return, Stmt $previousStmt) : bool
+    private function shouldSkipStmt(Return_ $return, Stmt $previousStmt): bool
     {
         if (!$return->expr instanceof Variable) {
             return \true;
@@ -178,6 +177,9 @@ CODE_SAMPLE
         if ($this->onlyDirectAssign && $previousNode instanceof AssignOp) {
             return \true;
         }
+        if ($previousNode instanceof AssignOp && $previousNode->expr instanceof Ternary) {
+            return \true;
+        }
         $variable = $return->expr;
         // is the same variable
         if (!$this->nodeComparator->areNodesEqual($previousNode->var, $variable)) {
@@ -193,14 +195,14 @@ CODE_SAMPLE
         }
         return $this->variableAnalyzer->isUsedByReference($variable);
     }
-    private function hasSomeComment(Stmt $stmt) : bool
+    private function hasSomeComment(Stmt $stmt): bool
     {
         if ($stmt->getComments() !== []) {
             return \true;
         }
         return $stmt->getDocComment() instanceof Doc;
     }
-    private function isReturnWithVarAnnotation(Return_ $return) : bool
+    private function isReturnWithVarAnnotation(Return_ $return): bool
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($return);
         return !$phpDocInfo->getVarType() instanceof MixedType;

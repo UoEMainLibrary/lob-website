@@ -6,13 +6,12 @@ namespace Rector\PHPUnit\NodeFactory;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ArrayDimFetch;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Scalar\LNumber;
+use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
@@ -24,14 +23,12 @@ final class ConsecutiveIfsFactory
 {
     /**
      * @readonly
-     * @var \Rector\NodeNameResolver\NodeNameResolver
      */
-    private $nodeNameResolver;
+    private NodeNameResolver $nodeNameResolver;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\CodeQuality\NodeFactory\NestedClosureAssertFactory
      */
-    private $nestedClosureAssertFactory;
+    private NestedClosureAssertFactory $nestedClosureAssertFactory;
     public function __construct(NodeNameResolver $nodeNameResolver, NestedClosureAssertFactory $nestedClosureAssertFactory)
     {
         $this->nodeNameResolver = $nodeNameResolver;
@@ -40,7 +37,7 @@ final class ConsecutiveIfsFactory
     /**
      * @return Stmt[]
      */
-    public function createIfs(MethodCall $withConsecutiveMethodCall, MethodCall $numberOfInvocationsMethodCall) : array
+    public function createIfs(MethodCall $withConsecutiveMethodCall, MethodCall $numberOfInvocationsMethodCall): array
     {
         $ifs = [];
         $parametersVariable = new Variable(ConsecutiveVariable::PARAMETERS);
@@ -49,12 +46,9 @@ final class ConsecutiveIfsFactory
             if ($withConsecutiveArg->value instanceof Array_) {
                 $array = $withConsecutiveArg->value;
                 foreach ($array->items as $assertKey => $assertArrayItem) {
-                    if (!$assertArrayItem instanceof ArrayItem) {
-                        continue;
-                    }
                     if (!$assertArrayItem->value instanceof MethodCall) {
-                        $parametersDimFetch = new ArrayDimFetch(new Variable('parameters'), new LNumber($assertKey));
-                        $args = [new Arg($assertArrayItem), new Arg($parametersDimFetch)];
+                        $parametersDimFetch = new ArrayDimFetch(new Variable('parameters'), new Int_($assertKey));
+                        $args = [new Arg($assertArrayItem->value), new Arg($parametersDimFetch)];
                         $ifStmts[] = new Expression(new MethodCall(new Variable('this'), 'assertSame', $args));
                         continue;
                     }
@@ -62,9 +56,9 @@ final class ConsecutiveIfsFactory
                     if ($this->nodeNameResolver->isName($assertMethodCall->name, 'equalTo')) {
                         $ifStmts[] = $this->createAssertMethodCall($assertMethodCall, $parametersVariable, $assertKey);
                     } elseif ($this->nodeNameResolver->isName($assertMethodCall->name, 'callback')) {
-                        $ifStmts = \array_merge($ifStmts, $this->nestedClosureAssertFactory->create($assertMethodCall, $assertKey));
+                        $ifStmts = array_merge($ifStmts, $this->nestedClosureAssertFactory->create($assertMethodCall, $assertKey));
                     } else {
-                        $args = [new Arg($assertMethodCall), new Arg(new ArrayDimFetch(new Variable('parameters'), new LNumber($assertKey)))];
+                        $args = [new Arg($assertMethodCall), new Arg(new ArrayDimFetch(new Variable('parameters'), new Int_($assertKey)))];
                         $assertSameMethodCall = new MethodCall(new Variable('this'), new Identifier('assertSame'), $args);
                         $ifStmts[] = new Expression($assertSameMethodCall);
                     }
@@ -80,7 +74,7 @@ final class ConsecutiveIfsFactory
                             $identicalCompare = $arrowFunction->expr;
                             // @todo improve in time
                             if ($identicalCompare->left instanceof Variable) {
-                                $parametersArrayDimFetch = new ArrayDimFetch(new Variable('parameters'), new LNumber(0));
+                                $parametersArrayDimFetch = new ArrayDimFetch(new Variable('parameters'), new Int_(0));
                                 $assertSameMethodCall = new MethodCall(new Variable('this'), new Identifier('assertSame'));
                                 $assertSameMethodCall->args[] = new Arg($identicalCompare->right);
                                 $assertSameMethodCall->args[] = new Arg($parametersArrayDimFetch);
@@ -91,14 +85,14 @@ final class ConsecutiveIfsFactory
                 }
                 throw new NotImplementedYetException();
             }
-            $ifs[] = new If_(new Identical($numberOfInvocationsMethodCall, new LNumber($key + 1)), ['stmts' => $ifStmts]);
+            $ifs[] = new If_(new Identical($numberOfInvocationsMethodCall, new Int_($key + 1)), ['stmts' => $ifStmts]);
         }
         return $ifs;
     }
-    private function createAssertMethodCall(MethodCall $assertMethodCall, Variable $parametersVariable, int $parameterPositionKey) : Expression
+    private function createAssertMethodCall(MethodCall $assertMethodCall, Variable $parametersVariable, int $parameterPositionKey): Expression
     {
         $assertMethodCall->name = new Identifier('assertEquals');
-        $parametersArrayDimFetch = new ArrayDimFetch($parametersVariable, new LNumber($parameterPositionKey));
+        $parametersArrayDimFetch = new ArrayDimFetch($parametersVariable, new Int_($parameterPositionKey));
         $assertMethodCall->args[] = new Arg($parametersArrayDimFetch);
         return new Expression($assertMethodCall);
     }

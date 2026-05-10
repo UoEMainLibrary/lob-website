@@ -4,6 +4,7 @@ declare (strict_types=1);
 namespace Rector\Caching\Config;
 
 use Rector\Application\VersionResolver;
+use Rector\Caching\Contract\CacheMetaExtensionInterface;
 use Rector\Configuration\Parameter\SimpleParameterProvider;
 use Rector\Exception\ShouldNotHappenException;
 /**
@@ -11,19 +12,40 @@ use Rector\Exception\ShouldNotHappenException;
  */
 final class FileHashComputer
 {
-    public function compute(string $filePath) : string
+    /**
+     * @var CacheMetaExtensionInterface[]
+     * @readonly
+     */
+    private array $cacheMetaExtensions = [];
+    /**
+     * @param CacheMetaExtensionInterface[] $cacheMetaExtensions
+     */
+    public function __construct(array $cacheMetaExtensions = [])
+    {
+        $this->cacheMetaExtensions = $cacheMetaExtensions;
+    }
+    public function compute(string $filePath): string
     {
         $this->ensureIsPhp($filePath);
         $parametersHash = SimpleParameterProvider::hash();
-        return \sha1($filePath . $parametersHash . VersionResolver::PACKAGE_VERSION);
+        $extensionHash = $this->computeExtensionHash();
+        return sha1($filePath . $parametersHash . $extensionHash . VersionResolver::PACKAGE_VERSION);
     }
-    private function ensureIsPhp(string $filePath) : void
+    private function computeExtensionHash(): string
     {
-        $fileExtension = \pathinfo($filePath, \PATHINFO_EXTENSION);
+        $extensionHash = '';
+        foreach ($this->cacheMetaExtensions as $cacheMetumExtension) {
+            $extensionHash .= $cacheMetumExtension->getKey() . ':' . $cacheMetumExtension->getHash();
+        }
+        return $extensionHash;
+    }
+    private function ensureIsPhp(string $filePath): void
+    {
+        $fileExtension = pathinfo($filePath, \PATHINFO_EXTENSION);
         if ($fileExtension === 'php') {
             return;
         }
-        throw new ShouldNotHappenException(\sprintf(
+        throw new ShouldNotHappenException(sprintf(
             // getRealPath() cannot be used, as it breaks in phar
             'Provide only PHP file, ready for Dependency Injection. "%s" given',
             $filePath

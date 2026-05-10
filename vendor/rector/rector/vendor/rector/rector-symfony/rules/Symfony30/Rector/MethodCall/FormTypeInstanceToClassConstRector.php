@@ -4,9 +4,9 @@ declare (strict_types=1);
 namespace Rector\Symfony\Symfony30\Rector\MethodCall;
 
 use PhpParser\Node;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
@@ -34,34 +34,28 @@ final class FormTypeInstanceToClassConstRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormInstanceToFormClassConstFetchConverter
      */
-    private $formInstanceToFormClassConstFetchConverter;
+    private FormInstanceToFormClassConstFetchConverter $formInstanceToFormClassConstFetchConverter;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormAddMethodCallAnalyzer
      */
-    private $formAddMethodCallAnalyzer;
+    private FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormOptionsArrayMatcher
      */
-    private $formOptionsArrayMatcher;
+    private FormOptionsArrayMatcher $formOptionsArrayMatcher;
     /**
      * @readonly
-     * @var \Rector\Symfony\NodeAnalyzer\FormCollectionAnalyzer
      */
-    private $formCollectionAnalyzer;
+    private FormCollectionAnalyzer $formCollectionAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Symfony\TypeAnalyzer\ControllerAnalyzer
      */
-    private $controllerAnalyzer;
+    private ControllerAnalyzer $controllerAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(FormInstanceToFormClassConstFetchConverter $formInstanceToFormClassConstFetchConverter, FormAddMethodCallAnalyzer $formAddMethodCallAnalyzer, FormOptionsArrayMatcher $formOptionsArrayMatcher, FormCollectionAnalyzer $formCollectionAnalyzer, ControllerAnalyzer $controllerAnalyzer, ValueResolver $valueResolver)
     {
         $this->formInstanceToFormClassConstFetchConverter = $formInstanceToFormClassConstFetchConverter;
@@ -71,7 +65,7 @@ final class FormTypeInstanceToClassConstRector extends AbstractRector
         $this->controllerAnalyzer = $controllerAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Changes createForm(new FormType), add(new FormType) to ones with "FormType::class"', [new CodeSample(<<<'CODE_SAMPLE'
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -100,14 +94,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class];
     }
     /**
      * @param MethodCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if ($this->controllerAnalyzer->isController($node->var) && $this->isName($node->name, 'createForm')) {
             return $this->formInstanceToFormClassConstFetchConverter->processNewInstance($node, 0, 2);
@@ -121,7 +115,7 @@ CODE_SAMPLE
         }
         return $this->formInstanceToFormClassConstFetchConverter->processNewInstance($node, 1, 2);
     }
-    private function refactorCollectionOptions(MethodCall $methodCall) : void
+    private function refactorCollectionOptions(MethodCall $methodCall): void
     {
         $optionsArray = $this->formOptionsArrayMatcher->match($methodCall);
         if (!$optionsArray instanceof Array_) {

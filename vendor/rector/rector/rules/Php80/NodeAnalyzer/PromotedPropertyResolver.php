@@ -12,7 +12,7 @@ final class PromotedPropertyResolver
     /**
      * @return Param[]
      */
-    public function resolveFromClass(Class_ $class) : array
+    public function resolveFromClass(Class_ $class): array
     {
         $constructClassMethod = $class->getMethod(MethodName::CONSTRUCT);
         if (!$constructClassMethod instanceof ClassMethod) {
@@ -20,7 +20,7 @@ final class PromotedPropertyResolver
         }
         $promotedPropertyParams = [];
         foreach ($constructClassMethod->getParams() as $param) {
-            if ($param->flags === 0) {
+            if (!$param->isPromoted()) {
                 continue;
             }
             $promotedPropertyParams[] = $param;

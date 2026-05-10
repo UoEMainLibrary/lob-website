@@ -9,56 +9,46 @@ declare (strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\SebastianBergmann\Diff\Output;
+namespace RectorPrefix202604\SebastianBergmann\Diff\Output;
 
 use function array_splice;
+use function assert;
 use function count;
 use function fclose;
 use function fopen;
 use function fwrite;
+use function is_resource;
 use function max;
 use function min;
 use function str_ends_with;
 use function stream_get_contents;
 use function substr;
-use RectorPrefix202411\SebastianBergmann\Diff\Differ;
+use RectorPrefix202604\SebastianBergmann\Diff\Differ;
 /**
  * Builds a diff string representation in unified diff format in chunks.
  */
 final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
 {
+    private bool $collapseRanges = \true;
+    private int $commonLineThreshold = 6;
     /**
-     * @var bool
+     * @var positive-int
      */
-    private $collapseRanges = \true;
-    /**
-     * @var int
-     */
-    private $commonLineThreshold = 6;
-    /**
-     * @psalm-var positive-int
-     * @var int
-     */
-    private $contextLines = 3;
-    /**
-     * @var string
-     */
-    private $header;
-    /**
-     * @var bool
-     */
-    private $addLineNumbers;
+    private int $contextLines = 3;
+    private string $header;
+    private bool $addLineNumbers;
     public function __construct(string $header = "--- Original\n+++ New\n", bool $addLineNumbers = \false)
     {
         $this->header = $header;
         $this->addLineNumbers = $addLineNumbers;
     }
-    public function getDiff(array $diff) : string
+    public function getDiff(array $diff): string
     {
         $buffer = fopen('php://memory', 'r+b');
+        assert(is_resource($buffer));
         if ('' !== $this->header) {
             fwrite($buffer, $this->header);
-            if (\substr_compare($this->header, "\n", -\strlen("\n")) !== 0) {
+            if (substr_compare($this->header, "\n", -strlen("\n")) !== 0) {
                 fwrite($buffer, "\n");
             }
         }
@@ -72,7 +62,7 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
         $last = substr($diff, -1);
         return '' !== $diff && "\n" !== $last && "\r" !== $last ? $diff . "\n" : $diff;
     }
-    private function writeDiffHunks($output, array $diff) : void
+    private function writeDiffHunks($output, array $diff): void
     {
         // detect "No newline at end of file" and insert into `$diff` if needed
         $upperLimit = count($diff);
@@ -163,7 +153,7 @@ final class UnifiedDiffOutputBuilder extends AbstractChunkOutputBuilder
         $toRange -= $sameCount;
         $this->writeHunk($diff, $hunkCapture - $contextStartOffset, $i - $sameCount + $contextEndOffset + 1, $fromStart - $contextStartOffset, $fromRange + $contextStartOffset + $contextEndOffset, $toStart - $contextStartOffset, $toRange + $contextStartOffset + $contextEndOffset, $output);
     }
-    private function writeHunk(array $diff, int $diffStartIndex, int $diffEndIndex, int $fromStart, int $fromRange, int $toStart, int $toRange, $output) : void
+    private function writeHunk(array $diff, int $diffStartIndex, int $diffEndIndex, int $fromStart, int $fromRange, int $toStart, int $toRange, $output): void
     {
         if ($this->addLineNumbers) {
             fwrite($output, '@@ -' . $fromStart);

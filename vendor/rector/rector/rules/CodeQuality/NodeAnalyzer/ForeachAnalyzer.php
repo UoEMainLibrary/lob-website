@@ -13,9 +13,8 @@ final class ForeachAnalyzer
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Comparing\NodeComparator
      */
-    private $nodeComparator;
+    private NodeComparator $nodeComparator;
     public function __construct(NodeComparator $nodeComparator)
     {
         $this->nodeComparator = $nodeComparator;
@@ -26,9 +25,9 @@ final class ForeachAnalyzer
      *      <$assigns[]> = $value;
      * }
      */
-    public function matchAssignItemsOnlyForeachArrayVariable(Foreach_ $foreach) : ?Expr
+    public function matchAssignItemsOnlyForeachArrayVariable(Foreach_ $foreach): ?Expr
     {
-        if (\count($foreach->stmts) !== 1) {
+        if (count($foreach->stmts) !== 1) {
             return null;
         }
         $onlyStatement = $foreach->stmts[0];

@@ -12,7 +12,7 @@ use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
 use PhpParser\Node\Param;
-use PhpParser\Node\Scalar\Encapsed;
+use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Expression;
@@ -32,30 +32,27 @@ final class CreateFunctionToAnonymousFunctionRector extends AbstractRector imple
 {
     /**
      * @readonly
-     * @var \Rector\PhpParser\Parser\InlineCodeParser
      */
-    private $inlineCodeParser;
+    private InlineCodeParser $inlineCodeParser;
     /**
      * @readonly
-     * @var \Rector\Php72\NodeFactory\AnonymousFunctionFactory
      */
-    private $anonymousFunctionFactory;
+    private AnonymousFunctionFactory $anonymousFunctionFactory;
     /**
      * @readonly
-     * @var \Rector\Php\ReservedKeywordAnalyzer
      */
-    private $reservedKeywordAnalyzer;
+    private ReservedKeywordAnalyzer $reservedKeywordAnalyzer;
     public function __construct(InlineCodeParser $inlineCodeParser, AnonymousFunctionFactory $anonymousFunctionFactory, ReservedKeywordAnalyzer $reservedKeywordAnalyzer)
     {
         $this->inlineCodeParser = $inlineCodeParser;
         $this->anonymousFunctionFactory = $anonymousFunctionFactory;
         $this->reservedKeywordAnalyzer = $reservedKeywordAnalyzer;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::DEPRECATE_CREATE_FUNCTION;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Use anonymous functions instead of deprecated create_function()', [new CodeSample(<<<'CODE_SAMPLE'
 class ClassWithCreateFunction
@@ -82,7 +79,7 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [FuncCall::class];
     }
@@ -90,7 +87,7 @@ CODE_SAMPLE
      * @param FuncCall $node
      * @return Closure|null
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->isName($node, 'create_function')) {
             return null;
@@ -98,7 +95,7 @@ CODE_SAMPLE
         if ($node->isFirstClassCallable()) {
             return null;
         }
-        if (\count($node->getArgs()) < 2) {
+        if (count($node->getArgs()) < 2) {
             return null;
         }
         $firstExpr = $node->getArgs()[0]->value;
@@ -120,7 +117,7 @@ CODE_SAMPLE
     /**
      * @return Param[]
      */
-    private function createParamsFromString(Expr $expr) : array
+    private function createParamsFromString(Expr $expr): array
     {
         $content = $this->inlineCodeParser->stringify($expr);
         $content = '<?php $value = function(' . $content . ') {};';
@@ -138,16 +135,16 @@ CODE_SAMPLE
     /**
      * @return Stmt[]
      */
-    private function parseStringToBody(Expr $expr) : array
+    private function parseStringToBody(Expr $expr): array
     {
-        if (!$expr instanceof String_ && !$expr instanceof Encapsed && !$expr instanceof Concat) {
+        if (!$expr instanceof String_ && !$expr instanceof InterpolatedString && !$expr instanceof Concat) {
             // special case of code elsewhere
             return [$this->createEval($expr)];
         }
         $content = $this->inlineCodeParser->stringify($expr);
         return $this->inlineCodeParser->parseString($content);
     }
-    private function createEval(Expr $expr) : Expression
+    private function createEval(Expr $expr): Expression
     {
         $evalFuncCall = new FuncCall(new Name('eval'), [new Arg($expr)]);
         return new Expression($evalFuncCall);

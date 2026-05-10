@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Formatter;
+namespace RectorPrefix202604\Symfony\Component\Console\Formatter;
 
-use RectorPrefix202411\Symfony\Component\Console\Exception\InvalidArgumentException;
-use RectorPrefix202411\Symfony\Contracts\Service\ResetInterface;
+use RectorPrefix202604\Symfony\Component\Console\Exception\InvalidArgumentException;
+use RectorPrefix202604\Symfony\Contracts\Service\ResetInterface;
 /**
  * @author Jean-François Simon <contact@jfsimon.fr>
  */
@@ -20,11 +20,8 @@ class OutputFormatterStyleStack implements ResetInterface
     /**
      * @var OutputFormatterStyleInterface[]
      */
-    private $styles = [];
-    /**
-     * @var \Symfony\Component\Console\Formatter\OutputFormatterStyleInterface
-     */
-    private $emptyStyle;
+    private array $styles = [];
+    private OutputFormatterStyleInterface $emptyStyle;
     public function __construct(?OutputFormatterStyleInterface $emptyStyle = null)
     {
         $this->emptyStyle = $emptyStyle ?? new OutputFormatterStyle();
@@ -53,15 +50,15 @@ class OutputFormatterStyleStack implements ResetInterface
      *
      * @throws InvalidArgumentException When style tags incorrectly nested
      */
-    public function pop(?OutputFormatterStyleInterface $style = null) : OutputFormatterStyleInterface
+    public function pop(?OutputFormatterStyleInterface $style = null): OutputFormatterStyleInterface
     {
         if (!$this->styles) {
             return $this->emptyStyle;
         }
         if (null === $style) {
-            return \array_pop($this->styles);
+            return array_pop($this->styles);
         }
-        foreach (\array_reverse($this->styles, \true) as $index => $stackedStyle) {
+        foreach (array_reverse($this->styles, \true) as $index => $stackedStyle) {
             if ($style->apply('') === $stackedStyle->apply('')) {
                 $this->styles = \array_slice($this->styles, 0, $index);
                 return $stackedStyle;
@@ -72,7 +69,7 @@ class OutputFormatterStyleStack implements ResetInterface
     /**
      * Computes current style with stacks top codes.
      */
-    public function getCurrent() : OutputFormatterStyleInterface
+    public function getCurrent(): OutputFormatterStyleInterface
     {
         if (!$this->styles) {
             return $this->emptyStyle;
@@ -87,7 +84,7 @@ class OutputFormatterStyleStack implements ResetInterface
         $this->emptyStyle = $emptyStyle;
         return $this;
     }
-    public function getEmptyStyle() : OutputFormatterStyleInterface
+    public function getEmptyStyle(): OutputFormatterStyleInterface
     {
         return $this->emptyStyle;
     }

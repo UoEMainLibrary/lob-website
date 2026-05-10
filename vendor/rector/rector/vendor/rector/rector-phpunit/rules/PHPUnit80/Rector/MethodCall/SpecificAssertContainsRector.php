@@ -8,8 +8,7 @@ use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
-use PHPStan\Type\StringType;
-use PHPStan\Type\UnionType;
+use PHPStan\Type\TypeCombinator;
 use Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer;
 use Rector\Rector\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
@@ -23,9 +22,8 @@ final class SpecificAssertContainsRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @var array<string, string>
      */
@@ -34,7 +32,7 @@ final class SpecificAssertContainsRector extends AbstractRector
     {
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Change assertContains()/assertNotContains() method to new string and iterable alternatives', [new CodeSample(<<<'CODE_SAMPLE'
 final class SomeTest extends \PHPUnit\Framework\TestCase
@@ -61,14 +59,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [MethodCall::class, StaticCall::class];
     }
     /**
      * @param MethodCall|StaticCall $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->testsNodeAnalyzer->isPHPUnitMethodCallNames($node, ['assertContains', 'assertNotContains'])) {
             return null;
@@ -80,20 +78,18 @@ CODE_SAMPLE
             return null;
         }
         $methodName = $this->getName($node->name);
+        if ($methodName === null) {
+            return null;
+        }
         $newMethodName = self::OLD_TO_NEW_METHOD_NAMES[$methodName];
         $node->name = new Identifier($newMethodName);
         return $node;
     }
-    private function isPossiblyStringType(Expr $expr) : bool
+    private function isPossiblyStringType(Expr $expr): bool
     {
         $exprType = $this->getType($expr);
-        if ($exprType instanceof UnionType) {
-            foreach ($exprType->getTypes() as $unionedType) {
-                if ($unionedType instanceof StringType) {
-                    return \true;
-                }
-            }
-        }
-        return $exprType instanceof StringType;
+        $exprType = TypeCombinator::removeNull($exprType);
+        $exprType = TypeCombinator::removeFalsey($exprType);
+        return $exprType->isString()->yes();
     }
 }

@@ -6,7 +6,7 @@ namespace Rector\StaticTypeMapper\Naming;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Use_;
-use PhpParser\Node\Stmt\UseUse;
+use PhpParser\Node\UseItem;
 use PHPStan\Analyser\NameScope;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
@@ -19,14 +19,13 @@ final class NameScopeFactory
 {
     /**
      * @readonly
-     * @var \Rector\Naming\Naming\UseImportsResolver
      */
-    private $useImportsResolver;
+    private UseImportsResolver $useImportsResolver;
     public function __construct(UseImportsResolver $useImportsResolver)
     {
         $this->useImportsResolver = $useImportsResolver;
     }
-    public function createNameScopeFromNodeWithoutTemplateTypes(Node $node) : NameScope
+    public function createNameScopeFromNodeWithoutTemplateTypes(Node $node): NameScope
     {
         $scope = $node->getAttribute(AttributeKey::SCOPE);
         if ($scope instanceof Scope) {
@@ -45,16 +44,16 @@ final class NameScopeFactory
      * @param array<Use_|GroupUse> $useNodes
      * @return array<string, string>
      */
-    private function resolveUseNamesByAlias(array $useNodes) : array
+    private function resolveUseNamesByAlias(array $useNodes): array
     {
         $useNamesByAlias = [];
         foreach ($useNodes as $useNode) {
             $prefix = $this->useImportsResolver->resolvePrefix($useNode);
             foreach ($useNode->uses as $useUse) {
-                /** @var UseUse $useUse */
+                /** @var UseItem $useUse */
                 $aliasName = $useUse->getAlias()->name;
                 // uses must be lowercase, as PHPStan lowercases it
-                $lowercasedAliasName = \strtolower($aliasName);
+                $lowercasedAliasName = strtolower($aliasName);
                 $useNamesByAlias[$lowercasedAliasName] = $prefix . $useUse->name->toString();
             }
         }

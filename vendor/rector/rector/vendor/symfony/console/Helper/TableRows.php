@@ -8,22 +8,19 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace RectorPrefix202411\Symfony\Component\Console\Helper;
+namespace RectorPrefix202604\Symfony\Component\Console\Helper;
 
 /**
  * @internal
  */
 class TableRows implements \IteratorAggregate
 {
-    /**
-     * @var \Closure
-     */
-    private $generator;
+    private \Closure $generator;
     public function __construct(\Closure $generator)
     {
         $this->generator = $generator;
     }
-    public function getIterator() : \Traversable
+    public function getIterator(): \Traversable
     {
         return ($this->generator)();
     }

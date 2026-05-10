@@ -8,14 +8,13 @@ final class Tag implements TagInterface
 {
     /**
      * @readonly
-     * @var string
      */
-    private $name;
+    private string $name;
     /**
      * @var array<string, mixed>
      * @readonly
      */
-    private $data = [];
+    private array $data = [];
     /**
      * @param array<string, mixed> $data
      */
@@ -24,14 +23,14 @@ final class Tag implements TagInterface
         $this->name = $name;
         $this->data = $data;
     }
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
     /**
      * @return array<string, mixed>
      */
-    public function getData() : array
+    public function getData(): array
     {
         return $this->data;
     }

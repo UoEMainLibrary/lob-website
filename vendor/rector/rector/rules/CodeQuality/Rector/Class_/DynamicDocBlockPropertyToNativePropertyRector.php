@@ -31,39 +31,32 @@ final class DynamicDocBlockPropertyToNativePropertyRector extends AbstractRector
 {
     /**
      * @readonly
-     * @var \Rector\Php80\NodeAnalyzer\PhpAttributeAnalyzer
      */
-    private $phpAttributeAnalyzer;
+    private PhpAttributeAnalyzer $phpAttributeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover
      */
-    private $phpDocTagRemover;
+    private PhpDocTagRemover $phpDocTagRemover;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\CodeQuality\NodeFactory\TypedPropertyFactory
      */
-    private $typedPropertyFactory;
+    private TypedPropertyFactory $typedPropertyFactory;
     /**
      * @readonly
-     * @var \Rector\PHPUnit\NodeAnalyzer\TestsNodeAnalyzer
      */
-    private $testsNodeAnalyzer;
+    private TestsNodeAnalyzer $testsNodeAnalyzer;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     public function __construct(PhpAttributeAnalyzer $phpAttributeAnalyzer, PhpDocInfoFactory $phpDocInfoFactory, PhpDocTagRemover $phpDocTagRemover, DocBlockUpdater $docBlockUpdater, TypedPropertyFactory $typedPropertyFactory, TestsNodeAnalyzer $testsNodeAnalyzer, ValueResolver $valueResolver)
     {
         $this->phpAttributeAnalyzer = $phpAttributeAnalyzer;
@@ -74,7 +67,7 @@ final class DynamicDocBlockPropertyToNativePropertyRector extends AbstractRector
         $this->testsNodeAnalyzer = $testsNodeAnalyzer;
         $this->valueResolver = $valueResolver;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Turn dynamic docblock properties on class with no parents to explicit ones', [new CodeSample(<<<'CODE_SAMPLE'
 /**
@@ -105,14 +98,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         if (!$this->phpAttributeAnalyzer->hasPhpAttribute($node, 'AllowDynamicProperties')) {
             return null;
@@ -138,7 +131,7 @@ CODE_SAMPLE
                 }
             }
         }
-        $node->attrGroups = \array_values($node->attrGroups);
+        $node->attrGroups = array_values($node->attrGroups);
         $newProperties = $this->createNewPropertyFromPropertyTagValueNodes($propertyPhpDocTagNodes, $node);
         // remove property tags
         foreach ($propertyPhpDocTagNodes as $propertyPhpDocTagNode) {
@@ -146,12 +139,12 @@ CODE_SAMPLE
             $this->phpDocTagRemover->removeTagValueFromNode($classPhpDocInfo, $propertyPhpDocTagNode);
         }
         // merge new properties to start of the file
-        $node->stmts = \array_merge($newProperties, $node->stmts);
+        $node->stmts = array_merge($newProperties, $node->stmts);
         // update doc info
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
         return $node;
     }
-    public function provideMinPhpVersion() : int
+    public function provideMinPhpVersion(): int
     {
         return PhpVersionFeature::DEPRECATE_DYNAMIC_PROPERTIES;
     }
@@ -159,7 +152,7 @@ CODE_SAMPLE
      * @param PhpDocTagNode[] $propertyPhpDocTagNodes
      * @return Property[]
      */
-    private function createNewPropertyFromPropertyTagValueNodes(array $propertyPhpDocTagNodes, Class_ $class) : array
+    private function createNewPropertyFromPropertyTagValueNodes(array $propertyPhpDocTagNodes, Class_ $class): array
     {
         $newProperties = [];
         foreach ($propertyPhpDocTagNodes as $propertyPhpDocTagNode) {
@@ -168,15 +161,15 @@ CODE_SAMPLE
             if (!$propertyTagValueNode instanceof PropertyTagValueNode) {
                 continue;
             }
-            $propertyName = \ltrim($propertyTagValueNode->propertyName, '$');
+            $propertyName = ltrim($propertyTagValueNode->propertyName, '$');
             if ($this->isPromotedProperty($class, $propertyName)) {
                 continue;
             }
             // is property already defined?
-            if ($class->getProperty($propertyName)) {
-                // improve exising one type if needed
+            if ($class->getProperty($propertyName) instanceof Property) {
+                // improve existing one type if needed
                 $existingProperty = $class->getProperty($propertyName);
-                if ($existingProperty->type !== null) {
+                if ($existingProperty->type instanceof Node) {
                     continue;
                 }
                 $defaultValue = $existingProperty->props[0]->default;
@@ -188,7 +181,7 @@ CODE_SAMPLE
         }
         return $newProperties;
     }
-    private function shouldSkipClass(Class_ $class) : bool
+    private function shouldSkipClass(Class_ $class): bool
     {
         // skip magic
         $getClassMethod = $class->getMethod('__get');
@@ -204,15 +197,15 @@ CODE_SAMPLE
         }
         return !$this->testsNodeAnalyzer->isInTestClass($class);
     }
-    private function isPromotedProperty(Class_ $class, string $propertyName) : bool
+    private function isPromotedProperty(Class_ $class, string $propertyName): bool
     {
         $constructClassMethod = $class->getMethod(MethodName::CONSTRUCT);
         if ($constructClassMethod instanceof ClassMethod) {
             foreach ($constructClassMethod->params as $param) {
-                if (!$param->flags) {
+                if (!$param->isPromoted()) {
                     continue;
                 }
-                $paramName = $this->getName($param->var);
+                $paramName = $this->getName($param);
                 if ($paramName === $propertyName) {
                     return \true;
                 }

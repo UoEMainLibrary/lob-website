@@ -16,9 +16,11 @@ use Rector\BetterPhpDocParser\PhpDoc\StringNode;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\BetterPhpDocParser\ValueObject\PhpDoc\DoctrineAnnotation\CurlyListNode;
 use Rector\Comments\NodeDocBlock\DocBlockUpdater;
+use Rector\Doctrine\Enum\MappingClass;
 use Rector\Doctrine\NodeAnalyzer\ConstructorAssignPropertyAnalyzer;
 use Rector\Doctrine\NodeFactory\ValueAssignFactory;
 use Rector\Doctrine\NodeManipulator\ConstructorManipulator;
+use Rector\Doctrine\TypedCollections\NodeModifier\PropertyDefaultNullRemover;
 use Rector\PhpParser\Node\Value\ValueResolver;
 use Rector\Rector\AbstractRector;
 use Rector\ValueObject\MethodName;
@@ -33,39 +35,34 @@ final class MoveCurrentDateTimeDefaultInEntityToConstructorRector extends Abstra
 {
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeManipulator\ConstructorManipulator
      */
-    private $constructorManipulator;
+    private ConstructorManipulator $constructorManipulator;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeFactory\ValueAssignFactory
      */
-    private $valueAssignFactory;
+    private ValueAssignFactory $valueAssignFactory;
     /**
      * @readonly
-     * @var \Rector\Doctrine\NodeAnalyzer\ConstructorAssignPropertyAnalyzer
      */
-    private $constructorAssignPropertyAnalyzer;
+    private ConstructorAssignPropertyAnalyzer $constructorAssignPropertyAnalyzer;
     /**
      * @readonly
-     * @var \Rector\Comments\NodeDocBlock\DocBlockUpdater
      */
-    private $docBlockUpdater;
+    private DocBlockUpdater $docBlockUpdater;
     /**
      * @readonly
-     * @var \Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory
      */
-    private $phpDocInfoFactory;
+    private PhpDocInfoFactory $phpDocInfoFactory;
     /**
      * @readonly
-     * @var \Rector\PhpParser\Node\Value\ValueResolver
      */
-    private $valueResolver;
+    private ValueResolver $valueResolver;
     /**
-     * @var bool
+     * @readonly
      */
-    private $hasChanged = \false;
-    public function __construct(ConstructorManipulator $constructorManipulator, ValueAssignFactory $valueAssignFactory, ConstructorAssignPropertyAnalyzer $constructorAssignPropertyAnalyzer, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory, ValueResolver $valueResolver)
+    private PropertyDefaultNullRemover $propertyDefaultNullRemover;
+    private bool $hasChanged = \false;
+    public function __construct(ConstructorManipulator $constructorManipulator, ValueAssignFactory $valueAssignFactory, ConstructorAssignPropertyAnalyzer $constructorAssignPropertyAnalyzer, DocBlockUpdater $docBlockUpdater, PhpDocInfoFactory $phpDocInfoFactory, ValueResolver $valueResolver, PropertyDefaultNullRemover $propertyDefaultNullRemover)
     {
         $this->constructorManipulator = $constructorManipulator;
         $this->valueAssignFactory = $valueAssignFactory;
@@ -73,8 +70,9 @@ final class MoveCurrentDateTimeDefaultInEntityToConstructorRector extends Abstra
         $this->docBlockUpdater = $docBlockUpdater;
         $this->phpDocInfoFactory = $phpDocInfoFactory;
         $this->valueResolver = $valueResolver;
+        $this->propertyDefaultNullRemover = $propertyDefaultNullRemover;
     }
-    public function getRuleDefinition() : RuleDefinition
+    public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition('Move default value for entity property to constructor, the safest place', [new CodeSample(<<<'CODE_SAMPLE'
 use Doctrine\ORM\Mapping as ORM;
@@ -118,14 +116,14 @@ CODE_SAMPLE
     /**
      * @return array<class-string<Node>>
      */
-    public function getNodeTypes() : array
+    public function getNodeTypes(): array
     {
         return [Class_::class];
     }
     /**
      * @param Class_ $node
      */
-    public function refactor(Node $node) : ?Node
+    public function refactor(Node $node): ?Node
     {
         $this->hasChanged = \false;
         foreach ($node->getProperties() as $property) {
@@ -136,10 +134,10 @@ CODE_SAMPLE
         }
         return null;
     }
-    private function refactorProperty(Property $property, Class_ $class) : void
+    private function refactorProperty(Property $property, Class_ $class): void
     {
         $phpDocInfo = $this->phpDocInfoFactory->createFromNodeOrEmpty($property);
-        $doctrineAnnotationTagValueNode = $phpDocInfo->getByAnnotationClass('Doctrine\\ORM\\Mapping\\Column');
+        $doctrineAnnotationTagValueNode = $phpDocInfo->getByAnnotationClass(MappingClass::COLUMN);
         if (!$doctrineAnnotationTagValueNode instanceof DoctrineAnnotationTagValueNode) {
             return;
         }
@@ -180,7 +178,7 @@ CODE_SAMPLE
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($property);
         $this->refactorClassWithRemovalDefault($class, $property);
     }
-    private function refactorClassWithRemovalDefault(Class_ $class, Property $property) : void
+    private function refactorClassWithRemovalDefault(Class_ $class, Property $property): void
     {
         $this->refactorClass($class, $property);
         $classMethod = $class->getMethod(MethodName::CONSTRUCT);
@@ -188,11 +186,10 @@ CODE_SAMPLE
             return;
         }
         // 3. remove default from property
-        $onlyProperty = $property->props[0];
-        $onlyProperty->default = null;
+        $this->propertyDefaultNullRemover->remove($property);
         $this->hasChanged = \true;
     }
-    private function refactorClass(Class_ $class, Property $property) : void
+    private function refactorClass(Class_ $class, Property $property): void
     {
         /** @var string $propertyName */
         $propertyName = $this->getName($property);

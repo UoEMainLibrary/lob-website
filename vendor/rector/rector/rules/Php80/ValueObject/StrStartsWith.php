@@ -9,24 +9,20 @@ final class StrStartsWith
 {
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr\FuncCall
      */
-    private $funcCall;
+    private FuncCall $funcCall;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $haystackExpr;
+    private Expr $haystackExpr;
     /**
      * @readonly
-     * @var \PhpParser\Node\Expr
      */
-    private $needleExpr;
+    private Expr $needleExpr;
     /**
      * @readonly
-     * @var bool
      */
-    private $isPositive;
+    private bool $isPositive;
     public function __construct(FuncCall $funcCall, Expr $haystackExpr, Expr $needleExpr, bool $isPositive)
     {
         $this->funcCall = $funcCall;
@@ -34,19 +30,19 @@ final class StrStartsWith
         $this->needleExpr = $needleExpr;
         $this->isPositive = $isPositive;
     }
-    public function getFuncCall() : FuncCall
+    public function getFuncCall(): FuncCall
     {
         return $this->funcCall;
     }
-    public function getHaystackExpr() : Expr
+    public function getHaystackExpr(): Expr
     {
         return $this->haystackExpr;
     }
-    public function isPositive() : bool
+    public function isPositive(): bool
     {
         return $this->isPositive;
     }
-    public function getNeedleExpr() : Expr
+    public function getNeedleExpr(): Expr
     {
         return $this->needleExpr;
     }
