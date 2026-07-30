@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\inline_entity_form\FunctionalJavascript;
 
 /**
@@ -62,13 +64,13 @@ class ElementWebTest extends InlineEntityFormTestBase {
       $this->assertNoNodeByTitle($title);
 
       $assert_session->elementExists('xpath', $title_field_xpath)->setValue($title);
-      $assert_session->elementExists('xpath', $positive_int_field_xpath)->setValue(-1);
+      $assert_session->elementExists('xpath', $positive_int_field_xpath)->setValue('-1');
 
       $page->pressButton('Save');
       $assert_session->pageTextNotContains("Created Content $title");
       $this->assertNoNodeByTitle($title);
 
-      $assert_session->elementExists('xpath', $positive_int_field_xpath)->setValue(11);
+      $assert_session->elementExists('xpath', $positive_int_field_xpath)->setValue('11');
       $page->pressButton('Save');
       $assert_session->pageTextContains("Created Content $title");
       $this->assertNodeByTitle($title, 'ief_test_custom');

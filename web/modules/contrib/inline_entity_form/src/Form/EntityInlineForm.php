@@ -279,7 +279,7 @@ class EntityInlineForm implements InlineFormInterface {
    * {@inheritdoc}
    */
   public function save(EntityInterface $entity) {
-    $entity->save();
+    return $entity->save();
   }
 
   /**

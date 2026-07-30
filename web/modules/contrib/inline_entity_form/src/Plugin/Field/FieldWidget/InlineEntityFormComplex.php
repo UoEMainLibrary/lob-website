@@ -306,12 +306,13 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
     ]);
     $entities_count = count($entities);
 
-    // Determine if there are multiple existing entities that could be referenced.
+    // Determine if there are multiple existing entities that could be
+    // referenced.
     $selection_settings = $this->getFieldSetting('handler_settings') ? $this->getFieldSetting('handler_settings') : [];
     $options = [
-        'target_type' => $this->getFieldSetting('target_type'),
-        'handler' => $this->getFieldSetting('handler'),
-      ] + $selection_settings;
+      'target_type' => $this->getFieldSetting('target_type'),
+      'handler' => $this->getFieldSetting('handler'),
+    ] + $selection_settings;
 
     // Prepare information about which operations may be available to the user.
     $settings = $this->getSettings();
@@ -320,12 +321,13 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
     $allow_new = $settings['allow_new'] && $this->canAddNew();
 
     if (!$allow_new && $allow_existing) {
-      // Only count referencable entities if existing entities are allowed
-      // to be referenced otherwise we set the variable to false.
+      // Only count referenceable entities if existing entities are allowed to
+      // be referenced, otherwise we set the variable to false.
       /** @var \Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface $handler */
       $handler = $this->selectionManager->getInstance($options);
       $have_multiple_existing_entities = $handler->countReferenceableEntities() > 1;
-    } else {
+    }
+    else {
       $have_multiple_existing_entities = FALSE;
     }
 
@@ -492,7 +494,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
         // If an entity may be removed, show the "Remove" button.
         if ($may_remove) {
           // The default removal operation is unlink and the access check for
-          // deleting happens inside the controller buildRemoveForm() method
+          // deleting happens inside the controller buildRemoveForm() method.
           $row['actions']['ief_entity_remove'] = [
             '#type' => 'submit',
             '#value' => $this->t('Remove'),
@@ -722,8 +724,10 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
     if (empty($values) && !empty($widget_state['form'])) {
       if ($widget_state['form'] == 'add') {
         $element = NestedArray::getValue($form, [$field_name, 'widget', 'form']);
-        $entity = $element['inline_entity_form']['#entity'];
-        $values[] = ['entity' => $entity];
+        if ($element && isset($element['inline_entity_form']['#entity'])) {
+          $entity = $element['inline_entity_form']['#entity'];
+          $values[] = ['entity' => $entity];
+        }
       }
       elseif ($widget_state['form'] == 'ief_add_existing') {
         $parent = NestedArray::getValue($form, [$field_name, 'widget', 'form']);
@@ -1002,7 +1006,8 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
 
     $widget_state = $form_state->get(['inline_entity_form', $element['#ief_id']]);
 
-    // The entity hasn't been saved yet, or is being deleted, so remove the reference.
+    // The entity hasn't been saved yet, or is being deleted, so remove the
+    // reference.
     unset($widget_state['entities'][$delta]);
 
     // If the entity has been saved, delete it if either the widget is set to

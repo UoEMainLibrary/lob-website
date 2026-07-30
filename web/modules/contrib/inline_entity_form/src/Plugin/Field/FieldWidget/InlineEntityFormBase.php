@@ -155,7 +155,7 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
    * the form state keys can be sorted to ensure inside-out saving of entities.
    *
    * Also, "add" and "edit" IEFs have different array parents, which messes up
-   * form state, so we fixup this here with a, errrm, pragmatic hack.
+   * form state, so we fixup this here with a "pragmatic hack".
    *
    * @param string[] $parents
    *   The array parents.
@@ -302,7 +302,7 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
     $summary[] = $this->t('Form mode: @mode', ['@mode' => $form_mode_label]);
     if ($this->getSetting('override_labels')) {
       $summary[] = $this->t(
-        'Overriden labels are used: %singular and %plural',
+        'Overridden labels are used: %singular and %plural',
         [
           '%singular' => $this->getSetting('label_singular'),
           '%plural' => $this->getSetting('label_plural'),
@@ -418,13 +418,13 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
    *   Delta.
    * @param array $parents
    *   Array of parent element names.
-   * @param \Drupal\Core\Entity\EntityInterface $entity
+   * @param \Drupal\Core\Entity\EntityInterface|null $entity
    *   Optional entity object.
    *
    * @return array
    *   IEF form element structure.
    */
-  protected function getInlineEntityForm($operation, $bundle, $langcode, $delta, array $parents, EntityInterface $entity = NULL) {
+  protected function getInlineEntityForm($operation, $bundle, $langcode, $delta, array $parents, ?EntityInterface $entity = NULL) {
     $element = [
       '#type' => 'inline_entity_form',
       '#entity_type' => $this->getFieldSetting('target_type'),
@@ -466,9 +466,13 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
    * @see \Drupal\inline_entity_form\TranslationHelper::initFormLangcodes()
    *
    * @todo Replace line 472 \Drupal call with Dependency Injection.
+   * @see https://www.drupal.org/project/inline_entity_form/issues/3413349
    */
   protected function isTranslating(FormStateInterface $form_state) {
+    // phpcs:disable DrupalPractice.Objects.GlobalDrupal.GlobalDrupal
+    // @phpstan-ignore-next-line
     if (\Drupal::hasService('content_translation.manager') && TranslationHelper::isTranslating($form_state)) {
+      // @phpstan-ignore-next-line
       $translation_manager = \Drupal::service('content_translation.manager');
       $target_type = $this->getFieldSetting('target_type');
       foreach ($this->getTargetBundles() as $bundle) {
