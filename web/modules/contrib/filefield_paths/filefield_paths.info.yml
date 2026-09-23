@@ -11,7 +11,7 @@ test_dependencies:
   - token:token
   - redirect:redirect
 
-# Information added by Drupal.org packaging script on 2025-12-12
-version: '8.x-1.0-rc1'
+# Information added by Drupal.org packaging script on 2026-09-07
+version: '8.x-1.0-rc2'
 project: 'filefield_paths'
-datestamp: 1765543391
+datestamp: 1788767585

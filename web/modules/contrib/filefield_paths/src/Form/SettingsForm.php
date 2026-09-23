@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -21,43 +23,34 @@ use Symfony\Component\HttpFoundation\Request;
 class SettingsForm extends ConfigFormBase {
 
   /**
-   * Stream wrapper manager.
-   *
-   * @var \Drupal\Core\StreamWrapper\StreamWrapperManagerInterface
-   */
-  protected $streamWrapperManager;
-
-  /**
-   * Filesystem service.
-   *
-   * @var \Drupal\Core\File\FileSystemInterface
-   */
-  protected $fileSystem;
-
-  /**
    * {@inheritdoc}
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
-    StreamWrapperManagerInterface $stream_wrapper_manager,
-    FileSystemInterface $file_system,
+    /**
+     * Stream wrapper manager.
+     */
+    protected StreamWrapperManagerInterface $streamWrapperManager,
+    /**
+     * Filesystem service.
+     */
+    protected FileSystemInterface $fileSystem,
     TypedConfigManagerInterface $typed_config_manager,
     protected /*readonly*/ ?MoveFileProcessorInterface $moveFileProcessor = NULL,
   ) {
     parent::__construct($config_factory, $typed_config_manager);
-    $this->streamWrapperManager = $stream_wrapper_manager;
-    $this->fileSystem = $file_system;
-    if ($this->moveFileProcessor === NULL) {
+    if (!$this->moveFileProcessor instanceof MoveFileProcessorInterface) {
       @trigger_error('Calling ' . __METHOD__ . '() without the $moveFileProcessor argument is deprecated in filefield_paths:8.x-1.0 and it will be required in filefield_paths:2.0.0. See https://www.drupal.org/node/3562442', E_USER_DEPRECATED);
       // @phpstan-ignore-next-line
-      $this->moveFileProcessor = \Drupal::service(MoveFileProcessorInterface::class);
+      $this->moveFileProcessor = \Drupal::service(MoveFileProcessorInterface::class); // phpcs:ignore DrupalPractice.Objects.GlobalDrupal.GlobalDrupal
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  #[\Override]
+  public static function create(ContainerInterface $container): static {
     return new static(
       $container->get('config.factory'),
       $container->get('stream_wrapper_manager'),
@@ -70,14 +63,14 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'filefield_paths_settings_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
+  protected function getEditableConfigNames(): array {
     return [
       'filefield_paths.settings',
     ];
@@ -86,12 +79,13 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
+  #[\Override]
   public function buildForm(array $form, FormStateInterface $form_state, ?Request $request = NULL) {
-    $description = $this->t('The location that unprocessed files will be uploaded prior to being processed by File (Field) Paths.');
+    $description = $this->t('Files are uploaded here first. They move to their final path when the entity is saved.');
     $description .= '<br />';
-    $description .= $this->t('It is recommended to use the temporary file system (temporary://) whenever possible, especially for files that do not require previewing before form submission. Alternatively, if your server configuration permits, the private file system (private://) is preferred for situations where file previews — such as image previews — are needed before the form is submitted, as it provides secure and appropriate access for this functionality.');
+    $description .= $this->t('Use the temporary file system (temporary://) where you can. Files there have no public URL, and image previews still work. If temporary:// does not suit your server, use the private file system (private://).');
     $description .= '<br />';
-    $description .= '<strong>' . $this->t('Never use the public directory (public://) if the site supports private files, or private files can be temporarily exposed publicly.') . '</strong>';
+    $description .= '<strong>' . $this->t('Do not use the public file system (public://) on a site with private files. A file bound for private:// would have a public URL until the entity is saved.') . '</strong>';
     $form['temp_location'] = [
       '#title' => $this->t('Temporary file location'),
       '#type' => 'textfield',
@@ -106,34 +100,32 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  #[\Override]
+  public function validateForm(array &$form, FormStateInterface $form_state): void {
     $values = $form_state->getValues();
     $scheme = $this->streamWrapperManager->getScheme($values['temp_location']);
     if (!$scheme) {
       $form_state->setErrorByName('temp_location', $this->t('Invalid file location. You must include a file stream wrapper (e.g., public://).'));
 
-      return FALSE;
+      return;
     }
 
     if (!$this->streamWrapperManager->isValidScheme($scheme)) {
       $form_state->setErrorByName('temp_location', $this->t('Invalid file stream wrapper.'));
 
-      return FALSE;
+      return;
     }
 
     if ((!is_dir($values['temp_location']) || !is_writable($values['temp_location'])) && !$this->fileSystem->prepareDirectory($values['temp_location'], FileSystem::CREATE_DIRECTORY | FileSystem::MODIFY_PERMISSIONS)) {
       $form_state->setErrorByName('temp_location', $this->t('File location can not be created or is not writable.'));
-
-      return FALSE;
     }
-
-    return TRUE;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  #[\Override]
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
     $values = $form_state->getValues();
     $this->config('filefield_paths.settings')
       ->set('temp_location', $values['temp_location'])

@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Utility;
 
+use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\field\FieldConfigInterface;
 use Drupal\Core\StreamWrapper\StreamWrapperManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\filefield_paths\Batch\BatchUpdaterInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireServiceClosure;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * File (Field) Paths field config edit form handler.
@@ -37,21 +40,34 @@ class FieldConfigEditFormHandler implements FieldConfigEditFormHandlerInterface 
   public function submit(array $form, FormStateInterface $form_state): void {
     $settings = $form_state->getValue('third_party_settings')['filefield_paths'];
     // Retroactive updates.
-    if (!($settings['enabled'] && $settings['retroactive_update'])) {
+    if (!$settings['enabled'] || !$settings['retroactive_update']) {
       // Retroactive updates disabled.
       return;
     }
+    $form_object = $form_state->getFormObject();
+    if (!$form_object instanceof EntityFormInterface) {
+      return;
+    }
+    $entity = $form_object->getEntity();
+    if (!$entity instanceof FieldConfigInterface) {
+      return;
+    }
     $updater = $this->getUpdater();
-    if (!$updater->batchUpdate($form_state->getFormObject()->getEntity())) {
+    // Setting a batch here is enough: the form API processes any pending
+    // batch right after submit handlers run and sends the response itself.
+    // Calling batch_process() and sending a response here too would emit a
+    // second, conflicting response.
+    if (!$updater->batchUpdate($entity)) {
       // No paths to update.
       return;
     }
-    $response = batch_process($form_state->getRedirect());
-    if (!$response instanceof Response) {
-      // Not expected batch response.
-      return;
-    }
-    $response->send();
+    // For an AJAX submission the form API disabled the redirect, and the
+    // batch it stores would keep that disabled state. A finished batch
+    // then falls back to the request URL, which still carries the
+    // ajax_form query arguments and crashes on a normal page load.
+    // Re-enable the redirect so the finished batch lands on the form's
+    // own redirect target, the same page as a non-JavaScript submission.
+    $form_state->disableRedirect(FALSE);
   }
 
   /**

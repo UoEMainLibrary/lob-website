@@ -1,11 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Hook;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\field_ui\Form\FieldConfigEditForm as CoreFieldConfigEditForm;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
@@ -44,19 +50,32 @@ final class FieldConfigEditForm {
    */
   // @phpstan-ignore-next-line
   #[Hook('form_field_config_edit_form_alter')]
-  public function formAlter(array &$form, FormStateInterface $form_state) {// phpcs:ignore Squiz.WhiteSpace.FunctionSpacing.Before
+  public function formAlter(array &$form, FormStateInterface $form_state): void {// phpcs:ignore Squiz.WhiteSpace.FunctionSpacing.Before
 
+    $form_object = $form_state->getFormObject();
+    if (!$form_object instanceof EntityFormInterface) {
+      return;
+    }
     /** @var \Drupal\field\Entity\FieldConfig $field */
-    $field = $form_state->getFormObject()->getEntity();
+    $field = $form_object->getEntity();
     $class = $field->getClass();
 
-    if (!(class_exists($class) && ($class === FileFieldItemList::class || is_subclass_of($class, FileFieldItemList::class)))) {
+    if (!class_exists($class) || $class !== FileFieldItemList::class && !is_subclass_of($class, FileFieldItemList::class)) {
       // Not supported the field config edit form.
       return;
     }
 
     $entity_info = $this->entityTypeManager->getDefinition($field->getTargetEntityTypeId());
     $settings = $field->getThirdPartySettings('filefield_paths');
+
+    // Core's AJAX callback for this form does not know about batches set by
+    // third-party submit handlers. It always redirects to the field overview
+    // page, so a retroactive update batch is stored but never run. Replace
+    // the callback with one that sends the browser to the batch page when a
+    // batch is waiting, and hands over to core's callback when none is.
+    if (isset($form['actions']['submit']['#ajax']['callback'])) {
+      $form['actions']['submit']['#ajax']['callback'] = [self::class, 'ajaxSubmit'];
+    }
 
     $form['settings']['filefield_paths'] = [
       '#type'    => 'container',
@@ -103,13 +122,13 @@ final class FieldConfigEditForm {
       ];
 
       // Attach widget field form elements.
-      if (!(isset($settings_field['form']) && is_array($settings_field['form']))) {
+      if (!isset($settings_field['form']) || !is_array($settings_field['form'])) {
         // No expected form elements.
         continue;
       }
-      foreach (array_keys($settings_field['form']) as $delta => $key) {
+      foreach (array_keys($settings_field['form']) as $key) {
         $form['settings']['filefield_paths']['details'][$name][$key] = $settings_field['form'][$key];
-        if ($this->tokenEntityMapper !== NULL && $this->moduleHandler->moduleExists('token')) {
+        if ($this->tokenEntityMapper instanceof TokenEntityMapperInterface && $this->moduleHandler->moduleExists('token')) {
           $form['settings']['filefield_paths']['details'][$name][$key]['#element_validate'][] = 'token_element_validate';
           $form['settings']['filefield_paths']['details'][$name][$key]['#token_types'] = [
             'date',
@@ -133,7 +152,7 @@ final class FieldConfigEditForm {
         '#title'      => $this->t('@title options', ['@title' => $settings_field['title']]),
         '#weight'     => 1,
         '#attributes' => [
-          'class' => ["{$name} cleanup"],
+          'class' => [$name . ' cleanup'],
         ],
       ];
       // Cleanup slashes (/).
@@ -184,11 +203,11 @@ final class FieldConfigEditForm {
         }
       }
 
-      $description = $this->t('The location that unprocessed files will be uploaded prior to being processed by File (Field) Paths.');
+      $description = $this->t('Files are uploaded here first. They move to their final path when the entity is saved.');
       $description .= '<br />';
-      $description .= $this->t('It is recommended to use the temporary file system (temporary://) whenever possible, especially for files that do not require previewing before form submission. Alternatively, if your server configuration permits, the private file system (private://) is preferred for situations where file previews — such as image previews — are needed before the form is submitted, as it provides secure and appropriate access for this functionality.');
+      $description .= $this->t('Use the temporary file system (temporary://) where you can. Files there have no public URL, and image previews still work. If temporary:// does not suit your server, use the private file system (private://).');
       $description .= '<br />';
-      $description .= '<strong>' . $this->t('Never use the public directory (public://) if the site supports private files, or private files can be temporarily exposed publicly.') . '</strong>';
+      $description .= '<strong>' . $this->t('Do not use the public file system (public://) on a site with private files. A file bound for private:// would have a public URL until the entity is saved.') . '</strong>';
       $description .= '<br />';
       $description .= $this->t('Leave blank to use <a href=":url">global setting</a>.', [':url' => Url::fromRoute('filefield_paths.admin_settings')->toString()]);
       // Temporary file path.
@@ -245,6 +264,28 @@ final class FieldConfigEditForm {
    */
   public static function submit(array $form, FormStateInterface $form_state): void {
     \Drupal::service(FieldConfigEditFormHandlerInterface::class)->submit($form, $form_state);
+  }
+
+  /**
+   * AJAX callback for the field configuration form.
+   *
+   * By the time this runs, the form API has already built and stored any
+   * batch set during submission, but its redirect to the batch page was
+   * discarded by the AJAX handling. Send the browser there ourselves. When
+   * no batch is waiting, core's own callback handles the response.
+   *
+   * @internal
+   */
+  public static function ajaxSubmit(array &$form, FormStateInterface $form_state): AjaxResponse {
+    $batch = &batch_get();
+    if (isset($batch['id'], $batch['url']) && !empty($batch['progressive'])) {
+      $response = new AjaxResponse();
+      $response->addCommand(new RedirectCommand($batch['url']->toString()));
+      return $response;
+    }
+    $form_object = $form_state->getFormObject();
+    assert($form_object instanceof CoreFieldConfigEditForm);
+    return $form_object->ajaxSubmit($form, $form_state);
   }
 
   /**

@@ -1,7 +1,8 @@
-File (Field) Paths
-==================
+# File (Field) Paths
 
-[![Build Status](https://travis-ci.org/Decipher/filefield_paths.svg)](https://travis-ci.org/Decipher/filefield_paths)
+[![Pipeline](https://git.drupalcode.org/project/filefield_paths/badges/8.x-1.x/pipeline.svg)](https://git.drupalcode.org/project/filefield_paths/-/pipelines)
+[![Test](https://github.com/Decipher/filefield_paths/actions/workflows/test.yml/badge.svg?branch=8.x-1.x)](https://github.com/Decipher/filefield_paths/actions/workflows/test.yml?query=branch%3A8.x-1.x)
+[![Coverage](https://codecov.io/gh/Decipher/filefield_paths/branch/8.x-1.x/graph/badge.svg)](https://codecov.io/gh/Decipher/filefield_paths/branch/8.x-1.x)
 
 The File (Field) Paths module extends the default functionality of Drupal's core
 File module, Image module and many other File upload modules, by adding the
@@ -11,75 +12,122 @@ In simple terms, File (Field) Paths allows you to automatically sort and rename
 your uploaded files using token based replacement patterns to maintain a nice
 clean filesystem.
 
+For a full description of the module, visit the
+[project page](https://www.drupal.org/project/filefield_paths).
+
+Submit bug reports and feature suggestions, or track changes in the
+[issue queue](https://www.drupal.org/project/issues/filefield_paths).
 
 
-Features
---------
+## Table of contents
 
-* Configurable file paths now use entity tokens in addition to user tokens.
-* Configurable file names.
-* Support for file based fields, including but not limited to:
-    * Drupal core File module.
-    * Drupal core Image module.
-    * Video module.
-* File path and filename cleanup options:
-    * Remove slashes from tokens.
-    * Filter out words and punctuation by taking advantage of the Pathauto
-      module.
-    * Convert unicode characters into US-ASCII with the Transliteration module.
-* Retroactive updates - rename and/or move previously uploaded files.
-* Active updating - actively rename and/or move previously uploaded files.
-* Create redirect - automatically create a redirect when moving uploaded files,
-  using the Redirect module.
+- Requirements
+- Installation
+- Configuration
+- Features
+- FAQ
+- Maintainers
 
 
+## Requirements
 
-Recommended Modules
--------------------
+This module requires the following modules:
 
-* [Pathauto](https://www.drupal.org/project/pathauto)
-* [Redirect](https://www.drupal.org/project/redirect)
-* [Token](https://www.drupal.org/project/token)
-
+- [Pathauto](https://www.drupal.org/project/pathauto)
+- [Redirect](https://www.drupal.org/project/redirect)
+- [Token](https://www.drupal.org/project/token)
 
 
-Usage/Configuration
--------------------
+## Installation
+
+Install as you would normally install a contributed Drupal module. For further
+information, see
+[Installing Drupal Modules](https://www.drupal.org/docs/extending-drupal/installing-modules).
+
+
+## Configuration
+
+### File fields
 
 Once installed, File (Field) Paths needs to be configured for each file field
 you wish to use. Settings can be found on the settings form of any supported
-file based field.
+file based field:
 
-  *Example:*
+Administration > Structure > Content types > Article > Manage fields > Image  
+`/admin/structure/types/manage/article/fields/node.article.field_image`
 
-    Administration > Structure > Content types > Article > Manage fields > Image
-    http://example.com/admin/structure/types/manage/article/fields/field_image
+### Temporary file location
+
+File (Field) Paths uploads each file to a temporary location first and moves it
+to its final path once the entity is saved and the token values are known. If
+that location is under `public://`, a file bound for the private file system can
+be read by anyone who knows its URL until the entity is saved.
+
+A new install uses `temporary://filefield_paths`. Keep it. Files there have no
+public URL, and image previews still work: image styles are built for staged
+files on demand.
+
+If `temporary://` does not suit your server, use the
+[private file system](https://www.drupal.org/docs/8/core/modules/file/overview#s-managing-file-locations-and-access)
+instead. One such case is several web servers without a shared temporary
+directory:
+
+1. Set a private file path in `settings.php`, as described under
+   [Private file system settings](https://www.drupal.org/docs/8/core/modules/file/overview#s-private-file-system-settings).
+   With several web servers, that path must be on storage they all share.
+2. On "File (Field) Paths settings"
+   (`/admin/config/media/file-system/filefield-paths`), set "Temporary file
+   location" to `private://filefield_paths`.
+
+The status report warns when the temporary file location points at `public://`
+while a safer scheme is available.
 
 
+## Features
 
-Frequently Asked Questions
---------------------------
+- Configurable file paths now use entity tokens in addition to user tokens.
+- Configurable file names.
+  - A generated name always ends in an extension the field allows. When the
+    pattern does not give one, the file's own extension is added.
+  - Generated names are sanitised the way core sanitises an uploaded file
+    name, with the same file system settings.
+- Support for file based fields, including but not limited to:
+  - Drupal core File module.
+  - Drupal core Image module.
+  - Video module.
+- File path and filename cleanup options:
+  - Remove slashes from tokens.
+  - Filter out words and punctuation by taking advantage of the Pathauto
+      module.
+  - Convert unicode characters into US-ASCII with the Transliteration module.
+- Retroactive updates - rename and/or move previously uploaded files.
+- Active updating - actively rename and/or move previously uploaded files.
+- Create redirect - automatically create a redirect when moving uploaded files,
+  using the Redirect module.
 
-Q. Aren't tokens already supported in the File module?
 
-A. A limited selection of tokens are supported in the File module.
+## FAQ
+
+**Q: Aren't tokens already supported in the File module?**
+
+**A:** A limited selection of tokens are supported in the File module.
 
    Entity based tokens allow you to use the Entity ID, Title, creation date and
    much more in your directory/filenames where you would otherwise be unable.
 
 
-Q. Why aren't my files in the correct folder?
+**Q: Why aren't my files in the correct folder?**
 
-A. When you are creating or updating an entity the full values for the tokens
+**A:** When you are creating or updating an entity the full values for the tokens
    may not yet be known by Drupal, so the File (Field) Paths module will upload
    your files to a temporary location and then once you save the entity and
    Drupal is provided with the tokens values the file will be moved to the
    appropriate location.
 
 
-Q. Why is there a warning on the 'Retroactive updates' feature?
+**Q: Why is there a warning on the 'Retroactive updates' feature?**
 
-A. Retroactive updates will go through every single entity of the particular
+**A:** Retroactive updates will go through every single entity of the particular
    bundle and move and/or rename the files.
 
    While there have been no reports of errors caused by the feature, it is quite
@@ -89,10 +137,8 @@ A. Retroactive updates will go through every single entity of the particular
 
 
 
-History and Maintainers
------------------------
+## Maintainers
 
-File (Field) Paths was written and is maintained by Stuart Clark (deciphered).
-
-* http://stuar.tc/lark
-* http://twitter.com/Decipher
+- Oleh Vehera - [voleger](https://www.drupal.org/u/voleger)
+- Stuart Clark - [Deciphered](https://www.drupal.org/u/deciphered)
+- David Pagini - [dpagini](https://www.drupal.org/u/dpagini)

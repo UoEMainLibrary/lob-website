@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Hook;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Component\Utility\DeprecationHelper;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\File\Event\FileUploadSanitizeNameEvent;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Logger\LoggerChannelInterface;
@@ -13,28 +16,31 @@ use Drupal\Core\StreamWrapper\StreamWrapperManagerInterface;
 use Drupal\file\FileRepositoryInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\filefield_paths\PathProcessorInterface;
+use Drupal\filefield_paths\ProcessOutcomeInterface;
 use Drupal\filefield_paths\RedirectInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireServiceClosure;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Implements hook_filefield_paths_process_file().
  *
  * @todo Convert this to a plugin.
  */
-final class FileFieldPathsProcessFileLegacy {
+final readonly class FileFieldPathsProcessFileLegacy {
 
   public function __construct(
-    private readonly FileSystemInterface $fileSystem,
-    private readonly FileRepositoryInterface $fileRepository,
-    private readonly StreamWrapperManagerInterface $streamWrapperManager,
-    private readonly ModuleHandlerInterface $moduleHandler,
-    private readonly ConfigFactoryInterface $configFactory,
-    private readonly PathProcessorInterface $pathProcessor,
+    private FileSystemInterface $fileSystem,
+    private FileRepositoryInterface $fileRepository,
+    private StreamWrapperManagerInterface $streamWrapperManager,
+    private ModuleHandlerInterface $moduleHandler,
+    private PathProcessorInterface $pathProcessor,
+    private ProcessOutcomeInterface $processOutcome,
     #[Autowire(service: 'logger.channel.filefield_paths')]
-    private readonly LoggerChannelInterface $logger,
+    private LoggerChannelInterface $loggerChannel,
     #[AutowireServiceClosure(RedirectInterface::class)]
-    private readonly \Closure $redirectClosure,
+    private \Closure $redirectClosure,
+    private EventDispatcherInterface $eventDispatcher,
   ) {}
 
   /**
@@ -48,29 +54,43 @@ final class FileFieldPathsProcessFileLegacy {
     /** @var \Drupal\field\Entity\FieldStorageConfig $field_storage */
     $field_storage = $field_config->getFieldStorageDefinition();
 
-    $config = $this->configFactory->get('filefield_paths.settings');
-
-    // Check that the destination is writeable.
+    // Check that the destination is writeable and the source is readable.
+    // Any registered, readable scheme is an acceptable move source: the
+    // temporary staging scheme, the field's own destination scheme, or any
+    // other scheme (e.g. moving public:// files to private:// after a
+    // uri_scheme setting change).
     $wrappers = $this->streamWrapperManager->getWrappers(StreamWrapperInterface::WRITE);
+    $readable_wrappers = $this->streamWrapperManager->getWrappers(StreamWrapperInterface::READ);
 
     $destination_scheme_name = $field_storage->getSetting('uri_scheme');
-    $temp_location = !empty($settings['temp_location']) ? $settings['temp_location'] : $config->get('temp_location');
-    $temporary_scheme_name = $this->streamWrapperManager::getScheme($temp_location);
-    $schemas = [$temporary_scheme_name, $destination_scheme_name];
 
     /** @var \Drupal\file\Entity\File $file */
     foreach ($field->referencedEntities() as $file) {
       $source_scheme_name = $this->streamWrapperManager::getScheme($file->getFileUri());
-      if (!(!empty($wrappers[$destination_scheme_name]) && in_array($source_scheme_name, $schemas, TRUE))) {
-        // Unexpected source scheme.
+      if (empty($wrappers[$destination_scheme_name]) || empty($readable_wrappers[$source_scheme_name])) {
+        // Unexpected source or destination scheme.
+        $this->loggerChannel->notice('The file %uri was skipped because its scheme (%source) or the destination scheme (%destination) is not a registered, accessible stream wrapper.', [
+          '%uri' => $file->getFileUri(),
+          '%source' => $source_scheme_name,
+          '%destination' => $destination_scheme_name,
+        ]);
+        $this->processOutcome->recordSkipped($file->id());
         continue;
       }
       // Process file if this is a new entity, 'Active updating' is set or
       // file wasn't previously attached to the entity.
-      if (isset($entity->original) && empty($settings['active_updating']) && !$entity->isNew() && !$entity->original->{$field->getName()}->isEmpty()) {
+      // ContentEntityBase::__set() writes 'original' into its internal values
+      // array rather than an object property, so property_exists() is always
+      // FALSE here and the skip below never fired on core older than 11.2.
+      $original_entity = DeprecationHelper::backwardsCompatibleCall(\Drupal::VERSION, '11.2.0', fn(): ?ContentEntityInterface => $entity->getOriginal(), fn() => $entity->original ?? NULL);
+      if ($original_entity instanceof ContentEntityInterface && empty($settings['active_updating']) && !$entity->isNew() && !$original_entity->{$field->getName()}->isEmpty()) {
         /** @var \Drupal\file\Entity\File $original_file */
-        foreach ($entity->original->{$field->getName()}->referencedEntities() as $original_file) {
+        foreach ($original_entity->{$field->getName()}->referencedEntities() as $original_file) {
           if ((string) $original_file->id() === (string) $file->id()) {
+            $this->loggerChannel->notice('The file %uri was skipped because it was already attached before this save and active updating is not enabled.', [
+              '%uri' => $file->getFileUri(),
+            ]);
+            $this->processOutcome->recordSkipped($file->id());
             continue 2;
           }
         }
@@ -93,23 +113,40 @@ final class FileFieldPathsProcessFileLegacy {
       $path = $this->pathProcessor->processString($settings['file_path']['value'], $token_data, $settings['file_path']['options']);
 
       $destination = $this->streamWrapperManager->normalizeUri($field_storage->getSetting('uri_scheme') . '://' . $path . '/' . $name);
+      // The name came from tokens, so it may carry an extension that core
+      // munged on upload. Sanitise it the way core sanitises an upload.
+      $destination = $this->sanitizeDestination($destination, $file->getFileUri(), (string) $field_config->getSetting('file_extensions'));
 
       // Ensure file uri is no more than 255 characters.
       if (mb_strlen($destination) > 255) {
-        $this->logger->info('File path was truncated');
+        $this->loggerChannel->info('File path was truncated');
         $pathinfo = pathinfo($destination);
-        $destination = mb_substr($destination, 0, 254 - mb_strlen($pathinfo['extension'])) . ".{$pathinfo['extension']}";
+        $ext = $pathinfo['extension'] ?? '';
+        $prefix_max = $ext !== '' ? 254 - mb_strlen($ext) : 255;
+        $destination = mb_substr($destination, 0, $prefix_max) . ($ext !== '' ? '.' . $ext : '');
       }
 
       // Finalize file if necessary.
-      if (!($file->getFileUri() !== $destination && file_exists($file->getFileUri()))) {
+      // Check the file is on disk first. A record can point at the correct
+      // destination while the file itself is gone, and that is a failure,
+      // not a file that is already in place.
+      if (!file_exists($file->getFileUri())) {
+        $this->loggerChannel->notice('The file %uri was skipped because it does not exist on disk.', [
+          '%uri' => $file->getFileUri(),
+        ]);
+        $this->processOutcome->recordSkipped($file->id());
+        continue;
+      }
+      if ($file->getFileUri() === $destination) {
         // File is already in the right place.
+        $this->processOutcome->recordUpdated($file->id());
         continue;
       }
       $dirname = $this->fileSystem->dirname($destination);
       $dir_exists = $this->fileSystem->prepareDirectory($dirname, $this->fileSystem::CREATE_DIRECTORY);
       if (!$dir_exists) {
-        $this->logger->notice('The directory %directory could not be created.', ['%directory' => $dirname]);
+        $this->loggerChannel->notice('The directory %directory could not be created.', ['%directory' => $dirname]);
+        $this->processOutcome->recordSkipped($file->id());
         continue;
       }
 
@@ -118,13 +155,15 @@ final class FileFieldPathsProcessFileLegacy {
       try {
         $new_file = $this->fileRepository->move($file, $destination);
       }
-      catch (\Exception $e) {
-        $this->logger->notice('The file %old could not be moved to the destination of %new. Ensure your permissions are set correctly.', [
+      catch (\Exception) {
+        $this->loggerChannel->notice('The file %old could not be moved to the destination of %new. Ensure your permissions are set correctly.', [
           '%old' => $file->getFileUri(),
           '%new' => $destination,
         ]);
+        $this->processOutcome->recordSkipped($file->id());
         continue;
       }
+      $this->processOutcome->recordUpdated($file->id());
 
       // Create redirect from old location.
       if (
@@ -137,9 +176,9 @@ final class FileFieldPathsProcessFileLegacy {
 
       // Remove any old empty directories.
       // @todo Fix problem of missing test for the line below here.
-      $paths = explode('/', str_replace("{$source_scheme_name}://", '', $this->fileSystem->dirname($file->getFileUri())));
+      $paths = explode('/', str_replace($source_scheme_name . '://', '', $this->fileSystem->dirname($file->getFileUri())));
       while ($paths) {
-        if (!@$this->fileSystem->rmdir("{$source_scheme_name}://" . implode('/', $paths))) {
+        if (!@$this->fileSystem->rmdir($source_scheme_name . '://' . implode('/', $paths))) {
           // No dirs was removed, so we're done.
           break;
         }
@@ -156,6 +195,47 @@ final class FileFieldPathsProcessFileLegacy {
    */
   private function getRedirect(): RedirectInterface {
     return ($this->redirectClosure)();
+  }
+
+  /**
+   * Sanitises the file name part of a destination URI.
+   *
+   * Only the last path segment is a file name. The directory part is left
+   * alone. The name must end in an extension the field allows. When it does
+   * not, the file's own extension is put back first: the content is still
+   * the type that passed upload validation. Core's upload sanitiser then
+   * munges any insecure extension inside the name.
+   *
+   * @param string $destination
+   *   The normalised destination URI.
+   * @param string $source_uri
+   *   The URI the file is moving from.
+   * @param string $allowed_extensions
+   *   The field's allowed extensions, space separated. Empty means any.
+   *
+   * @return string
+   *   The destination URI with a sanitised file name.
+   */
+  private function sanitizeDestination(string $destination, string $source_uri, string $allowed_extensions): string {
+    $segments = explode('/', $destination);
+    $name = array_pop($segments);
+    // A backslash in a name is not path information here, but the sanitise
+    // event rejects it as such. Neutralise it rather than throw on save.
+    $name = str_replace('\\', '_', $name);
+
+    $allowed = $allowed_extensions === '' ? [] : array_unique(explode(' ', trim(strtolower($allowed_extensions))));
+    $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+    if ($allowed !== [] && !in_array($extension, $allowed, TRUE)) {
+      $original_extension = pathinfo($source_uri, PATHINFO_EXTENSION);
+      if ($original_extension !== '') {
+        $name .= '.' . $original_extension;
+      }
+    }
+
+    $event = new FileUploadSanitizeNameEvent($name, $allowed_extensions);
+    $this->eventDispatcher->dispatch($event);
+
+    return implode('/', $segments) . '/' . $event->getFilename();
   }
 
 }

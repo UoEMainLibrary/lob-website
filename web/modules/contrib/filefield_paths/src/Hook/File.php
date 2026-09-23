@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Hook;
 
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -40,8 +42,8 @@ final class File {
     // Store the original filename in the database.
     if (
       isset($file->origname, $file->filename) &&
-      $file->origname->isEmpty() &&
-      !$file->filename->isEmpty()
+      (is_array($file->origname) || $file->origname->isEmpty()) &&
+      (!is_array($file->filename) && !$file->filename->isEmpty())
     ) {
       $file->origname = $file->filename;
     }

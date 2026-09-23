@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\filefield_paths\Batch;
 
 use Drupal\field\FieldConfigInterface;
@@ -33,5 +35,20 @@ interface BatchUpdaterInterface {
    * @internal
    */
   public function batchProcess(array $objects, FieldConfigInterface $field_config, array &$context): void;
+
+  /**
+   * Batch finished callback: reports how many files moved or were skipped.
+   *
+   * @param bool $success
+   *   Whether the batch completed successfully.
+   * @param array $results
+   *   The results array built up during batchProcess(), containing
+   *   'updated' and 'skipped' file counts.
+   * @param array $operations
+   *   The operations that remained unprocessed.
+   *
+   * @internal
+   */
+  public function batchFinished(bool $success, array $results, array $operations): void;
 
 }
